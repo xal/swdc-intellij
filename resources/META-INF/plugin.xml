@@ -1,0 +1,38 @@
+<idea-plugin>
+  <id>com.softwareco.intellij.plugin</id>
+  <name>Software.com</name>
+  <version>0.1.5</version>
+  <vendor email="support@software.com" url="https://software.com">Software.com</vendor>
+
+  <description><![CDATA[
+      Insights into how you code
+    ]]></description>
+
+  <change-notes><![CDATA[
+      Software.com release 0.1.5<br>
+    ]]>
+  </change-notes>
+
+  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
+  <idea-version since-build="162"/>
+
+  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+       on how to target different products -->
+  <depends>com.intellij.modules.lang</depends>
+
+  <application-components>
+    <!-- Add your application components here -->
+    <component>
+      <implementation-class>com.softwareco.intellij.plugin.SoftwareCo</implementation-class>
+    </component>
+  </application-components>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <!-- Add your extensions here -->
+  </extensions>
+
+  <actions>
+    <!-- Add your actions here -->
+  </actions>
+
+</idea-plugin>
