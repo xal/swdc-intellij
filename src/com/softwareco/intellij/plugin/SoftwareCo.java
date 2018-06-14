@@ -22,17 +22,13 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.PlatformUtils;
 import com.intellij.util.messages.MessageBusConnection;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Level;
 import org.jetbrains.annotations.NotNull;
@@ -46,6 +42,8 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Date;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.*;
 
 /**
@@ -57,7 +55,7 @@ public class SoftwareCo implements ApplicationComponent {
     public static final Logger log = Logger.getInstance("SoftwareCo");
     public static Gson gson;
 
-    private static final String PLUGIN_MGR_ENDPOINT = "http://localhost:19234/api/v1/data";
+    // private static final String PLUGIN_MGR_ENDPOINT = "http://localhost:19234/api/v1/data";
     private static final String PM_BUCKET = "https://s3-us-west-1.amazonaws.com/swdc-plugin-manager/";
     private static final String PM_NAME = "software";
 
@@ -70,13 +68,14 @@ public class SoftwareCo implements ApplicationComponent {
     private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private ScheduledFuture<?> scheduledFixture;
 
-    private static HttpClient httpClient;
-    private static ExecutorService executorService;
-    private static boolean pluginManagerConnectionErrorShown = false;
     private static boolean READY = false;
     private static KeystrokeManager keystrokeMgr;
     private static boolean downloadingPM = false;
     private static boolean pluginManagerInstallErrorShown = false;
+
+    private SoftwareCoSessionManager sessionMgr = SoftwareCoSessionManager.getInstance();
+
+    private Timer kpmFetchTimer;
 
     public SoftwareCo() {
     }
@@ -92,27 +91,37 @@ public class SoftwareCo implements ApplicationComponent {
 
         setLoggingLevel();
 
-        executorService = Executors.newFixedThreadPool(2);
-
         keystrokeMgr = KeystrokeManager.getInstance();
-        // initialize the HttpClient
-        RequestConfig config = RequestConfig.custom()
-                .setConnectTimeout(5000)
-                .setConnectionRequestTimeout(5000)
-                .setSocketTimeout(5000)
-                .build();
-
-        httpClient = HttpClientBuilder
-                .create()
-                .setDefaultRequestConfig(config)
-                .build();
         gson = new Gson();
 
         setupEventListeners();
         setupScheduledProcessor();
         log.info("Software.com: Finished initializing SoftwareCo plugin");
 
+        // run the initial calls in 5 seconds
+        new Thread(() -> {
+            try {
+                Thread.sleep(1000 * 5);
+                sessionMgr.chekUserAuthenticationStatus();
+                sessionMgr.fetchDailyKpmSessionInfo();
+                sessionMgr.sendOfflineData();
+            }
+            catch (Exception e){
+                System.err.println(e);
+            }
+        }).start();
+
+        // run the kpm fetch task every minute
+        kpmFetchTimer = new Timer();
+        kpmFetchTimer.scheduleAtFixedRate(new ProcessKpmSessionInfoTask(), 60 * 1000, 60 * 1000);
+
         READY = true;
+    }
+
+    private class ProcessKpmSessionInfoTask extends TimerTask {
+        public void run() {
+            sessionMgr.fetchDailyKpmSessionInfo();
+        }
     }
 
     private void setupEventListeners() {
@@ -198,6 +207,18 @@ public class SoftwareCo implements ApplicationComponent {
         }
         updateFileInfoValue(fileInfo, fileName, "close", 1);
         log.info("Software.com: file closed: " + fileName);
+    }
+
+    public static String getUserHomeDir() {
+        return System.getProperty("user.home");
+    }
+
+    public static boolean isWindows() {
+        return SystemInfo.isWindows;
+    }
+
+    public static boolean isMac() {
+        return SystemInfo.isMac;
     }
 
     private static String getFileUrl() {
@@ -462,11 +483,10 @@ public class SoftwareCo implements ApplicationComponent {
         return projectDirectory;
     }
 
-    private static void processKeystrokes() {
+    private void processKeystrokes() {
         if (READY) {
 
             List<KeystrokeManager.KeystrokeCountWrapper> wrappers = keystrokeMgr.getKeystrokeCountWrapperList();
-            long nowInMillis = System.currentTimeMillis();
             for (KeystrokeManager.KeystrokeCountWrapper wrapper : wrappers) {
                 if (wrapper.getKeystrokeCount() != null) {
                     //
@@ -488,10 +508,10 @@ public class SoftwareCo implements ApplicationComponent {
         }
     }
 
-    private static void sendKeystrokeData(KeystrokeCount keystrokeCount) {
+    private void sendKeystrokeData(KeystrokeCount keystrokeCount) {
 
         KeystrokeDataSendTask sendTask = new KeystrokeDataSendTask(keystrokeCount);
-        Future<HttpResponse> response = executorService.submit(sendTask);
+        Future<HttpResponse> response = SoftwareCoUtils.executorService.submit(sendTask);
 
         boolean postFailed = true;
 
@@ -528,39 +548,12 @@ public class SoftwareCo implements ApplicationComponent {
             }
         }
 
-        if (!downloadingPM && postFailed && !pluginManagerConnectionErrorShown) {
-
-            // first check to see if the plugin manager was installed
-            if (!pluginManagerInstallErrorShown && !hasPluginInstalled()) {
-                pluginManagerInstallErrorShown = true;
-                ApplicationManager.getApplication().invokeLater(new Runnable() {
-                    public void run() {
-                        // ask to download the PM
-                        int options = Messages.showDialog(
-                                "We are having trouble sending data to Software.com. " +
-                                        "The Plugin Manager may not be installed. Would you like to download it now?",
-                                "Software", new String[]{"Download", "Not now"}, 0, Messages.getQuestionIcon());
-                        if (options == 0) {
-                            // "download" was selected
-                            downloadPM();
-                        }
-                    }
-                });
-                return;
-            }
-
-            pluginManagerConnectionErrorShown = true;
-            ApplicationManager.getApplication().invokeLater(new Runnable() {
-                public void run() {
-                    // show a popup
-                    String msg = "We are having trouble sending data to Software.com. Please make sure the Plugin Manager is running and logged in.";
-                    // show a popup message once
-                    Messages.showMessageDialog(
-                            msg,
-                            "Information",
-                            Messages.getInformationIcon());
-                }
-            });
+        if (postFailed) {
+            log.info("Saving kpm info offline");
+            // save the data offline
+            String payload = SoftwareCo.gson.toJson(keystrokeCount);
+            sessionMgr.storePayload(payload);
+            sessionMgr.chekUserAuthenticationStatus();
         }
     }
 
@@ -581,21 +574,29 @@ public class SoftwareCo implements ApplicationComponent {
             long startInSeconds = (int) (new Date().getTime() / 1000 - 90);
             keystrokeCount.setStart(startInSeconds);
             keystrokeCount.setEnd(startInSeconds + 60);
-            String keystrokeCountJson = gson.toJson(keystrokeCount);
+            String kpmData = gson.toJson(keystrokeCount);
 
-            log.info("Software.com: sending:\n" + PLUGIN_MGR_ENDPOINT + "\n" + keystrokeCountJson);
+            String endpoint = SoftwareCoUtils.api_endpoint + "/data";
 
             try {
-
-                HttpPost request = new HttpPost(PLUGIN_MGR_ENDPOINT);
-                StringEntity params = new StringEntity(keystrokeCountJson);
+                HttpPost request = new HttpPost(endpoint);
+                StringEntity params = new StringEntity(kpmData);
                 request.addHeader("Content-type", "application/json");
+
+                // add the auth token
+                String jwtToken = SoftwareCoSessionManager.getItem("jwt");
+                // we need the header, but check if it's null anyway
+                if (jwtToken != null) {
+                    request.addHeader("Authorization", jwtToken);
+                }
+
                 request.setEntity(params);
 
                 //
                 // Send the POST request
                 //
-                HttpResponse response = httpClient.execute(request);
+                SoftwareCoUtils.logApiRequest(request, kpmData);
+                HttpResponse response = SoftwareCoUtils.httpClient.execute(request);
 
                 //
                 // Return the response
