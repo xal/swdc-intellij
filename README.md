@@ -15,6 +15,8 @@
 3. Search for **"Software.com"**
 4. **Install** *Software*
 5. **Restart** IntelliJ
+6. **Authenticate** your account by clicking the IDE prompt (only required for the first plugin you install)
+
 
 ### Uninstall
 

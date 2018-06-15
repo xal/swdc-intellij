@@ -232,7 +232,7 @@ public class SoftwareCoSessionManager {
             setItem("eclipse_lastUpdateTime", String.valueOf(System.currentTimeMillis()));
             confirmWindowOpen = true;
 
-            String msg = "To see insights into how you code, please sign in to Software.com.";
+            String msg = "To see your coding data in Software.com, please authenticate your account.";
 
             final String dialogMsg = msg;
 
@@ -241,7 +241,7 @@ public class SoftwareCoSessionManager {
                     // ask to download the PM
                     int options = Messages.showDialog(
                             msg,
-                            "Software", new String[]{"Not now", "Login"},
+                            "Software", new String[]{"Not now", "Authenticate"},
                             1, Messages.getInformationIcon());
                     if (options == 1) {
                         // create the token value
