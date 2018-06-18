@@ -98,10 +98,15 @@ public class SoftwareCo implements ApplicationComponent {
         setupScheduledProcessor();
         log.info("Software.com: Finished initializing SoftwareCo plugin");
 
+        SoftwareCoUtils.setStatusLineMessage(
+                "Software.com",
+                "Click to see more from Software.com",
+                "pulse");
+
         // run the initial calls in 5 seconds
         new Thread(() -> {
             try {
-                Thread.sleep(1000 * 5);
+                Thread.sleep(1000 * 10);
                 sessionMgr.chekUserAuthenticationStatus();
                 sessionMgr.fetchDailyKpmSessionInfo();
                 sessionMgr.sendOfflineData();

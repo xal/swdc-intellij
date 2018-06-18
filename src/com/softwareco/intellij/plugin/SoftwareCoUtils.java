@@ -4,7 +4,9 @@ import com.google.gson.JsonObject;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.wm.StatusBar;
+import com.intellij.openapi.wm.StatusBarWidget;
 import com.intellij.openapi.wm.WindowManager;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -13,10 +15,8 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.HttpClientBuilder;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import javax.swing.*;
+import java.io.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -138,16 +138,48 @@ public class SoftwareCoUtils {
                 + ", payload: " + payload + "]");
     }
 
-    public static void setStatusLineMessage(final String msg, final String tooltip) {
+    public static void setStatusLineMessage(final String msg, final String tooltip, final String iconName) {
         try {
             Project p = ProjectManager.getInstance().getOpenProjects()[0];
             final StatusBar statusBar = WindowManager.getInstance().getStatusBar(p);
-            log.info("status: " + msg);
+
             if (statusBar != null) {
-                statusBar.setInfo(msg);
+                StatusBarWidget existingWidget = statusBar.getWidget(SoftwareCoStatusBarTextWidget.WIDGET_ID);
+                if (existingWidget != null) {
+                    try {
+                        statusBar.removeWidget(SoftwareCoStatusBarTextWidget.WIDGET_ID);
+                    } catch (Exception e) {
+                        log.error("Failed to remove existing " + SoftwareCoStatusBarTextWidget.WIDGET_ID + " widget: " + e.getMessage());
+                    }
+                }
+
+                existingWidget = statusBar.getWidget(SoftwareCoStatusBarIconWidget.WIDGET_ID);
+                if (existingWidget != null) {
+                    try {
+                        statusBar.removeWidget(SoftwareCoStatusBarIconWidget.WIDGET_ID);
+                    } catch (Exception e) {
+                        log.error("Failed to remove existing " + SoftwareCoStatusBarIconWidget.WIDGET_ID + " widget: " + e.getMessage());
+                    }
+                }
+
+                Icon icon = IconLoader.findIcon("/com/softwareco/intellij/plugin/" + iconName + ".gif");
+
+                SoftwareCoStatusBarIconWidget iconWidget = new SoftwareCoStatusBarIconWidget();
+                iconWidget.setIcon(icon);
+
+                SoftwareCoStatusBarTextWidget widget = new SoftwareCoStatusBarTextWidget();
+                widget.setText(msg);
+                widget.setTooltip(tooltip);
+
+                statusBar.addWidget(iconWidget);
+                statusBar.addWidget(widget);
+                statusBar.updateWidget(SoftwareCoStatusBarIconWidget.WIDGET_ID);
+                statusBar.updateWidget(SoftwareCoStatusBarTextWidget.WIDGET_ID);
+
             }
         } catch (Exception e) {
             //
         }
     }
+
 }

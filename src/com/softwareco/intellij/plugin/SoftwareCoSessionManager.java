@@ -99,7 +99,10 @@ public class SoftwareCoSessionManager {
         }
         if (!isOk) {
             // update the status bar with Sign Up message
-            SoftwareCoUtils.setStatusLineMessage("Software.com", "Double click to sign up to Software.com");
+            SoftwareCoUtils.setStatusLineMessage(
+                    "Software.com",
+                    "Click to sign in to Software.com",
+                    "alert");
         }
         return isOk;
     }
@@ -169,7 +172,7 @@ public class SoftwareCoSessionManager {
         }
     }
 
-    private static void setItem(String key, String val) {
+    public static void setItem(String key, String val) {
         JsonObject jsonObj = getSoftwareSessionAsJson();
         jsonObj.addProperty(key, val);
 
@@ -232,7 +235,7 @@ public class SoftwareCoSessionManager {
             setItem("eclipse_lastUpdateTime", String.valueOf(System.currentTimeMillis()));
             confirmWindowOpen = true;
 
-            String msg = "To see your coding data in Software.com, please authenticate your account.";
+            String msg = "To see your coding data in Software.com, please sign in your account.";
 
             final String dialogMsg = msg;
 
@@ -241,7 +244,7 @@ public class SoftwareCoSessionManager {
                     // ask to download the PM
                     int options = Messages.showDialog(
                             msg,
-                            "Software", new String[]{"Not now", "Authenticate"},
+                            "Software", new String[]{"Not now", "Sign in"},
                             1, Messages.getInformationIcon());
                     if (options == 1) {
                         // create the token value
@@ -249,21 +252,23 @@ public class SoftwareCoSessionManager {
                         setItem("token", token);
                         // launch the browser with the login view
                         launchWebUrl(SoftwareCoUtils.launch_url + "/login?token=" + token);
-
-                        // checkTokenAvailability
-                        new Thread(() -> {
-                            try {
-                                Thread.sleep(1000 * 30);
-                                checkTokenAvailability();
-                            }
-                            catch (Exception e){
-                                System.err.println(e);
-                            }
-                        }).start();
                     }
                     confirmWindowOpen = false;
                 }
             });
+
+            if (!authenticated) {
+                // checkTokenAvailability
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(1000 * 60);
+                        checkTokenAvailability();
+                    }
+                    catch (Exception e){
+                        System.err.println(e);
+                    }
+                }).start();
+            }
 
         }
     }
@@ -305,7 +310,7 @@ public class SoftwareCoSessionManager {
         }
     }
 
-    private String generateToken() {
+    public static String generateToken() {
         String uuid = UUID.randomUUID().toString();
         return uuid.replace("-", "");
     }
@@ -324,6 +329,10 @@ public class SoftwareCoSessionManager {
             if (jsonObj.has("kpm")) {
                 avgKpm = jsonObj.get("kpm").getAsInt();
             }
+            boolean inFlow = true;
+            if (jsonObj.has("inFlow")) {
+                inFlow = jsonObj.get("inFlow").getAsBoolean();
+            }
             long totalMin = 0;
             if (jsonObj.has("minutesTotal")) {
                 totalMin = jsonObj.get("minutesTotal").getAsLong();
@@ -340,9 +349,15 @@ public class SoftwareCoSessionManager {
                 sessionTime = totalMin + " min";
             }
             if (avgKpm > 0 || totalMin > 0) {
-                SoftwareCoUtils.setStatusLineMessage(avgKpm + " KPM, " + sessionTime, "Double click to see more from Software.com");
+                String iconName = (inFlow) ? "rocket" : "flame";
+                SoftwareCoUtils.setStatusLineMessage(
+                        avgKpm + " KPM, " + sessionTime,
+                        "Click to see more from Software.com",
+                        iconName);
             } else {
-                SoftwareCoUtils.setStatusLineMessage("Software.com", "Click to see more from Software.com");
+                SoftwareCoUtils.setStatusLineMessage(
+                        "Software.com", "Click to see more from Software.com",
+                        "pulse");
             }
         }
     }
