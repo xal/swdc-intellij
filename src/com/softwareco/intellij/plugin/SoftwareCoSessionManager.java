@@ -102,7 +102,7 @@ public class SoftwareCoSessionManager {
             SoftwareCoUtils.setStatusLineMessage(
                     "Software.com",
                     "Click to sign in to Software.com",
-                    "alert");
+                    "ionicons_svg_md-alert");
         }
         return isOk;
     }
@@ -251,7 +251,7 @@ public class SoftwareCoSessionManager {
                         String token = generateToken();
                         setItem("token", token);
                         // launch the browser with the login view
-                        launchWebUrl(SoftwareCoUtils.launch_url + "/login?token=" + token);
+                        launchWebUrl(SoftwareCoUtils.launch_url + "/onboarding?token=" + token);
                     }
                     confirmWindowOpen = false;
                 }
@@ -349,7 +349,7 @@ public class SoftwareCoSessionManager {
                 sessionTime = totalMin + " min";
             }
             if (avgKpm > 0 || totalMin > 0) {
-                String iconName = (inFlow) ? "rocket" : "flame";
+                String iconName = (inFlow) ? "ionicons_svg_md-rocket" : "";
                 SoftwareCoUtils.setStatusLineMessage(
                         avgKpm + " KPM, " + sessionTime,
                         "Click to see more from Software.com",
@@ -357,7 +357,7 @@ public class SoftwareCoSessionManager {
             } else {
                 SoftwareCoUtils.setStatusLineMessage(
                         "Software.com", "Click to see more from Software.com",
-                        "pulse");
+                        "");
             }
         }
     }

@@ -162,16 +162,17 @@ public class SoftwareCoUtils {
                     }
                 }
 
-                Icon icon = IconLoader.findIcon("/com/softwareco/intellij/plugin/" + iconName + ".gif");
+                if (iconName != null && !iconName.equals("")) {
+                    Icon icon = IconLoader.findIcon("/com/softwareco/intellij/plugin/" + iconName + ".gif");
+                    SoftwareCoStatusBarIconWidget iconWidget = new SoftwareCoStatusBarIconWidget();
+                    iconWidget.setIcon(icon);
+                    statusBar.addWidget(iconWidget);
+                }
 
-                SoftwareCoStatusBarIconWidget iconWidget = new SoftwareCoStatusBarIconWidget();
-                iconWidget.setIcon(icon);
 
                 SoftwareCoStatusBarTextWidget widget = new SoftwareCoStatusBarTextWidget();
                 widget.setText(msg);
                 widget.setTooltip(tooltip);
-
-                statusBar.addWidget(iconWidget);
                 statusBar.addWidget(widget);
                 statusBar.updateWidget(SoftwareCoStatusBarIconWidget.WIDGET_ID);
                 statusBar.updateWidget(SoftwareCoStatusBarTextWidget.WIDGET_ID);

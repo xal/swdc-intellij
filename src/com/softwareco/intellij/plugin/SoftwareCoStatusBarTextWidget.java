@@ -30,7 +30,7 @@ public class SoftwareCoStatusBarTextWidget implements StatusBarWidget {
                 if (jwtToken == null) {
                     String token = SoftwareCoSessionManager.generateToken();
                     SoftwareCoSessionManager.setItem("token", token);
-                    url += "/login?token=" + token;
+                    url += "/onboarding?token=" + token;
                 }
                 BrowserUtil.browse(url);
             }

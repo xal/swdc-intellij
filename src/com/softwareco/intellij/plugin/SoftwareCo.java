@@ -101,7 +101,7 @@ public class SoftwareCo implements ApplicationComponent {
         SoftwareCoUtils.setStatusLineMessage(
                 "Software.com",
                 "Click to see more from Software.com",
-                "pulse");
+                "ionicons_svg_md-alert");
 
         // run the initial calls in 5 seconds
         new Thread(() -> {
