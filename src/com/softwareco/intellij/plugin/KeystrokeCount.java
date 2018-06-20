@@ -18,7 +18,7 @@ public class KeystrokeCount {
     private String type = "Events";
     // sublime = 1, vs code = 2, eclipse = 3, intellij = 4, visual studio = 6, atom = 7
     private int pluginId = 4;
-    private String version = "0.1.5";
+    private String version = "0.1.9";
 
     // non-hardcoded attributes
     private JsonObject source = new JsonObject();
@@ -68,11 +68,17 @@ public class KeystrokeCount {
         // create one and return the one just created
         JsonObject fileInfoData = new JsonObject();
         fileInfoData.addProperty("keys", 0);
+        fileInfoData.addProperty("add", 0);
         fileInfoData.addProperty("paste", 0);
         fileInfoData.addProperty("open", 0);
         fileInfoData.addProperty("close", 0);
         fileInfoData.addProperty("delete", 0);
         fileInfoData.addProperty("length", 0);
+        fileInfoData.addProperty("netkeys", 0);
+        fileInfoData.addProperty("lines", 0);
+        fileInfoData.addProperty("linesAdded", 0);
+        fileInfoData.addProperty("linesRemoved", 0);
+        fileInfoData.addProperty("syntax", 0);
         source.add(fileName, fileInfoData);
 
         return fileInfoData;
@@ -103,9 +109,8 @@ public class KeystrokeCount {
         for ( Map.Entry<String, JsonElement> fileInfoData : fileInfoDataSet ) {
             JsonObject fileinfoDataJsonObj = (JsonObject) fileInfoData.getValue();
             // go through all of the different types of event vals and check if we have an incremented value
-            if (this.hasValueDataForProperty(fileinfoDataJsonObj, "keys") ||
+            if (this.hasValueDataForProperty(fileinfoDataJsonObj, "add") ||
                     this.hasValueDataForProperty(fileinfoDataJsonObj, "open") ||
-                    this.hasValueDataForProperty(fileinfoDataJsonObj, "close") ||
                     this.hasValueDataForProperty(fileinfoDataJsonObj, "close") ||
                     this.hasValueDataForProperty(fileinfoDataJsonObj, "paste") ||
                     this.hasValueDataForProperty(fileinfoDataJsonObj, "delete")) {

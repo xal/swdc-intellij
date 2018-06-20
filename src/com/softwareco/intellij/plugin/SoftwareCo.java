@@ -403,13 +403,17 @@ public class SoftwareCo implements ApplicationComponent {
 
             log.info("Software.com: Copy+Paste incremented");
         } else if (numKeystrokes < 0) {
+            int deleteKpm = Math.abs(numKeystrokes);
             // It's a character delete event
-            updateFileInfoValue(fileInfo, fileName, "delete", Math.abs(numKeystrokes));
+            updateFileInfoValue(fileInfo, fileName, "delete", deleteKpm);
+
+            int incrementedCount = Integer.parseInt(keystrokeCount.getData()) + deleteKpm;
+            keystrokeCount.setData( String.valueOf(incrementedCount) );
 
             log.info("Software.com: Delete incremented");
         } else {
             // increment the specific file keystroke value
-            updateFileInfoValue(fileInfo, fileName, "keys", 1);
+            updateFileInfoValue(fileInfo, fileName, "add", 1);
 
             // increment the data keystroke count
             int incrementedCount = Integer.parseInt(keystrokeCount.getData()) + 1;
@@ -429,6 +433,16 @@ public class SoftwareCo implements ApplicationComponent {
         } else {
             int totalVal = keysVal.getAsInt() + incrementVal;
             fileInfo.addProperty(key, totalVal);
+        }
+
+        if (key.equals("add") || key.equals("delete")) {
+            // update the netkeys and the keys
+            // "netkeys" = add - delete
+            // "keys" = add + delete
+            int deleteCount = fileInfo.get("delete").getAsInt();
+            int addCount = fileInfo.get("add").getAsInt();
+            fileInfo.addProperty("keys", (addCount + deleteCount));
+            fileInfo.addProperty("netkeys", (addCount - deleteCount));
         }
     }
 
