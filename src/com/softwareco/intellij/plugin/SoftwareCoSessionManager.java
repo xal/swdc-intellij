@@ -289,6 +289,10 @@ public class SoftwareCoSessionManager {
     public static void checkTokenAvailability() {
         String tokenVal = getItem("token");
 
+        if (tokenVal == null || tokenVal.equals("")) {
+            return;
+        }
+
         JsonObject responseData = SoftwareCoUtils.getResponseInfo(
                 makeApiCall("/users/plugin/confirm?token=" + tokenVal, false, null)).jsonObj;
         if (responseData != null) {
@@ -300,7 +304,7 @@ public class SoftwareCoSessionManager {
             // check again in a minute
             new Thread(() -> {
                 try {
-                    Thread.sleep(1000 * 60);
+                    Thread.sleep(1000 * 120);
                     checkTokenAvailability();
                 }
                 catch (Exception e){
