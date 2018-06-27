@@ -60,7 +60,7 @@ public class SoftwareCoStatusBarTextWidget implements StatusBarWidget {
         @NotNull
         @Override
         public String getMaxPossibleText() {
-            return "";
+            return null;
         }
 
         @Override

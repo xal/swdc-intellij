@@ -107,9 +107,7 @@ public class SoftwareCo implements ApplicationComponent {
         new Thread(() -> {
             try {
                 Thread.sleep(1000 * 10);
-                sessionMgr.chekUserAuthenticationStatus();
-                sessionMgr.fetchDailyKpmSessionInfo();
-                sessionMgr.sendOfflineData();
+                initializeCalls();
             }
             catch (Exception e){
                 System.err.println(e);
@@ -123,9 +121,23 @@ public class SoftwareCo implements ApplicationComponent {
         READY = true;
     }
 
+    private void initializeCalls() {
+        ApplicationManager.getApplication().invokeLater(new Runnable() {
+            public void run() {
+                sessionMgr.checkUserAuthenticationStatus();
+                sessionMgr.fetchDailyKpmSessionInfo();
+                sessionMgr.sendOfflineData();
+            }
+        });
+    }
+
     private class ProcessKpmSessionInfoTask extends TimerTask {
         public void run() {
-            sessionMgr.fetchDailyKpmSessionInfo();
+            ApplicationManager.getApplication().invokeLater(new Runnable() {
+                public void run() {
+                    sessionMgr.fetchDailyKpmSessionInfo();
+                }
+            });
         }
     }
 
@@ -572,7 +584,7 @@ public class SoftwareCo implements ApplicationComponent {
             // save the data offline
             String payload = SoftwareCo.gson.toJson(keystrokeCount);
             sessionMgr.storePayload(payload);
-            sessionMgr.chekUserAuthenticationStatus();
+            sessionMgr.checkUserAuthenticationStatus();
         }
     }
 

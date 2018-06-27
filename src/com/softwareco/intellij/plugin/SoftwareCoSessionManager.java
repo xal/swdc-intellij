@@ -101,7 +101,7 @@ public class SoftwareCoSessionManager {
             // update the status bar with Sign Up message
             SoftwareCoUtils.setStatusLineMessage(
                     "Software.com",
-                    "Click to sign in to Software.com",
+                    "Click to log in to Software.com",
                     "ionicons_svg_md-alert");
         }
         return isOk;
@@ -225,7 +225,7 @@ public class SoftwareCoSessionManager {
         }
     }
 
-    public void chekUserAuthenticationStatus() {
+    public void checkUserAuthenticationStatus() {
         boolean isOnline = isServerOnline();
         boolean authenticated = isAuthenticated();
         boolean pastThresholdTime = isPastTimeThreshold();
@@ -235,7 +235,7 @@ public class SoftwareCoSessionManager {
             setItem("eclipse_lastUpdateTime", String.valueOf(System.currentTimeMillis()));
             confirmWindowOpen = true;
 
-            String msg = "To see your coding data in Software.com, please sign in your account.";
+            String msg = "To see your coding data in Software.com, please log in your account.";
 
             final String dialogMsg = msg;
 
@@ -244,7 +244,7 @@ public class SoftwareCoSessionManager {
                     // ask to download the PM
                     int options = Messages.showDialog(
                             msg,
-                            "Software", new String[]{"Not now", "Sign in"},
+                            "Software", new String[]{"Not now", "Log in"},
                             1, Messages.getInformationIcon());
                     if (options == 1) {
                         // create the token value

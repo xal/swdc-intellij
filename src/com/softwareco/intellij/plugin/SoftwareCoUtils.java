@@ -28,9 +28,6 @@ public class SoftwareCoUtils {
     private final static String PROD_API_ENDPOINT = "https://api.software.com";
     private final static String PROD_URL_ENDPOINT = "https://alpha.software.com";
 
-    private final static String LOCAL_API_ENDPOINT = "https://localhost:5000";
-    private final static String LOCAL_URL_ENDPOINT = "https://localhost:3000";
-
     // set the api endpoint to use
     public final static String api_endpoint = PROD_API_ENDPOINT;
     // set the launch url to use
@@ -68,9 +65,13 @@ public class SoftwareCoUtils {
             // (consume the entity so there's no connection leak causing a connection pool timeout)
             String jsonStr = getStringRepresentation(response.getEntity());
             if (jsonStr != null) {
-                JsonObject jsonObj = SoftwareCo.jsonParser.parse(jsonStr).getAsJsonObject();
-                responseInfo.jsonObj = jsonObj;
                 responseInfo.jsonStr = jsonStr;
+                try {
+                    JsonObject jsonObj = SoftwareCo.jsonParser.parse(jsonStr).getAsJsonObject();
+                    responseInfo.jsonObj = jsonObj;
+                } catch (Exception e) {
+                    responseInfo.isOk = false;
+                }
             }
             responseInfo.isOk = isOk(response);
         } catch (Exception e) {
@@ -138,43 +139,35 @@ public class SoftwareCoUtils {
                 + ", payload: " + payload + "]");
     }
 
-    public static void setStatusLineMessage(final String msg, final String tooltip, final String iconName) {
+    public static synchronized void setStatusLineMessage(final String msg, final String tooltip, final String iconName) {
         try {
             Project p = ProjectManager.getInstance().getOpenProjects()[0];
             final StatusBar statusBar = WindowManager.getInstance().getStatusBar(p);
 
             if (statusBar != null) {
-                StatusBarWidget existingWidget = statusBar.getWidget(SoftwareCoStatusBarTextWidget.WIDGET_ID);
-                if (existingWidget != null) {
-                    try {
-                        statusBar.removeWidget(SoftwareCoStatusBarTextWidget.WIDGET_ID);
-                    } catch (Exception e) {
-                        log.error("Failed to remove existing " + SoftwareCoStatusBarTextWidget.WIDGET_ID + " widget: " + e.getMessage());
-                    }
-                }
-
-                existingWidget = statusBar.getWidget(SoftwareCoStatusBarIconWidget.WIDGET_ID);
-                if (existingWidget != null) {
+                if (iconName != null && !iconName.equals("")) {
                     try {
                         statusBar.removeWidget(SoftwareCoStatusBarIconWidget.WIDGET_ID);
                     } catch (Exception e) {
-                        log.error("Failed to remove existing " + SoftwareCoStatusBarIconWidget.WIDGET_ID + " widget: " + e.getMessage());
+                        //
                     }
-                }
-
-                if (iconName != null && !iconName.equals("")) {
                     Icon icon = IconLoader.findIcon("/com/softwareco/intellij/plugin/" + iconName + ".gif");
                     SoftwareCoStatusBarIconWidget iconWidget = new SoftwareCoStatusBarIconWidget();
                     iconWidget.setIcon(icon);
                     statusBar.addWidget(iconWidget);
+                    statusBar.updateWidget(SoftwareCoStatusBarIconWidget.WIDGET_ID);
                 }
 
+                try {
+                    statusBar.removeWidget(SoftwareCoStatusBarTextWidget.WIDGET_ID);
+                } catch (Exception e) {
+                    //
+                }
 
                 SoftwareCoStatusBarTextWidget widget = new SoftwareCoStatusBarTextWidget();
                 widget.setText(msg);
                 widget.setTooltip(tooltip);
                 statusBar.addWidget(widget);
-                statusBar.updateWidget(SoftwareCoStatusBarIconWidget.WIDGET_ID);
                 statusBar.updateWidget(SoftwareCoStatusBarTextWidget.WIDGET_ID);
 
             }
