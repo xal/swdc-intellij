@@ -128,7 +128,7 @@ public class SoftwareCoSessionManager {
             output.append(payload);
             output.close();
         } catch (Exception e) {
-            log.error("Software.com: Error appending to the Software data store file", e);
+            log.info("Software.com: Error appending to the Software data store file", e);
         }
     }
 
@@ -167,7 +167,7 @@ public class SoftwareCoSessionManager {
                     log.info("Software.com: No offline data to send");
                 }
             } catch (Exception e) {
-                log.error("Software.com: Error trying to read and send offline data.", e);
+                log.info("Software.com: Error trying to read and send offline data.", e);
             }
         }
     }
@@ -185,7 +185,7 @@ public class SoftwareCoSessionManager {
             output.write(content);
             output.close();
         } catch (Exception e) {
-            log.error("Software.com: Failed to write the key value pair (" + key + ", " + val + ") into the session.", e);
+            log.info("Software.com: Failed to write the key value pair (" + key + ", " + val + ") into the session.", e);
         }
     }
 
@@ -211,7 +211,7 @@ public class SoftwareCoSessionManager {
                     data = SoftwareCo.jsonParser.parse(content).getAsJsonObject();
                 }
             } catch (Exception e) {
-                log.error("Software.com: Error trying to read and json parse the session file.", e);
+                log.info("Software.com: Error trying to read and json parse the session file.", e);
             }
         }
         return (data == null) ? new JsonObject() : data;
@@ -390,7 +390,7 @@ public class SoftwareCoSessionManager {
                 }
 
             } catch (InterruptedException | ExecutionException e) {
-                log.error("Software.com: Unable to get the response from the http request.", e);
+                log.info("Software.com: Unable to get the response from the http request.", e);
             }
         }
         return null;
@@ -446,7 +446,7 @@ public class SoftwareCoSessionManager {
                 //
                 return response;
             } catch (Exception e) {
-                log.error("Software.com: Unable to make api request.", e);
+                log.info("Software.com: Unable to make api request.", e);
             }
 
             return null;

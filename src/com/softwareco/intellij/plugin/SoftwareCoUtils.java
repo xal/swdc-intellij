@@ -1,5 +1,6 @@
 package com.softwareco.intellij.plugin;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -53,29 +54,39 @@ public class SoftwareCoUtils {
     }
 
     public static class HttpResponseInfo {
-        public boolean isOk;
-        public String jsonStr;
-        public JsonObject jsonObj;
+        public boolean isOk = false;
+        public String jsonStr = null;
+        public JsonObject jsonObj = null;
     }
 
     public static HttpResponseInfo getResponseInfo(HttpResponse response) {
         HttpResponseInfo responseInfo = new HttpResponseInfo();
-        try {
-            // get the entity json string
-            // (consume the entity so there's no connection leak causing a connection pool timeout)
-            String jsonStr = getStringRepresentation(response.getEntity());
-            if (jsonStr != null) {
-                responseInfo.jsonStr = jsonStr;
-                try {
-                    JsonObject jsonObj = SoftwareCo.jsonParser.parse(jsonStr).getAsJsonObject();
-                    responseInfo.jsonObj = jsonObj;
-                } catch (Exception e) {
-                    responseInfo.isOk = false;
+        if (response != null) {
+            try {
+                // get the entity json string
+                // (consume the entity so there's no connection leak causing a connection pool timeout)
+                String jsonStr = getStringRepresentation(response.getEntity());
+                if (jsonStr != null) {
+                    responseInfo.jsonStr = jsonStr;
+                    if (jsonStr.indexOf("{") != -1 && jsonStr.indexOf("}") != -1) {
+                        JsonElement jsonEl = null;
+                        try {
+                            jsonEl = SoftwareCo.jsonParser.parse(jsonStr);
+                            JsonObject jsonObj = jsonEl.getAsJsonObject();
+                            responseInfo.jsonObj = jsonObj;
+                        } catch (Exception e) {
+                            // the string may be a simple message like "Unauthorized"
+                        }
+                    }
                 }
+                responseInfo.isOk = isOk(response);
+            } catch (Exception e) {
+                log.error("Unable to get http response info.", e);
             }
-            responseInfo.isOk = isOk(response);
-        } catch (Exception e) {
-            log.error("Unable to get http response info.", e);
+
+        } else {
+            responseInfo.jsonStr = "Unauthorized";
+            responseInfo.isOk = false;
         }
         return responseInfo;
     }
