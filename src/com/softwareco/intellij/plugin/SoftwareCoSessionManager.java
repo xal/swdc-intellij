@@ -248,10 +248,13 @@ public class SoftwareCoSessionManager {
                             1, Messages.getInformationIcon());
                     if (options == 1) {
                         // create the token value
-                        String token = generateToken();
-                        setItem("token", token);
+                        String tokenVal = getItem("token");
+                        if (tokenVal == null || tokenVal.equals("")) {
+                            tokenVal = generateToken();
+                            setItem("token", tokenVal);
+                        }
                         // launch the browser with the login view
-                        launchWebUrl(SoftwareCoUtils.launch_url + "/onboarding?token=" + token);
+                        launchWebUrl(SoftwareCoUtils.launch_url + "/onboarding?token=" + tokenVal);
                     }
                     confirmWindowOpen = false;
                 }
