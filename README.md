@@ -8,6 +8,8 @@
 
 *Software* is installed and uninstalled via the IntelliJ Marketplace.
 
+<!--- Begin: setup --->
+
 ### Install
 
 1. Navigate to **Plugins**
@@ -22,6 +24,8 @@
 
 1. Navigate to **Plugins**
 2. **Uninstall** *Software*
+
+<!--- End: setup --->
 
 ## Privacy
 
