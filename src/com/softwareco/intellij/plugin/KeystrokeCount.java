@@ -75,7 +75,8 @@ public class KeystrokeCount {
         fileInfoData.addProperty("delete", 0);
         fileInfoData.addProperty("length", 0);
         fileInfoData.addProperty("netkeys", 0);
-        fileInfoData.addProperty("lines", 0);
+        // -1 to help identify when setting it the 1st time
+        fileInfoData.addProperty("lines", -1);
         fileInfoData.addProperty("linesAdded", 0);
         fileInfoData.addProperty("linesRemoved", 0);
         fileInfoData.addProperty("syntax", 0);

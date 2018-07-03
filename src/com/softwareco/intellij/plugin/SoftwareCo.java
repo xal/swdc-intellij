@@ -346,6 +346,12 @@ public class SoftwareCo implements ApplicationComponent {
             return;
         }
 
+        boolean isNewLine = false;
+        String newFrag = documentEvent.getNewFragment().toString();
+        if (newFrag.matches("^\n.*") || newFrag.matches("^\n\r.*")) {
+            isNewLine = true;
+        }
+
         String projectName = "";
         String projectFilepath = "";
         String fileName = "";
@@ -449,25 +455,19 @@ public class SoftwareCo implements ApplicationComponent {
         }
 
         // update the line count
-        int lines = getLineCount(fileName);
-        int prevLineCount = getPreviousLineCount(fileInfo);
-        boolean isNew = false;
-        if (prevLineCount == 0) {
-            isNew = true;
-            updateFileInfoValue(fileInfo, "lines", lines);
-        }
-        if (!isNew) {
-            int diff = lines - prevLineCount;
-            if (diff > 0) {
-                // new lines added
-                updateFileInfoValue(fileInfo, "linesAdded", diff);
-                log.info("Software.com: lines added incremented");
-            } else if (diff < 0) {
-                updateFileInfoValue(fileInfo, "linesRemoved", Math.abs(diff));
-                log.info("Software.com: lines removed incremented");
-            }
+        int lines = getPreviousLineCount(fileInfo);
+        if (lines == -1) {
+            lines = getLineCount(fileName);
         }
 
+        if (isNewLine) {
+            lines += 1;
+            // new lines added
+            updateFileInfoValue(fileInfo, "linesAdded", 1);
+            log.info("Software.com: lines added incremented");
+        }
+
+        updateFileInfoValue(fileInfo, "lines", lines);
         updateFileInfoValue(fileInfo,"length", currLen);
     }
 
