@@ -36,10 +36,14 @@ import org.jetbrains.annotations.NotNull;
 import java.awt.*;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 import java.util.List;
 import java.util.Timer;
@@ -208,7 +212,7 @@ public class SoftwareCo implements ApplicationComponent {
         if (fileInfo == null) {
             return;
         }
-        updateFileInfoValue(fileInfo, fileName, "open", 1);
+        updateFileInfoValue(fileInfo,"open", 1);
         log.info("Software.com: file opened: " + fileName);
     }
 
@@ -222,7 +226,7 @@ public class SoftwareCo implements ApplicationComponent {
         if (fileInfo == null) {
             return;
         }
-        updateFileInfoValue(fileInfo, fileName, "close", 1);
+        updateFileInfoValue(fileInfo,"close", 1);
         log.info("Software.com: file closed: " + fileName);
     }
 
@@ -308,6 +312,16 @@ public class SoftwareCo implements ApplicationComponent {
             log.error("Failed to download plugin manager, reason: " + e.toString());
         }
         downloadingPM = false;
+    }
+
+    protected static int getLineCount(String fileName) {
+        Path path = Paths.get(fileName);
+        try {
+            return (int) Files.lines(path).count();
+        } catch (IOException e) {
+            log.info("Software.com: failed to get the line count for file " + fileName);
+            return 0;
+        }
     }
 
     /**
@@ -411,13 +425,13 @@ public class SoftwareCo implements ApplicationComponent {
 
         if (numKeystrokes > 1) {
             // It's a copy and paste event
-            updateFileInfoValue(fileInfo, fileName, "paste", numKeystrokes);
+            updateFileInfoValue(fileInfo,"paste", numKeystrokes);
 
             log.info("Software.com: Copy+Paste incremented");
         } else if (numKeystrokes < 0) {
             int deleteKpm = Math.abs(numKeystrokes);
             // It's a character delete event
-            updateFileInfoValue(fileInfo, fileName, "delete", deleteKpm);
+            updateFileInfoValue(fileInfo,"delete", deleteKpm);
 
             int incrementedCount = Integer.parseInt(keystrokeCount.getData()) + deleteKpm;
             keystrokeCount.setData( String.valueOf(incrementedCount) );
@@ -425,7 +439,7 @@ public class SoftwareCo implements ApplicationComponent {
             log.info("Software.com: Delete incremented");
         } else {
             // increment the specific file keystroke value
-            updateFileInfoValue(fileInfo, fileName, "add", 1);
+            updateFileInfoValue(fileInfo,"add", 1);
 
             // increment the data keystroke count
             int incrementedCount = Integer.parseInt(keystrokeCount.getData()) + 1;
@@ -434,13 +448,38 @@ public class SoftwareCo implements ApplicationComponent {
             log.info("Software.com: KPM incremented");
         }
 
-        updateFileInfoValue(fileInfo, fileName, "length", currLen);
+        // update the line count
+        int lines = getLineCount(fileName);
+        int prevLineCount = getPreviousLineCount(fileInfo);
+        boolean isNew = false;
+        if (prevLineCount == 0) {
+            isNew = true;
+            updateFileInfoValue(fileInfo, "lines", lines);
+        }
+        if (!isNew) {
+            int diff = lines - prevLineCount;
+            if (diff > 0) {
+                // new lines added
+                updateFileInfoValue(fileInfo, "linesAdded", diff);
+                log.info("Software.com: lines added incremented");
+            } else if (diff < 0) {
+                updateFileInfoValue(fileInfo, "linesRemoved", Math.abs(diff));
+                log.info("Software.com: lines removed incremented");
+            }
+        }
+
+        updateFileInfoValue(fileInfo,"length", currLen);
     }
 
-    private static void updateFileInfoValue(JsonObject fileInfo, String fileName, String key, int incrementVal) {
+    private static int getPreviousLineCount(JsonObject fileInfo) {
+        JsonPrimitive keysVal = fileInfo.getAsJsonPrimitive("lines");
+        return keysVal.getAsInt();
+    }
+
+    private static void updateFileInfoValue(JsonObject fileInfo, String key, int incrementVal) {
         JsonPrimitive keysVal = fileInfo.getAsJsonPrimitive(key);
-        if (key.equals("length")) {
-            // length isn't additive
+        if (key.equals("length") || key.equals("lines") || key.equals("syntax")) {
+            // length, lines, or syntax are not additive
             fileInfo.addProperty(key, incrementVal);
         } else {
             int totalVal = keysVal.getAsInt() + incrementVal;
