@@ -27,7 +27,7 @@ public class SoftwareCoUtils {
 
     // public final static String PLUGIN_MGR_ENDPOINT = "http://localhost:19234/api/v1/data";
     private final static String PROD_API_ENDPOINT = "https://api.software.com";
-    private final static String PROD_URL_ENDPOINT = "https://alpha.software.com";
+    private final static String PROD_URL_ENDPOINT = "https://app.software.com";
 
     // set the api endpoint to use
     public final static String api_endpoint = PROD_API_ENDPOINT;
