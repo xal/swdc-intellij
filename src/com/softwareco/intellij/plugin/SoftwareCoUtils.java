@@ -30,9 +30,9 @@ public class SoftwareCoUtils {
     public static final Logger log = Logger.getInstance("SoftwareCoUtils");
 
     // set the api endpoint to use
-    public final static String api_endpoint = "http://localhost:5000"; // "https://api.software.com";
+    public final static String api_endpoint = "https://api.software.com";
     // set the launch url to use
-    public final static String launch_url = "http://localhost:3000"; // "https://app.software.com";
+    public final static String launch_url = "https://app.software.com";
 
     public static ExecutorService executorService;
     public static HttpClient httpClient;
