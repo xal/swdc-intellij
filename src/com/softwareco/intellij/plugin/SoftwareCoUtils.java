@@ -180,6 +180,7 @@ public class SoftwareCoUtils {
                     SoftwareCoStatusBarKpmIconWidget iconWidget =
                             new SoftwareCoStatusBarKpmIconWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID);
                     iconWidget.setIcon(icon);
+                    iconWidget.setTooltip(tooltip);
                     statusBar.addWidget(iconWidget);
                     statusBar.updateWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID);
                 }
@@ -197,7 +198,7 @@ public class SoftwareCoUtils {
                         ? false : true;
 
                 // add the separator if we have a session time text
-                if (sessionTimeText != null && !sessionTimeText.equals("") && !emptySessionIcon) {
+                if (sessionTimeText != null && !sessionTimeText.equals("") && emptySessionIcon) {
                     SoftwareCoStatusBarKpmTextWidget textSepWidget =
                             new SoftwareCoStatusBarKpmTextWidget(SoftwareCoStatusBarKpmTextWidget.TEXT_SEPARATOR);
                     textSepWidget.setText(", ");
@@ -212,6 +213,7 @@ public class SoftwareCoUtils {
                     SoftwareCoStatusBarKpmIconWidget iconWidget =
                             new SoftwareCoStatusBarKpmIconWidget(SoftwareCoStatusBarKpmIconWidget.SESSION_TIME_ICON_ID);
                     iconWidget.setIcon(icon);
+                    iconWidget.setTooltip(tooltip);
                     statusBar.addWidget(iconWidget);
                     statusBar.updateWidget(SoftwareCoStatusBarKpmIconWidget.SESSION_TIME_ICON_ID);
                 }
