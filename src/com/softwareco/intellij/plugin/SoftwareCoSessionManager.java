@@ -1,3 +1,7 @@
+/**
+ * Copyright (c) 2018 by Software.com
+ * All rights reserved
+ */
 package com.softwareco.intellij.plugin;
 
 import com.google.gson.JsonArray;
@@ -83,26 +87,18 @@ public class SoftwareCoSessionManager {
      */
     private boolean isAuthenticated() {
         String tokenVal = getItem("token");
+        boolean isOk = true;
         if (tokenVal == null) {
-            return false;
-        }
-
-        if (lastTimeAuthenticated > 0 && System.currentTimeMillis() - lastTimeAuthenticated < 10000) {
-            return true;
-        }
-
-        boolean isOk = SoftwareCoUtils.getResponseInfo(makeApiCall("/users/ping/", false, null)).isOk;
-        if (!isOk) {
-            lastTimeAuthenticated = -1;
+            isOk = false;
         } else {
-            lastTimeAuthenticated = System.currentTimeMillis();
+            isOk = SoftwareCoUtils.getResponseInfo(makeApiCall("/users/ping/", false, null)).isOk;
         }
         if (!isOk) {
             // update the status bar with Sign Up message
             SoftwareCoUtils.setStatusLineMessage(
-                    "Software.com",
-                    "Click to log in to Software.com",
-                    "ionicons_svg_md-alert");
+                    "Software.com", "alert_light.png",
+                    "", "",
+                    "Click to log in to Software.com");
         }
         return isOk;
     }
@@ -191,7 +187,7 @@ public class SoftwareCoSessionManager {
 
     public static String getItem(String key) {
         JsonObject jsonObj = getSoftwareSessionAsJson();
-        if (jsonObj != null && jsonObj.has(key)) {
+        if (jsonObj != null && jsonObj.has(key) && !jsonObj.get(key).isJsonNull()) {
             return jsonObj.get(key).getAsString();
         }
         return null;
@@ -247,31 +243,11 @@ public class SoftwareCoSessionManager {
                             "Software", new String[]{"Not now", "Log in"},
                             1, Messages.getInformationIcon());
                     if (options == 1) {
-                        // create the token value
-                        String tokenVal = getItem("token");
-                        if (tokenVal == null || tokenVal.equals("")) {
-                            tokenVal = generateToken();
-                            setItem("token", tokenVal);
-                        }
-                        // launch the browser with the login view
-                        launchWebUrl(SoftwareCoUtils.launch_url + "/onboarding?token=" + tokenVal);
+                        launchDashboard();
                     }
                     confirmWindowOpen = false;
                 }
             });
-
-            if (!authenticated) {
-                // checkTokenAvailability
-                new Thread(() -> {
-                    try {
-                        Thread.sleep(1000 * 60);
-                        checkTokenAvailability();
-                    }
-                    catch (Exception e){
-                        System.err.println(e);
-                    }
-                }).start();
-            }
 
         }
     }
@@ -298,13 +274,13 @@ public class SoftwareCoSessionManager {
 
         JsonObject responseData = SoftwareCoUtils.getResponseInfo(
                 makeApiCall("/users/plugin/confirm?token=" + tokenVal, false, null)).jsonObj;
-        if (responseData != null) {
+        if (responseData != null && responseData.has("jwt")) {
             // update the jwt, user and eclipse_lastUpdateTime
             setItem("jwt", responseData.get("jwt").getAsString());
             setItem("user", responseData.get("user").getAsString());
             setItem("eclipse_lastUpdateTime", String.valueOf(System.currentTimeMillis()));
         } else {
-            // check again in a minute
+            // check again in a couple of minutes
             new Thread(() -> {
                 try {
                     Thread.sleep(1000 * 120);
@@ -323,20 +299,36 @@ public class SoftwareCoSessionManager {
     }
 
     public void fetchDailyKpmSessionInfo() {
-        if (!isAuthenticated()) {
-            log.info("Software.com: Not authenticated to fetch KPM info, trying again later");
-            return;
-        }
         long fromSeconds = Math.round(System.currentTimeMillis() / 1000);
         // make an async call to get the kpm info
         JsonObject jsonObj = SoftwareCoUtils.getResponseInfo(
                 makeApiCall("/sessions?from=" + fromSeconds +"&summary=true", false, null)).jsonObj;
         if (jsonObj != null) {
+            int sessionMinAvg = 0;
+            if (jsonObj.has("sessionMinAvg")) {
+                sessionMinAvg = jsonObj.get("sessionMinAvg").getAsInt();
+            }
+            float sessionMinGoalPercent = 0f;
+            String sessionTimeIcon = "";
+            if (jsonObj.has("sessionMinGoalPercent")) {
+                sessionMinGoalPercent = jsonObj.get("sessionMinGoalPercent").getAsFloat();
+                if (sessionMinGoalPercent > 0) {
+                    if (sessionMinGoalPercent < 0.45) {
+                        sessionTimeIcon = "25_circle_light.png";
+                    } else if (sessionMinGoalPercent < 0.70) {
+                        sessionTimeIcon = "50_circle_light.png";
+                    } else if (sessionMinGoalPercent < 0.95) {
+                        sessionTimeIcon = "75_circle_light.png";
+                    } else {
+                        sessionTimeIcon = "100_circle_light.png";
+                    }
+                }
+            }
             int avgKpm = 0;
             if (jsonObj.has("kpm")) {
                 avgKpm = jsonObj.get("kpm").getAsInt();
             }
-            boolean inFlow = true;
+            boolean inFlow = false;
             if (jsonObj.has("inFlow")) {
                 inFlow = jsonObj.get("inFlow").getAsBoolean();
             }
@@ -348,32 +340,67 @@ public class SoftwareCoSessionManager {
             if (totalMin == 60) {
                 sessionTime = "1 hr";
             } else if (totalMin > 60) {
-                // sessionTime = (totalMin / 60).toFixed(2) + " hrs";
                 sessionTime =  String.format("%.2f", (totalMin / 60)) + " hrs";
             } else if (totalMin == 1) {
                 sessionTime = "1 min";
             } else {
                 sessionTime = totalMin + " min";
             }
+
             if (avgKpm > 0 || totalMin > 0) {
-                String iconName = (inFlow) ? "ionicons_svg_md-rocket" : "";
-                SoftwareCoUtils.setStatusLineMessage(
-                        avgKpm + " KPM, " + sessionTime,
-                        "Click to see more from Software.com",
-                        iconName);
+                String iconName = (inFlow) ? "rocket_light.png" : "";
+                String kpmStr = String.valueOf(avgKpm) + " KPM";
+                SoftwareCoUtils.setStatusLineMessage(kpmStr, iconName,
+                        sessionTime, sessionTimeIcon,
+                        "Click to see more from Software.com");
             } else {
                 SoftwareCoUtils.setStatusLineMessage(
-                        "Software.com", "Click to see more from Software.com",
-                        "");
+                        "Software.com", "",
+                        "", "",
+                        "Click to see more from Software.com");
             }
         }
     }
 
-    private void launchWebUrl(String url) {
+    public static void launchDashboard() {
+        String url = SoftwareCoUtils.launch_url;
+        String jwtToken = getItem("jwt");
+        String tokenVal = getItem("token");
+        boolean checkForTokenAvailability = false;
+
+        if (tokenVal == null || tokenVal.equals("")) {
+            checkForTokenAvailability = true;
+            tokenVal = SoftwareCoSessionManager.generateToken();
+            SoftwareCoSessionManager.setItem("token", tokenVal);
+            url += "/onboarding?token=" + tokenVal;
+
+        } else if (jwtToken == null || jwtToken.equals("")) {
+            checkForTokenAvailability = true;
+            url += "/onboarding?token=" + tokenVal;
+        }
+
+        // launch the dashboard with the possible onboarding + token
         BrowserUtil.browse(url);
+
+        if (checkForTokenAvailability) {
+            // check for the token in a minute
+            new Thread(() -> {
+                try {
+                    Thread.sleep(1000 * 60);
+                    SoftwareCoSessionManager.checkTokenAvailability();
+                } catch (Exception e) {
+                    System.err.println(e);
+                }
+            }).start();
+        }
     }
 
     private static HttpResponse makeApiCall(String api, boolean isPost, String payload) {
+
+        if (!SoftwareCo.TELEMTRY_ON) {
+            log.info("Software.com telemetry is currently paused. Enable to view KPM metrics");
+            return null;
+        }
 
         SessionManagerHttpClient sendTask = new SessionManagerHttpClient(api, isPost, payload);
 

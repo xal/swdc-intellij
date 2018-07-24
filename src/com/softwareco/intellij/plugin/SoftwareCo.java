@@ -9,6 +9,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.intellij.ide.plugins.PluginManager;
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
@@ -51,7 +53,7 @@ import java.util.TimerTask;
 import java.util.concurrent.*;
 
 /**
- * Intellij Plugin Application.
+ * Intellij Plugin Application
  */
 public class SoftwareCo implements ApplicationComponent {
 
@@ -59,9 +61,7 @@ public class SoftwareCo implements ApplicationComponent {
     public static final Logger log = Logger.getInstance("SoftwareCo");
     public static Gson gson;
 
-    // private static final String PLUGIN_MGR_ENDPOINT = "http://localhost:19234/api/v1/data";
-    private static final String PM_BUCKET = "https://s3-us-west-1.amazonaws.com/swdc-plugin-manager/";
-    private static final String PM_NAME = "software";
+    public static boolean TELEMTRY_ON = true;
 
     private String VERSION;
     private String IDE_NAME;
@@ -74,8 +74,6 @@ public class SoftwareCo implements ApplicationComponent {
 
     private static boolean READY = false;
     private static KeystrokeManager keystrokeMgr;
-    private static boolean downloadingPM = false;
-    private static boolean pluginManagerInstallErrorShown = false;
 
     private SoftwareCoSessionManager sessionMgr = SoftwareCoSessionManager.getInstance();
 
@@ -103,9 +101,9 @@ public class SoftwareCo implements ApplicationComponent {
         log.info("Software.com: Finished initializing SoftwareCo plugin");
 
         SoftwareCoUtils.setStatusLineMessage(
-                "Software.com",
-                "Click to see more from Software.com",
-                "ionicons_svg_md-alert");
+                "Software.com", "",
+                "", "",
+                "Click to see more from Software.com");
 
         // run the initial calls in 5 seconds
         new Thread(() -> {
@@ -129,7 +127,6 @@ public class SoftwareCo implements ApplicationComponent {
         ApplicationManager.getApplication().invokeLater(new Runnable() {
             public void run() {
                 sessionMgr.checkUserAuthenticationStatus();
-                sessionMgr.fetchDailyKpmSessionInfo();
                 sessionMgr.sendOfflineData();
             }
         });
@@ -240,78 +237,6 @@ public class SoftwareCo implements ApplicationComponent {
 
     public static boolean isMac() {
         return SystemInfo.isMac;
-    }
-
-    private static String getFileUrl() {
-        String fileUrl = PM_BUCKET + PM_NAME;
-        if (SystemInfo.isWindows) {
-            fileUrl += ".exe";
-        } else if (SystemInfo.isMac) {
-            fileUrl += ".dmg";
-        } else {
-            fileUrl += ".deb";
-        }
-        return fileUrl;
-    }
-
-    private static String getDownloadFilePathName() {
-        String downloadFilePathName = System.getProperty("user.home");
-        if (SystemInfo.isWindows) {
-            downloadFilePathName += "\\Desktop\\" + PM_NAME + ".exe";
-        } else if (SystemInfo.isMac) {
-            downloadFilePathName += "/Desktop/" + PM_NAME + ".dmg";
-        } else {
-            downloadFilePathName += "/Desktop/" + PM_NAME + ".deb";
-        }
-
-        return downloadFilePathName;
-    }
-
-    private static String getPmInstallDirectoryPath() {
-        if (SystemInfo.isWindows) {
-            return System.getProperty("user.home") + "\\AppData\\Programs";
-        } else if (SystemInfo.isMac) {
-            return "/Applications";
-        } else {
-            return "/user/lib";
-        }
-    }
-
-    private static boolean hasPluginInstalled() {
-        String installDir = getPmInstallDirectoryPath();
-        File f = new File(installDir);
-        if (f.exists() && f.isDirectory()) {
-            for (File file : f.listFiles()) {
-                if (!file.isDirectory() && file.getName().toLowerCase().indexOf("software") == 0) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private static void downloadPM() {
-        downloadingPM = true;
-        String saveAs = getDownloadFilePathName();
-
-        URL downloadUrl = null;
-        try {
-            downloadUrl = new URL(getFileUrl());
-        } catch (MalformedURLException e) {}
-
-        ReadableByteChannel rbc = null;
-        FileOutputStream fos = null;
-        try {
-            rbc = Channels.newChannel(downloadUrl.openStream());
-            fos = new FileOutputStream(saveAs);
-            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-            fos.close();
-            log.info("Completed download of " + saveAs);
-            Desktop.getDesktop().open(new File(saveAs));
-        } catch (Exception e) {
-            log.error("Failed to download plugin manager, reason: " + e.toString());
-        }
-        downloadingPM = false;
     }
 
     protected static int getLineCount(String fileName) {
@@ -579,6 +504,13 @@ public class SoftwareCo implements ApplicationComponent {
     }
 
     private void sendKeystrokeData(KeystrokeCount keystrokeCount) {
+
+        if (!SoftwareCo.TELEMTRY_ON) {
+            log.info("Software.com telemetry is currently paused. Enable to view KPM metrics");
+            String payload = SoftwareCo.gson.toJson(keystrokeCount);
+            sessionMgr.storePayload(payload);
+            return;
+        }
 
         KeystrokeDataSendTask sendTask = new KeystrokeDataSendTask(keystrokeCount);
         Future<HttpResponse> response = SoftwareCoUtils.executorService.submit(sendTask);

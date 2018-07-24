@@ -1,3 +1,7 @@
+/**
+ * Copyright (c) 2018 by Software.com
+ * All rights reserved
+ */
 package com.softwareco.intellij.plugin;
 
 import com.intellij.ide.BrowserUtil;
@@ -11,29 +15,25 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.awt.event.MouseEvent;
 
-public class SoftwareCoStatusBarIconWidget implements StatusBarWidget {
-    public static final Logger log = Logger.getInstance("SoftwareCoStatusBarIconWidget");
+public class SoftwareCoStatusBarKpmIconWidget implements StatusBarWidget {
+    public static final Logger log = Logger.getInstance("SoftwareCoStatusBarKpmIconWidget");
 
-    public static final String WIDGET_ID = "software.icon.com";
+    public static final String KPM_ICON_ID = "software.kpm.icon";
+    public static final String SESSION_TIME_ICON_ID = "software.session.time.icon";
 
     private Icon icon = null;
     private String tooltip = "";
+    private String id = KPM_ICON_ID;
 
     private final IconPresentation presentation = new IconPresentation();
     private Consumer<MouseEvent> eventHandler;
 
-    public SoftwareCoStatusBarIconWidget() {
+    public SoftwareCoStatusBarKpmIconWidget(String id) {
+        this.id = id;
         eventHandler = new Consumer<MouseEvent>() {
             @Override
             public void consume(MouseEvent mouseEvent) {
-                String url = SoftwareCoUtils.launch_url;
-                String jwtToken = SoftwareCoSessionManager.getItem("jwt");
-                if (jwtToken == null) {
-                    String token = SoftwareCoSessionManager.generateToken();
-                    SoftwareCoSessionManager.setItem("token", token);
-                    url += "/onboarding?token=" + token;
-                }
-                BrowserUtil.browse(url);
+                SoftwareCoSessionManager.launchDashboard();
             }
         };
     }
@@ -51,13 +51,13 @@ public class SoftwareCoStatusBarIconWidget implements StatusBarWidget {
         @NotNull
         @Override
         public Icon getIcon() {
-            return SoftwareCoStatusBarIconWidget.this.icon;
+            return SoftwareCoStatusBarKpmIconWidget.this.icon;
         }
 
         @Nullable
         @Override
         public String getTooltipText() {
-            return SoftwareCoStatusBarIconWidget.this.tooltip;
+            return SoftwareCoStatusBarKpmIconWidget.this.tooltip;
         }
 
         @Nullable
@@ -75,7 +75,7 @@ public class SoftwareCoStatusBarIconWidget implements StatusBarWidget {
     @NotNull
     @Override
     public String ID() {
-        return WIDGET_ID;
+        return id;
     }
 
     @Override

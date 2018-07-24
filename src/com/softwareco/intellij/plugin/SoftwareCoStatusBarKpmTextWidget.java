@@ -9,30 +9,27 @@ import org.jetbrains.annotations.NotNull;
 
 import java.awt.event.MouseEvent;
 
-public class SoftwareCoStatusBarTextWidget implements StatusBarWidget {
-    public static final Logger log = Logger.getInstance("SoftwareCoStatusBarWidget");
+public class SoftwareCoStatusBarKpmTextWidget implements StatusBarWidget {
+    public static final Logger log = Logger.getInstance("SoftwareCoStatusBarKpmTextWidget");
 
-    public static final String WIDGET_ID = "software.com";
+    public static final String KPM_TEXT_ID = "software.kpm.text";
+    public static final String SESSION_TIME_TEXT_ID = "software.session.time.text";
+    public static final String TEXT_SEPARATOR = "software.text.separator";
 
     private String msg = "";
     private String tooltip = "";
+    private String id = KPM_TEXT_ID;
 
     private Consumer<MouseEvent> eventHandler;
 
     private final TextPresentation presentation = new StatusPresentation();
 
-    public SoftwareCoStatusBarTextWidget() {
+    public SoftwareCoStatusBarKpmTextWidget(String id) {
+        this.id = id;
         eventHandler = new Consumer<MouseEvent>() {
             @Override
             public void consume(MouseEvent mouseEvent) {
-                String url = SoftwareCoUtils.launch_url;
-                String jwtToken = SoftwareCoSessionManager.getItem("jwt");
-                if (jwtToken == null) {
-                    String token = SoftwareCoSessionManager.generateToken();
-                    SoftwareCoSessionManager.setItem("token", token);
-                    url += "/onboarding?token=" + token;
-                }
-                BrowserUtil.browse(url);
+                SoftwareCoSessionManager.launchDashboard();
             }
         };
     }
@@ -54,7 +51,7 @@ public class SoftwareCoStatusBarTextWidget implements StatusBarWidget {
         @NotNull
         @Override
         public String getText() {
-            return SoftwareCoStatusBarTextWidget.this.msg;
+            return SoftwareCoStatusBarKpmTextWidget.this.msg;
         }
 
         @NotNull
@@ -65,7 +62,7 @@ public class SoftwareCoStatusBarTextWidget implements StatusBarWidget {
 
         @Override
         public String getTooltipText() {
-            return SoftwareCoStatusBarTextWidget.this.tooltip;
+            return SoftwareCoStatusBarKpmTextWidget.this.tooltip;
         }
 
         @Override
@@ -82,7 +79,7 @@ public class SoftwareCoStatusBarTextWidget implements StatusBarWidget {
     @NotNull
     @Override
     public String ID() {
-        return WIDGET_ID;
+        return id;
     }
 
     @Override

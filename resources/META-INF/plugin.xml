@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>com.softwareco.intellij.plugin</id>
   <name>Software.com</name>
-  <version>0.1.17</version>
+  <version>0.1.18</version>
   <vendor email="support@software.com" url="https://software.com">Software.com</vendor>
 
   <description><![CDATA[
@@ -9,7 +9,7 @@
     ]]></description>
 
   <change-notes><![CDATA[
-      Software.com release 0.1.17<br>
+      Software.com release 0.1.18<br>
     ]]>
   </change-notes>
 
@@ -32,7 +32,16 @@
   </extensions>
 
   <actions>
-    <!-- Add your actions here -->
+    <group id="CustomDefaultActionGroup" class="com.softwareco.intellij.plugin.actions.CustomDefaultActionGroup" popup="true"
+           text="Software.com" description="Software.com menu actions">
+        <add-to-group group-id="ToolsMenu" anchor="last"/>
+        <action class="com.softwareco.intellij.plugin.actions.PauseMetricsAction" id="PauseMetricsAction"
+              text="Pause metrics" description="Pause software.com metrics"/>
+        <action class="com.softwareco.intellij.plugin.actions.EnableMetricsAction" id="EnableMetricsAction"
+              text="Enable metrics" description="Enable software.com metrics"/>
+        <action class="com.softwareco.intellij.plugin.actions.SoftwareDashboardAction" id="SoftwareDashboardAction"
+                text="Go to software.com" description="View your KPM metrics"/>
+    </group>
   </actions>
 
 </idea-plugin>
