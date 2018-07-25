@@ -9,12 +9,15 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.editor.Editor;
 import com.softwareco.intellij.plugin.SoftwareCo;
+import com.softwareco.intellij.plugin.SoftwareCoUtils;
 
 public class EnableMetricsAction extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent anActionEvent) {
         SoftwareCo.TELEMTRY_ON = true;
+        SoftwareCoUtils.setStatusLineMessage("Software.com", "",
+                "", "", "Click to see more from Software.com");
     }
 
     @Override

@@ -128,6 +128,7 @@ public class SoftwareCo implements ApplicationComponent {
             public void run() {
                 sessionMgr.checkUserAuthenticationStatus();
                 sessionMgr.sendOfflineData();
+                sessionMgr.fetchDailyKpmSessionInfo();
             }
         });
     }

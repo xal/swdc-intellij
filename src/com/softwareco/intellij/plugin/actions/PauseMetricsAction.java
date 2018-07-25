@@ -10,6 +10,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.softwareco.intellij.plugin.SoftwareCo;
+import com.softwareco.intellij.plugin.SoftwareCoUtils;
 
 public class PauseMetricsAction extends AnAction {
     public static final Logger log = Logger.getInstance("PauseMetricsAction");
@@ -17,6 +18,8 @@ public class PauseMetricsAction extends AnAction {
     @Override
     public void actionPerformed(AnActionEvent anActionEvent) {
         SoftwareCo.TELEMTRY_ON = false;
+        SoftwareCoUtils.setStatusLineMessage("Paused", "",
+                "", "", "Enable metrics to resume");
     }
 
     @Override
