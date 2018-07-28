@@ -85,7 +85,7 @@ public class SoftwareCoSessionManager {
      * User session will have...
      * { user: user, jwt: jwt }
      */
-    private boolean isAuthenticated() {
+    private static boolean isAuthenticated() {
         String tokenVal = getItem("token");
         boolean isOk = true;
         if (tokenVal == null) {
@@ -269,6 +269,10 @@ public class SoftwareCoSessionManager {
         String tokenVal = getItem("token");
 
         if (tokenVal == null || tokenVal.equals("")) {
+            SoftwareCoUtils.setStatusLineMessage(
+                    "Software.com", "alert_light.png",
+                    "", "",
+                    "Click to log in to Software.com");
             return;
         }
 
@@ -374,7 +378,7 @@ public class SoftwareCoSessionManager {
             SoftwareCoSessionManager.setItem("token", tokenVal);
             url += "/onboarding?token=" + tokenVal;
 
-        } else if (jwtToken == null || jwtToken.equals("")) {
+        } else if (jwtToken == null || jwtToken.equals("") || !isAuthenticated()) {
             checkForTokenAvailability = true;
             url += "/onboarding?token=" + tokenVal;
         }
@@ -402,26 +406,37 @@ public class SoftwareCoSessionManager {
             return null;
         }
 
-        SessionManagerHttpClient sendTask = new SessionManagerHttpClient(api, isPost, payload);
+        try {
+            SessionManagerHttpClient sendTask = new SessionManagerHttpClient(api, isPost, payload);
 
-        Future<HttpResponse> response = SoftwareCoUtils.executorService.submit(sendTask);
+            Future<HttpResponse> response = SoftwareCoUtils.executorService.submit(sendTask);
 
-        //
-        // Handle the Future if it exist
-        //
-        if ( response != null ) {
+            //
+            // Handle the Future if it exist
+            //
+            if (response != null) {
 
-            HttpResponse httpResponse = null;
-            try {
-                httpResponse = response.get();
+                HttpResponse httpResponse = null;
+                try {
+                    httpResponse = response.get();
 
-                if (httpResponse != null) {
-                    return httpResponse;
+                    if (httpResponse != null) {
+                        return httpResponse;
+                    }
+
+                } catch (InterruptedException | ExecutionException e) {
+                    log.info("Software.com: Unable to get the response from the http request.", e);
+                    SoftwareCoUtils.setStatusLineMessage(
+                            "Software.com", "alert_light.png",
+                            "", "",
+                            "Click to log in to Software.com");
                 }
-
-            } catch (InterruptedException | ExecutionException e) {
-                log.info("Software.com: Unable to get the response from the http request.", e);
             }
+        } catch (Exception e) {
+            SoftwareCoUtils.setStatusLineMessage(
+                    "Software.com", "alert_light.png",
+                    "", "",
+                    "Click to log in to Software.com");
         }
         return null;
     }
