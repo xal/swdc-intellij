@@ -18,8 +18,7 @@ public class PauseMetricsAction extends AnAction {
     @Override
     public void actionPerformed(AnActionEvent anActionEvent) {
         SoftwareCo.TELEMTRY_ON = false;
-        SoftwareCoUtils.setStatusLineMessage("Paused", "",
-                "", "", "Enable metrics to resume");
+        SoftwareCoUtils.setStatusLineMessage("Paused", "Enable metrics to resume");
     }
 
     @Override

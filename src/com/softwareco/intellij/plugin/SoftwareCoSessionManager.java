@@ -96,9 +96,7 @@ public class SoftwareCoSessionManager {
         if (!isOk) {
             // update the status bar with Sign Up message
             SoftwareCoUtils.setStatusLineMessage(
-                    "Software.com", "alert_light.png",
-                    "", "",
-                    "Click to log in to Software.com");
+                    "⚠️Software.com", "Click to log in to Software.com");
         }
         return isOk;
     }
@@ -270,9 +268,7 @@ public class SoftwareCoSessionManager {
 
         if (tokenVal == null || tokenVal.equals("")) {
             SoftwareCoUtils.setStatusLineMessage(
-                    "Software.com", "alert_light.png",
-                    "", "",
-                    "Click to log in to Software.com");
+                    "⚠️Software.com", "Click to log in to Software.com");
             return;
         }
 
@@ -317,9 +313,9 @@ public class SoftwareCoSessionManager {
             if (jsonObj.has("sessionMinGoalPercent")) {
                 sessionMinGoalPercent = jsonObj.get("sessionMinGoalPercent").getAsFloat();
                 if (sessionMinGoalPercent > 0) {
-                    if (sessionMinGoalPercent < 0.45) {
+                    if (sessionMinGoalPercent < 0.40) {
                         sessionTimeIcon = "25_circle_light.png";
-                    } else if (sessionMinGoalPercent < 0.70) {
+                    } else if (sessionMinGoalPercent < 0.75) {
                         sessionTimeIcon = "50_circle_light.png";
                     } else if (sessionMinGoalPercent < 0.95) {
                         sessionTimeIcon = "75_circle_light.png";
@@ -340,29 +336,29 @@ public class SoftwareCoSessionManager {
             if (jsonObj.has("minutesTotal")) {
                 totalMin = jsonObj.get("minutesTotal").getAsLong();
             }
-            String sessionTime = "";
+            String sessionTimeStr = "";
             if (totalMin == 60) {
-                sessionTime = "1 hr";
+                sessionTimeStr = "1 hr";
             } else if (totalMin > 60) {
-                sessionTime =  String.format("%.2f", (totalMin / 60)) + " hrs";
+                sessionTimeStr =  String.format("%.2f", (totalMin / 60)) + " hrs";
             } else if (totalMin == 1) {
-                sessionTime = "1 min";
+                sessionTimeStr = "1 min";
             } else {
-                sessionTime = totalMin + " min";
+                sessionTimeStr = totalMin + " min";
             }
 
             if (avgKpm > 0 || totalMin > 0) {
-                String iconName = (inFlow) ? "rocket_light.png" : "";
-                String kpmStr = String.valueOf(avgKpm) + " KPM";
-                SoftwareCoUtils.setStatusLineMessage(kpmStr, iconName,
-                        sessionTime, sessionTimeIcon,
+                String kpmStr = String.valueOf(avgKpm) + " KPM,";
+                String kpmIcon = (inFlow) ? "rocket_light.png" : "";
+
+                SoftwareCoUtils.setStatusLineMessage(kpmStr, sessionTimeStr, kpmIcon, sessionTimeIcon,
                         "Click to see more from Software.com");
             } else {
                 SoftwareCoUtils.setStatusLineMessage(
-                        "Software.com", "",
-                        "", "",
-                        "Click to see more from Software.com");
+                        "Software.com", "Click to see more from Software.com");
             }
+        } else {
+            SoftwareCoUtils.setStatusLineMessage("⚠️Software.com", "Click to see more from Software.com");
         }
     }
 
@@ -427,16 +423,12 @@ public class SoftwareCoSessionManager {
                 } catch (InterruptedException | ExecutionException e) {
                     log.info("Software.com: Unable to get the response from the http request.", e);
                     SoftwareCoUtils.setStatusLineMessage(
-                            "Software.com", "alert_light.png",
-                            "", "",
-                            "Click to log in to Software.com");
+                            "⚠️Software.com", "Click to log in to Software.com");
                 }
             }
         } catch (Exception e) {
             SoftwareCoUtils.setStatusLineMessage(
-                    "Software.com", "alert_light.png",
-                    "", "",
-                    "Click to log in to Software.com");
+                    "⚠️Software.com", "Click to log in to Software.com");
         }
         return null;
     }

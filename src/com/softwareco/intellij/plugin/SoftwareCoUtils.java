@@ -11,7 +11,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.wm.StatusBar;
-import com.intellij.openapi.wm.StatusBarWidget;
 import com.intellij.openapi.wm.WindowManager;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -30,9 +29,9 @@ public class SoftwareCoUtils {
     public static final Logger log = Logger.getInstance("SoftwareCoUtils");
 
     // set the api endpoint to use
-    public final static String api_endpoint = "https://api.software.com";
+    public final static String api_endpoint = "http://localhost:5000"; //https://api.software.com";
     // set the launch url to use
-    public final static String launch_url = "https://app.software.com";
+    public final static String launch_url = "http://localhost:3000"; //https://app.software.com";
 
     public static ExecutorService executorService;
     public static HttpClient httpClient;
@@ -138,100 +137,100 @@ public class SoftwareCoUtils {
     }
 
     public static synchronized void setStatusLineMessage(
-            final String kpmText, final String kpmIconName,
-            final String sessionTimeText, final String sessionTimeIconName,
+            final String statusMsg,
             final String tooltip) {
         try {
             Project p = ProjectManager.getInstance().getOpenProjects()[0];
             final StatusBar statusBar = WindowManager.getInstance().getStatusBar(p);
 
             if (statusBar != null) {
-                // remove existing widgets
-                try {
-                    statusBar.removeWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID);
-                } catch (Exception e) {
-                    //
-                }
-                try {
-                    statusBar.removeWidget(SoftwareCoStatusBarKpmTextWidget.SESSION_TIME_TEXT_ID);
-                } catch (Exception e) {
-                    //
-                }
-                try {
-                    statusBar.removeWidget(SoftwareCoStatusBarKpmTextWidget.TEXT_SEPARATOR);
-                } catch (Exception e) {
-                    //
-                }
-                try {
-                    statusBar.removeWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID);
-                } catch (Exception e) {
-                    //
-                }
-                try {
-                    statusBar.removeWidget(SoftwareCoStatusBarKpmIconWidget.SESSION_TIME_ICON_ID);
-                } catch (Exception e) {
-                    //
-                }
+                removeWidgets();
 
-                // add the kpm icon if it's passed in
-                if (kpmIconName != null && !kpmIconName.equals("")) {
-                    Icon icon = IconLoader.findIcon("/com/softwareco/intellij/plugin/assets/dark/" + kpmIconName);
-
-                    SoftwareCoStatusBarKpmIconWidget iconWidget =
-                            new SoftwareCoStatusBarKpmIconWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID);
-                    iconWidget.setIcon(icon);
-                    iconWidget.setTooltip(tooltip);
-                    statusBar.addWidget(iconWidget);
-                    statusBar.updateWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID);
-                }
-
-                // add the kpm text, it can also just be "Software.com"
-                final String kpmMsg = (kpmText == null || kpmText.equals("")) ? "Software.com" : kpmText;
-                SoftwareCoStatusBarKpmTextWidget widget =
-                        new SoftwareCoStatusBarKpmTextWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID);
-                widget.setText(kpmMsg);
-                widget.setTooltip(tooltip);
+                SoftwareCoStatusBarKpmTextWidget widget = buildStatusBarTextWidget(statusMsg, tooltip, SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID);
                 statusBar.addWidget(widget);
                 statusBar.updateWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID);
-
-                boolean emptySessionIcon = (sessionTimeIconName != null && !sessionTimeIconName.equals(""))
-                        ? false : true;
-
-                // add the separator if we have a session time text
-                if (sessionTimeText != null && !sessionTimeText.equals("") && emptySessionIcon) {
-                    SoftwareCoStatusBarKpmTextWidget textSepWidget =
-                            new SoftwareCoStatusBarKpmTextWidget(SoftwareCoStatusBarKpmTextWidget.TEXT_SEPARATOR);
-                    textSepWidget.setText(", ");
-                    statusBar.addWidget(textSepWidget);
-                    statusBar.updateWidget(SoftwareCoStatusBarKpmTextWidget.TEXT_SEPARATOR);
-                }
-
-                // add the session time icon if its passed in
-                if (!emptySessionIcon) {
-                    Icon icon = IconLoader.findIcon("/com/softwareco/intellij/plugin/assets/dark/" + sessionTimeIconName);
-
-                    SoftwareCoStatusBarKpmIconWidget iconWidget =
-                            new SoftwareCoStatusBarKpmIconWidget(SoftwareCoStatusBarKpmIconWidget.SESSION_TIME_ICON_ID);
-                    iconWidget.setIcon(icon);
-                    iconWidget.setTooltip(tooltip);
-                    statusBar.addWidget(iconWidget);
-                    statusBar.updateWidget(SoftwareCoStatusBarKpmIconWidget.SESSION_TIME_ICON_ID);
-                }
-
-                // add the session time text if its passed in
-                if (sessionTimeText != null && !sessionTimeText.equals("")) {
-                    SoftwareCoStatusBarKpmTextWidget sessionTimeWidget =
-                            new SoftwareCoStatusBarKpmTextWidget(SoftwareCoStatusBarKpmTextWidget.SESSION_TIME_TEXT_ID);
-                    sessionTimeWidget.setText(sessionTimeText);
-                    sessionTimeWidget.setTooltip(tooltip);
-                    statusBar.addWidget(sessionTimeWidget);
-                    statusBar.updateWidget(SoftwareCoStatusBarKpmTextWidget.SESSION_TIME_TEXT_ID);
-                }
-
             }
         } catch (Exception e) {
             //
         }
+    }
+
+    public static synchronized void setStatusLineMessage(
+            final String kpmStr, final String sessionStr, final String kpmIcon, final String sessionIcon,
+            final String tooltip) {
+        try {
+            Project p = ProjectManager.getInstance().getOpenProjects()[0];
+            final StatusBar statusBar = WindowManager.getInstance().getStatusBar(p);
+
+            if (statusBar != null) {
+                removeWidgets();
+
+                if (kpmIcon != null && !kpmIcon.equals("")) {
+                    SoftwareCoStatusBarKpmIconWidget iconWidget = buildStatusBarIconWidget(kpmIcon, tooltip, SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID);
+                    statusBar.addWidget(iconWidget);
+                    statusBar.updateWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID);
+                }
+
+                SoftwareCoStatusBarKpmTextWidget widget = buildStatusBarTextWidget(kpmStr, tooltip, SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID);
+                statusBar.addWidget(widget);
+                statusBar.updateWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID);
+
+                if (sessionIcon != null && !sessionIcon.equals("")) {
+                    SoftwareCoStatusBarKpmIconWidget iconWidget = buildStatusBarIconWidget(sessionIcon, tooltip, SoftwareCoStatusBarKpmIconWidget.SESSION_TIME_ICON_ID);
+                    statusBar.addWidget(iconWidget);
+                    statusBar.updateWidget(SoftwareCoStatusBarKpmIconWidget.SESSION_TIME_ICON_ID);
+                }
+
+                SoftwareCoStatusBarKpmTextWidget sessionTimeWidget = buildStatusBarTextWidget(sessionStr, tooltip, SoftwareCoStatusBarKpmTextWidget.SESSION_TIME_TEXT_ID);
+                statusBar.addWidget(sessionTimeWidget);
+                statusBar.updateWidget(SoftwareCoStatusBarKpmTextWidget.SESSION_TIME_TEXT_ID);
+            }
+        } catch (Exception e) {
+            //
+        }
+    }
+
+    private static void removeWidgets() {
+        try {
+            Project p = ProjectManager.getInstance().getOpenProjects()[0];
+            final StatusBar statusBar = WindowManager.getInstance().getStatusBar(p);
+
+            if (statusBar != null) {
+                if (statusBar.getWidget(SoftwareCoStatusBarKpmTextWidget.SESSION_TIME_TEXT_ID) != null) {
+                    statusBar.removeWidget(SoftwareCoStatusBarKpmTextWidget.SESSION_TIME_TEXT_ID);
+                }
+                if (statusBar.getWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID) != null) {
+                    statusBar.removeWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID);
+                }
+
+                if (statusBar.getWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID) != null) {
+                    statusBar.removeWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID);
+                }
+                if (statusBar.getWidget(SoftwareCoStatusBarKpmIconWidget.SESSION_TIME_ICON_ID) != null) {
+                    statusBar.removeWidget(SoftwareCoStatusBarKpmIconWidget.SESSION_TIME_ICON_ID);
+                }
+            }
+        } catch (Exception e) {
+            //
+        }
+    }
+
+    public static SoftwareCoStatusBarKpmIconWidget buildStatusBarIconWidget(String iconName, String tooltip, String ID) {
+        Icon icon = IconLoader.findIcon("/com/softwareco/intellij/plugin/assets/dark/" + iconName);
+
+        SoftwareCoStatusBarKpmIconWidget iconWidget =
+                new SoftwareCoStatusBarKpmIconWidget(ID);
+        iconWidget.setIcon(icon);
+        iconWidget.setTooltip(tooltip);
+        return iconWidget;
+    }
+
+    public static SoftwareCoStatusBarKpmTextWidget buildStatusBarTextWidget(String msg, String tooltip, String ID) {
+        SoftwareCoStatusBarKpmTextWidget textWidget =
+                new SoftwareCoStatusBarKpmTextWidget(ID);
+        textWidget.setText(msg);
+        textWidget.setTooltip(tooltip);
+        return textWidget;
     }
 
 }

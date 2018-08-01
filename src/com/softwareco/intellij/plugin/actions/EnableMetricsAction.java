@@ -16,8 +16,7 @@ public class EnableMetricsAction extends AnAction {
     @Override
     public void actionPerformed(AnActionEvent anActionEvent) {
         SoftwareCo.TELEMTRY_ON = true;
-        SoftwareCoUtils.setStatusLineMessage("Software.com", "",
-                "", "", "Click to see more from Software.com");
+        SoftwareCoUtils.setStatusLineMessage("Software.com", "Click to see more from Software.com");
     }
 
     @Override
