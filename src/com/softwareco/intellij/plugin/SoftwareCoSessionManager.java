@@ -304,51 +304,48 @@ public class SoftwareCoSessionManager {
         JsonObject jsonObj = SoftwareCoUtils.getResponseInfo(
                 makeApiCall("/sessions?from=" + fromSeconds +"&summary=true", false, null)).jsonObj;
         if (jsonObj != null) {
-            int sessionMinAvg = 0;
-            if (jsonObj.has("sessionMinAvg")) {
-                sessionMinAvg = jsonObj.get("sessionMinAvg").getAsInt();
-            }
-            float sessionMinGoalPercent = 0f;
+
+            float currentSessionGoalPercent = 0f;
             String sessionTimeIcon = "";
-            if (jsonObj.has("sessionMinGoalPercent")) {
-                sessionMinGoalPercent = jsonObj.get("sessionMinGoalPercent").getAsFloat();
-                if (sessionMinGoalPercent > 0) {
-                    if (sessionMinGoalPercent < 0.40) {
+            if (jsonObj.has("currentSessionGoalPercent")) {
+                currentSessionGoalPercent = jsonObj.get("currentSessionGoalPercent").getAsFloat();
+                if (currentSessionGoalPercent > 0) {
+                    if (currentSessionGoalPercent < 0.40) {
                         sessionTimeIcon = "25_circle_light.png";
-                    } else if (sessionMinGoalPercent < 0.75) {
+                    } else if (currentSessionGoalPercent < 0.75) {
                         sessionTimeIcon = "50_circle_light.png";
-                    } else if (sessionMinGoalPercent < 0.95) {
+                    } else if (currentSessionGoalPercent < 0.95) {
                         sessionTimeIcon = "75_circle_light.png";
                     } else {
                         sessionTimeIcon = "100_circle_light.png";
                     }
                 }
             }
-            int avgKpm = 0;
-            if (jsonObj.has("kpm")) {
-                avgKpm = jsonObj.get("kpm").getAsInt();
+            int currentSessionKpm = 0;
+            if (jsonObj.has("currentSessionKpm")) {
+                currentSessionKpm = jsonObj.get("currentSessionKpm").getAsInt();
             }
             boolean inFlow = false;
             if (jsonObj.has("inFlow")) {
                 inFlow = jsonObj.get("inFlow").getAsBoolean();
             }
-            long totalMin = 0;
-            if (jsonObj.has("minutesTotal")) {
-                totalMin = jsonObj.get("minutesTotal").getAsLong();
+            long currentSessionMinutes = 0;
+            if (jsonObj.has("currentSessionMinutes")) {
+                currentSessionMinutes = jsonObj.get("currentSessionMinutes").getAsLong();
             }
             String sessionTimeStr = "";
-            if (totalMin == 60) {
+            if (currentSessionMinutes == 60) {
                 sessionTimeStr = "1 hr";
-            } else if (totalMin > 60) {
-                sessionTimeStr =  String.format("%.2f", (totalMin / 60)) + " hrs";
-            } else if (totalMin == 1) {
+            } else if (currentSessionMinutes > 60) {
+                sessionTimeStr =  String.format("%.2f", (currentSessionMinutes / 60)) + " hrs";
+            } else if (currentSessionMinutes == 1) {
                 sessionTimeStr = "1 min";
             } else {
-                sessionTimeStr = totalMin + " min";
+                sessionTimeStr = currentSessionMinutes + " min";
             }
 
-            if (avgKpm > 0 || totalMin > 0) {
-                String kpmStr = String.valueOf(avgKpm) + " KPM,";
+            if (currentSessionKpm > 0 || currentSessionMinutes > 0) {
+                String kpmStr = String.valueOf(currentSessionKpm) + " KPM,";
                 String kpmIcon = (inFlow) ? "rocket_light.png" : "";
 
                 SoftwareCoUtils.setStatusLineMessage(kpmStr, sessionTimeStr, kpmIcon, sessionTimeIcon,
