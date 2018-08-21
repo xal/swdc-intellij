@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>com.softwareco.intellij.plugin</id>
   <name>Software.com</name>
-  <version>0.1.26</version>
+  <version>0.1.27</version>
   <vendor email="support@software.com" url="https://software.com">Software.com</vendor>
 
   <description><![CDATA[
@@ -9,7 +9,7 @@
     ]]></description>
 
   <change-notes><![CDATA[
-      Software.com release 0.1.26<br>
+      Software.com release 0.1.27<br>
     ]]>
   </change-notes>
 
