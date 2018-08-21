@@ -353,6 +353,12 @@ public class SoftwareCo implements ApplicationComponent {
 
         JsonObject fileInfo = keystrokeCount.getSourceByFileName(fileName);
 
+        String currentTrack = SoftwareCoUtils.getCurrentMusicTrack();
+        String trackInfo = fileInfo.get("trackInfo").getAsString();
+        if ((trackInfo == null || trackInfo.equals("")) && (currentTrack != null && !currentTrack.equals(""))) {
+            updateFileInfoStringValue(fileInfo, "trackInfo", currentTrack);
+        }
+
         if (numKeystrokes > 1) {
             // It's a copy and paste event
             updateFileInfoValue(fileInfo,"paste", numKeystrokes);
@@ -400,9 +406,13 @@ public class SoftwareCo implements ApplicationComponent {
         return keysVal.getAsInt();
     }
 
+    private static void updateFileInfoStringValue(JsonObject fileInfo, String key, String value) {
+        fileInfo.addProperty(key, value);
+    }
+
     private static void updateFileInfoValue(JsonObject fileInfo, String key, int incrementVal) {
         JsonPrimitive keysVal = fileInfo.getAsJsonPrimitive(key);
-        if (key.equals("length") || key.equals("lines") || key.equals("syntax")) {
+        if (key.equals("length") || key.equals("lines")) {
             // length, lines, or syntax are not additive
             fileInfo.addProperty(key, incrementVal);
         } else {

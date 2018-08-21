@@ -480,7 +480,7 @@ public class SoftwareCoSessionManager {
                 //
                 return response;
             } catch (Exception e) {
-                log.info("Software.com: Unable to make api request.", e);
+                log.info("Software.com: Unable to make api request. " + e.toString(), null);
             }
 
             return null;
