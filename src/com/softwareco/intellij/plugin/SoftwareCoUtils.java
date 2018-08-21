@@ -236,6 +236,9 @@ public class SoftwareCoUtils {
     }
 
     public static String getCurrentMusicTrack() {
+        if (!SoftwareCo.isMac()) {
+            return SoftwareCo.gson.toJson(new JsonObject());
+        }
         String script =
                 "on buildItunesRecord(appState)\n" +
                     "tell application \"iTunes\"\n" +
