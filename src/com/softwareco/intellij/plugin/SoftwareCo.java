@@ -210,6 +210,10 @@ public class SoftwareCo implements ApplicationComponent {
         }
         updateFileInfoValue(fileInfo,"open", 1);
         log.info("Software.com: file opened: " + fileName);
+
+        // update the line count since we're here
+        int lines = getLineCount(fileName);
+        updateFileInfoValue(fileInfo, "lines", lines);
     }
 
     public static void handleFileClosedEvents(String fileName, Project project) {
@@ -340,6 +344,11 @@ public class SoftwareCo implements ApplicationComponent {
             numKeystrokes = document.getTextLength() - wrapper.getCurrentTextLength();
         }
 
+        // check if there are any keystrokes before updating the metrics
+        if (numKeystrokes == 0) {
+            return;
+        }
+
         //
         // Set the current text length and the current file and the current project
         //
@@ -359,7 +368,7 @@ public class SoftwareCo implements ApplicationComponent {
             updateFileInfoStringValue(fileInfo, "trackInfo", currentTrack);
         }
 
-        if (numKeystrokes > 1) {
+        if (numKeystrokes > 1 && !isNewLine) {
             // It's a copy and paste event
             updateFileInfoValue(fileInfo,"paste", numKeystrokes);
 
@@ -369,20 +378,16 @@ public class SoftwareCo implements ApplicationComponent {
             // It's a character delete event
             updateFileInfoValue(fileInfo,"delete", deleteKpm);
 
-            int incrementedCount = Integer.parseInt(keystrokeCount.getData()) + deleteKpm;
-            keystrokeCount.setData( String.valueOf(incrementedCount) );
-
             log.info("Software.com: Delete incremented");
-        } else {
+        } else if (!isNewLine) {
             // increment the specific file keystroke value
             updateFileInfoValue(fileInfo,"add", 1);
 
-            // increment the data keystroke count
-            int incrementedCount = Integer.parseInt(keystrokeCount.getData()) + 1;
-            keystrokeCount.setData( String.valueOf(incrementedCount) );
-
             log.info("Software.com: KPM incremented");
         }
+
+        int incrementedCount = Integer.parseInt(keystrokeCount.getData()) + 1;
+        keystrokeCount.setData( String.valueOf(incrementedCount) );
 
         // update the line count
         int lines = getPreviousLineCount(fileInfo);
