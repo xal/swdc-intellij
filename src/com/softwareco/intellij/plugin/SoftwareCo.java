@@ -22,8 +22,10 @@ import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
+import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.PlatformUtils;
@@ -295,32 +297,15 @@ public class SoftwareCo implements ApplicationComponent {
         }
 
         Project project = editors[0].getProject();
-
         if (project != null) {
             projectName = project.getName();
-            projectFilepath = project.getProjectFilePath();
+            projectFilepath = project.getBaseDir().getPath();
         }
 
         keystrokeMgr.addKeystrokeWrapperIfNoneExists(project);
 
         if (file != null) {
             fileName = file.getPath();
-        }
-
-        //
-        // project file path may be something like...
-        // /Users/username/IdeaProjects/MyProject/.idea/misc.xml
-        // so we need to extract the base project path using the project name
-        // which will be "MyProject"
-        //
-        if (projectName != null && projectName.length() > 0 &&
-                projectFilepath != null &&
-                projectFilepath.length() > 0) {
-            // get the index of the project name from the project path
-            int projectNameIdx = projectFilepath.indexOf(projectName);
-            if (projectNameIdx > 0) {
-                projectFilepath = projectFilepath.substring(0, projectNameIdx - 1);
-            }
         }
 
         //
@@ -367,6 +352,16 @@ public class SoftwareCo implements ApplicationComponent {
         if ((trackInfo == null || trackInfo.equals("")) && (currentTrack != null && !currentTrack.equals(""))) {
             updateFileInfoStringValue(fileInfo, "trackInfo", currentTrack);
         }
+
+        if (wrapper.getKeystrokeCount() != null && wrapper.getKeystrokeCount().getProject() != null
+                && !wrapper.getKeystrokeCount().getProject().hasResource() ) {
+            JsonObject resource = SoftwareCoUtils.getResourceInfo(projectFilepath);
+            if (resource.has("identifier")) {
+                wrapper.getKeystrokeCount().getProject().updateResource(resource);
+                wrapper.getKeystrokeCount().getProject().setIdentifier(resource.get("identifier").getAsString());
+            }
+        }
+        SoftwareCoUtils.getResourceInfo(projectFilepath);
 
         if (numKeystrokes > 1 && !isNewLine) {
             // It's a copy and paste event

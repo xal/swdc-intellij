@@ -12,6 +12,7 @@ import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.WindowManager;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -293,7 +294,8 @@ public class SoftwareCoUtils {
                     "return {}\n" +
                 "end try";
 
-        String trackInfoStr = eval(script);
+        String[] args = { "osascript", "-e", script };
+        String trackInfoStr = runCommand(args, null);
         // genre:Alternative, artist:AWOLNATION, id:6761, name:Kill Your Heroes, state:playing
         JsonObject jsonObj = new JsonObject();
         if (trackInfoStr != null && !trackInfoStr.equals("")) {
@@ -315,28 +317,29 @@ public class SoftwareCoUtils {
     }
 
     /**
-     * Execute AppleScript using {@literal osascript} No exceptions are thrown by this method.
-     *
-     * @param code the code to evaluate
-     * @return script result.
+     * Execute the args
+     * @param args
+     * @return
      */
-    private static String eval(String code) {
-        Runtime runtime = Runtime.getRuntime();
-        String[] args = { "osascript", "-e", code };
+    private static String runCommand(String[] args, String dir) {
+        // use process builder as it allows to run the command from a specified dir
+        ProcessBuilder builder = new ProcessBuilder();
 
         try {
-            Process process = runtime.exec(args);
-            process.waitFor();
+            builder.command(args);
+            if (dir != null) {
+                // change to the directory to run the command
+                builder.directory(new File(dir));
+            }
+            Process process = builder.start();
+
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
             InputStream is = process.getInputStream();
             copyLarge(is, baos, new byte[4096]);
             return baos.toString().trim();
 
-        } catch (IOException e) {
-            log.warn(e.getMessage(), e);
-            return null;
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             Thread.currentThread().interrupt();
             return null;
         }
@@ -351,6 +354,38 @@ public class SoftwareCoUtils {
             count += n;
         }
         return count;
+    }
+
+    public static JsonObject getResourceInfo(String projectDir) {
+        JsonObject jsonObj = new JsonObject();
+
+        // is the project dir avail?
+        if (projectDir != null && !projectDir.equals("")) {
+            try {
+                String[] branchCmd = { "git", "symbolic-ref", "--short", "HEAD" };
+                String branch = runCommand(branchCmd, projectDir);
+
+                String[] identifierCmd = { "git", "config", "--get", "remote.origin.url" };
+                String identifier = runCommand(identifierCmd, projectDir);
+
+                String[] emailCmd = { "git", "config", "user.email" };
+                String email = runCommand(emailCmd, projectDir);
+
+                String[] tagCmd = { "git", "describe", "--all" };
+                String tag = runCommand(tagCmd, projectDir);
+
+                if (StringUtils.isNotBlank(branch) && StringUtils.isNotBlank(identifier)) {
+                    jsonObj.addProperty("identifier", identifier);
+                    jsonObj.addProperty("branch", branch);
+                    jsonObj.addProperty("email", email);
+                    jsonObj.addProperty("tag", tag);
+                }
+            } catch (Exception e) {
+                //
+            }
+        }
+
+        return jsonObj;
     }
 
 }
