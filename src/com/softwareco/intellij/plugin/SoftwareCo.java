@@ -296,6 +296,10 @@ public class SoftwareCo implements ApplicationComponent {
             file = instance.getFile(document);
         }
 
+        if (file == null || file.isDirectory()) {
+            return;
+        }
+
         Project project = editors[0].getProject();
         if (project != null) {
             projectName = project.getName();
