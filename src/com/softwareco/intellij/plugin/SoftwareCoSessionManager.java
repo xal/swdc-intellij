@@ -337,7 +337,12 @@ public class SoftwareCoSessionManager {
             if (currentSessionMinutes == 60) {
                 sessionTimeStr = "1 hr";
             } else if (currentSessionMinutes > 60) {
-                sessionTimeStr =  String.format("%.2f", (currentSessionMinutes / 60)) + " hrs";
+                float fval = (float)currentSessionMinutes / 60;
+                try {
+                    sessionTimeStr = String.format("%.2f", fval) + " hrs";
+                } catch (Exception e) {
+                    sessionTimeStr = String.valueOf(fval);
+                }
             } else if (currentSessionMinutes == 1) {
                 sessionTimeStr = "1 min";
             } else {
