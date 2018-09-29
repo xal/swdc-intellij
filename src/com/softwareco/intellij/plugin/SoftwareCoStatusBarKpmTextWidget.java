@@ -6,6 +6,7 @@ import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.StatusBarWidget;
 import com.intellij.util.Consumer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.awt.event.MouseEvent;
 
@@ -43,10 +44,6 @@ public class SoftwareCoStatusBarKpmTextWidget implements StatusBarWidget {
     }
 
     class StatusPresentation implements StatusBarWidget.TextPresentation {
-        @Override
-        public float getAlignment() {
-            return 0;
-        }
 
         @NotNull
         @Override
@@ -57,14 +54,21 @@ public class SoftwareCoStatusBarKpmTextWidget implements StatusBarWidget {
         @NotNull
         @Override
         public String getMaxPossibleText() {
-            return null;
+            return "";
         }
 
+        @Override
+        public float getAlignment() {
+            return 0;
+        }
+
+        @Nullable
         @Override
         public String getTooltipText() {
             return SoftwareCoStatusBarKpmTextWidget.this.tooltip;
         }
 
+        @Nullable
         @Override
         public Consumer<MouseEvent> getClickConsumer() {
             return eventHandler;

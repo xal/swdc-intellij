@@ -67,7 +67,7 @@ public class KeystrokeCount {
 
         // create one and return the one just created
         JsonObject fileInfoData = new JsonObject();
-        fileInfoData.addProperty("keys", 0);
+        fileInfoData.addProperty("bulkDelete", 0);
         fileInfoData.addProperty("add", 0);
         fileInfoData.addProperty("paste", 0);
         fileInfoData.addProperty("open", 0);
@@ -107,6 +107,9 @@ public class KeystrokeCount {
     }
 
     public boolean hasData() {
+        if (Integer.parseInt(this.getData()) > 0) {
+            return true;
+        }
         Set<Map.Entry<String, JsonElement>> fileInfoDataSet = this.source.entrySet();
         for ( Map.Entry<String, JsonElement> fileInfoData : fileInfoDataSet ) {
             JsonObject fileinfoDataJsonObj = (JsonObject) fileInfoData.getValue();

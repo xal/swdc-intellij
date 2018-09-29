@@ -264,145 +264,83 @@ public class SoftwareCo implements ApplicationComponent {
         if (document == null) {
             return;
         }
-
-        //
-        // Get the current editors so we can determine the current file name and project in view
-        //
-        Editor[] editors = EditorFactory.getInstance().getEditors(document);
-        if (editors == null || editors.length == 0) {
-            //
-            // No editors to get the file and project information out of
-            //
-            return;
-        }
-
-        boolean isNewLine = false;
-        String newFrag = documentEvent.getNewFragment().toString();
-        if (newFrag.matches("^\n.*") || newFrag.matches("^\n\r.*")) {
-            isNewLine = true;
-        }
-
-        String projectName = "";
-        String projectFilepath = "";
-        String fileName = "";
-
-        //
-        // Get the file and project information from the document manager
-        //
         FileDocumentManager instance = FileDocumentManager.getInstance();
-
-        VirtualFile file = null;
         if (instance != null) {
-            file = instance.getFile(document);
-        }
+            VirtualFile file = instance.getFile(document);
+            if (file != null && !file.isDirectory()) {
+                Editor[] editors = EditorFactory.getInstance().getEditors(document);
+                String fileName = file.getPath();
+                Project project = editors[0].getProject();
+                String projectName = null;
+                String projectFilepath = null;
+                if (project != null) {
+                    projectName = project.getName();
+                    projectFilepath = project.getBaseDir().getPath();
 
-        if (file == null || file.isDirectory()) {
-            return;
-        }
+                    keystrokeMgr.addKeystrokeWrapperIfNoneExists(project);
+                    initializeKeystrokeObjectGraph(fileName, projectName, projectFilepath);
 
-        Project project = editors[0].getProject();
-        if (project != null) {
-            projectName = project.getName();
-            projectFilepath = project.getBaseDir().getPath();
-        }
+                    KeystrokeCount keystrokeCount = keystrokeMgr.getKeystrokeCount(projectName);
+                    if (keystrokeCount != null) {
 
-        keystrokeMgr.addKeystrokeWrapperIfNoneExists(project);
+                        KeystrokeManager.KeystrokeCountWrapper wrapper = keystrokeMgr.getKeystrokeWrapper(projectName);
 
-        if (file != null) {
-            fileName = file.getPath();
-        }
 
-        //
-        // The docEvent length will not be zero if the user deleted
-        // a number of characters at once,
-        //
-        int numKeystrokes = (documentEvent != null) ?
-                documentEvent.getNewLength() - documentEvent.getOldLength() :
-                0;
+                        // Set the current text length and the current file and the current project
+                        //
+                        int currLen = document.getTextLength();
+                        wrapper.setCurrentFileName(fileName);
+                        wrapper.setCurrentTextLength(currLen);
 
-        KeystrokeManager.KeystrokeCountWrapper wrapper = keystrokeMgr.getKeystrokeWrapper(projectName);
+                        JsonObject fileInfo = keystrokeCount.getSourceByFileName(fileName);
+                        if (documentEvent.getOldLength() > 0) {
+                            //it's a delete
+                            if (documentEvent.getOldLength() > 1) {
+                                // it's a bulk delete
+                                updateFileInfoValue(fileInfo, "bulkDelete", 1);
+                            } else {
+                                updateFileInfoValue(fileInfo, "delete", 1);
+                            }
+                        } else {
+                            // it's an add
+                            if (documentEvent.getNewLength() > 1) {
+                                // it's a paste
+                                updateFileInfoValue(fileInfo, "paste", 1);
+                            } else {
+                                updateFileInfoValue(fileInfo, "add", 1);
+                            }
+                        }
 
-        //
-        // get keystroke count from document length change if we're still in the same doc. That
-        // means it was a document save or event.
-        //
-        if ( numKeystrokes == 0 && fileName.equals(wrapper.getCurrentFileName()) ) {
-            //
-            // Count the number of characters in the text attribute
-            //
-            numKeystrokes = document.getTextLength() - wrapper.getCurrentTextLength();
-        }
+                        if (wrapper.getKeystrokeCount() != null && wrapper.getKeystrokeCount().getProject() != null
+                            && !wrapper.getKeystrokeCount().getProject().hasResource() ) {
+                            JsonObject resource = SoftwareCoUtils.getResourceInfo(projectFilepath);
+                            if (resource.has("identifier")) {
+                                wrapper.getKeystrokeCount().getProject().updateResource(resource);
+                                wrapper.getKeystrokeCount().getProject().setIdentifier(resource.get("identifier").getAsString());
+                            }
+                        }
+                        String trackInfo = fileInfo.get("trackInfo").getAsString();
+                        if ((trackInfo == null || trackInfo.equals(""))) {
+                            String currentTrack = SoftwareCoUtils.getCurrentMusicTrack();
+                            if (currentTrack != null && !currentTrack.equals("")) {
+                                updateFileInfoStringValue(fileInfo, "trackInfo", currentTrack);
+                            }
+                        }
 
-        // check if there are any keystrokes before updating the metrics
-        if (numKeystrokes == 0) {
-            return;
-        }
+                        int incrementedCount = Integer.parseInt(keystrokeCount.getData()) + 1;
+                        keystrokeCount.setData( String.valueOf(incrementedCount) );
 
-        //
-        // Set the current text length and the current file and the current project
-        //
-        int currLen = document.getTextLength();
-        wrapper.setCurrentFileName(fileName);
-        wrapper.setCurrentTextLength(currLen);
+                        String newFrag = documentEvent.getNewFragment().toString();
+                        if (newFrag.matches("^\n.*") || newFrag.matches("^\n\r.*")) {
+                            // it's a new line
+                            updateFileInfoValue(fileInfo, "linesAdded", 1);
+                        }
+                        updateFileInfoValue(fileInfo, "lines", getLineCount(fileName));
+                    }
+                }
 
-        initializeKeystrokeObjectGraph(fileName, projectName, projectFilepath);
-
-        KeystrokeCount keystrokeCount = keystrokeMgr.getKeystrokeCount(projectName);
-
-        JsonObject fileInfo = keystrokeCount.getSourceByFileName(fileName);
-
-        String currentTrack = SoftwareCoUtils.getCurrentMusicTrack();
-        String trackInfo = fileInfo.get("trackInfo").getAsString();
-        if ((trackInfo == null || trackInfo.equals("")) && (currentTrack != null && !currentTrack.equals(""))) {
-            updateFileInfoStringValue(fileInfo, "trackInfo", currentTrack);
-        }
-
-        if (wrapper.getKeystrokeCount() != null && wrapper.getKeystrokeCount().getProject() != null
-                && !wrapper.getKeystrokeCount().getProject().hasResource() ) {
-            JsonObject resource = SoftwareCoUtils.getResourceInfo(projectFilepath);
-            if (resource.has("identifier")) {
-                wrapper.getKeystrokeCount().getProject().updateResource(resource);
-                wrapper.getKeystrokeCount().getProject().setIdentifier(resource.get("identifier").getAsString());
             }
         }
-        SoftwareCoUtils.getResourceInfo(projectFilepath);
-
-        if (numKeystrokes > 1 && !isNewLine) {
-            // It's a copy and paste event
-            updateFileInfoValue(fileInfo,"paste", numKeystrokes);
-
-            log.info("Software.com: Copy+Paste incremented");
-        } else if (numKeystrokes < 0) {
-            int deleteKpm = Math.abs(numKeystrokes);
-            // It's a character delete event
-            updateFileInfoValue(fileInfo,"delete", deleteKpm);
-
-            log.info("Software.com: Delete incremented");
-        } else if (!isNewLine) {
-            // increment the specific file keystroke value
-            updateFileInfoValue(fileInfo,"add", 1);
-
-            log.info("Software.com: KPM incremented");
-        }
-
-        int incrementedCount = Integer.parseInt(keystrokeCount.getData()) + 1;
-        keystrokeCount.setData( String.valueOf(incrementedCount) );
-
-        // update the line count
-        int lines = getPreviousLineCount(fileInfo);
-        if (lines == -1) {
-            lines = getLineCount(fileName);
-        }
-
-        if (isNewLine) {
-            lines += 1;
-            // new lines added
-            updateFileInfoValue(fileInfo, "linesAdded", 1);
-            log.info("Software.com: lines added incremented");
-        }
-
-        updateFileInfoValue(fileInfo, "lines", lines);
-        updateFileInfoValue(fileInfo,"length", currLen);
     }
 
     private static int getPreviousLineCount(JsonObject fileInfo) {
@@ -427,10 +365,8 @@ public class SoftwareCo implements ApplicationComponent {
         if (key.equals("add") || key.equals("delete")) {
             // update the netkeys and the keys
             // "netkeys" = add - delete
-            // "keys" = add + delete
             int deleteCount = fileInfo.get("delete").getAsInt();
             int addCount = fileInfo.get("add").getAsInt();
-            fileInfo.addProperty("keys", (addCount + deleteCount));
             fileInfo.addProperty("netkeys", (addCount - deleteCount));
         }
     }

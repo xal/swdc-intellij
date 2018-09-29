@@ -311,13 +311,13 @@ public class SoftwareCoSessionManager {
                 currentSessionGoalPercent = jsonObj.get("currentSessionGoalPercent").getAsFloat();
                 if (currentSessionGoalPercent > 0) {
                     if (currentSessionGoalPercent < 0.40) {
-                        sessionTimeIcon = "25_circle_light.png";
+                        sessionTimeIcon = "❍";
                     } else if (currentSessionGoalPercent < 0.75) {
-                        sessionTimeIcon = "50_circle_light.png";
+                        sessionTimeIcon = "◒";
                     } else if (currentSessionGoalPercent < 0.95) {
-                        sessionTimeIcon = "75_circle_light.png";
+                        sessionTimeIcon = "◍";
                     } else {
-                        sessionTimeIcon = "100_circle_light.png";
+                        sessionTimeIcon = "●";
                     }
                 }
             }
@@ -351,15 +351,18 @@ public class SoftwareCoSessionManager {
 
             if (currentSessionKpm > 0 || currentSessionMinutes > 0) {
                 String kpmStr = String.valueOf(currentSessionKpm) + " KPM,";
-                String kpmIcon = (inFlow) ? "rocket_light.png" : "";
+                String kpmIcon = (inFlow) ? "🚀" : "";
 
-                SoftwareCoUtils.setStatusLineMessage(kpmStr, sessionTimeStr, kpmIcon, sessionTimeIcon,
-                        "Click to see more from Software.com");
+                String msg = kpmIcon + " " + kpmStr + ", " + sessionTimeIcon + " " + sessionTimeStr;
+
+                SoftwareCoUtils.setStatusLineMessage(msg, "Click to see more from Software.com");
             } else {
                 SoftwareCoUtils.setStatusLineMessage(
                         "Software.com", "Click to see more from Software.com");
             }
         } else {
+            log.info("Unable to get kpm summary");
+            this.checkUserAuthenticationStatus();
             SoftwareCoUtils.setStatusLineMessage("⚠️Software.com", "Click to see more from Software.com");
         }
     }

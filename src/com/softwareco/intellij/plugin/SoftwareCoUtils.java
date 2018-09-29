@@ -158,41 +158,6 @@ public class SoftwareCoUtils {
         }
     }
 
-    public static synchronized void setStatusLineMessage(
-            final String kpmStr, final String sessionStr, final String kpmIcon, final String sessionIcon,
-            final String tooltip) {
-        try {
-            Project p = ProjectManager.getInstance().getOpenProjects()[0];
-            final StatusBar statusBar = WindowManager.getInstance().getStatusBar(p);
-
-            if (statusBar != null) {
-                removeWidgets();
-
-                if (kpmIcon != null && !kpmIcon.equals("")) {
-                    SoftwareCoStatusBarKpmIconWidget iconWidget = buildStatusBarIconWidget(kpmIcon, tooltip, SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID);
-                    statusBar.addWidget(iconWidget);
-                    statusBar.updateWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID);
-                }
-
-                SoftwareCoStatusBarKpmTextWidget widget = buildStatusBarTextWidget(kpmStr, tooltip, SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID);
-                statusBar.addWidget(widget);
-                statusBar.updateWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID);
-
-                if (sessionIcon != null && !sessionIcon.equals("")) {
-                    SoftwareCoStatusBarKpmIconWidget iconWidget = buildStatusBarIconWidget(sessionIcon, tooltip, SoftwareCoStatusBarKpmIconWidget.SESSION_TIME_ICON_ID);
-                    statusBar.addWidget(iconWidget);
-                    statusBar.updateWidget(SoftwareCoStatusBarKpmIconWidget.SESSION_TIME_ICON_ID);
-                }
-
-                SoftwareCoStatusBarKpmTextWidget sessionTimeWidget = buildStatusBarTextWidget(sessionStr, tooltip, SoftwareCoStatusBarKpmTextWidget.SESSION_TIME_TEXT_ID);
-                statusBar.addWidget(sessionTimeWidget);
-                statusBar.updateWidget(SoftwareCoStatusBarKpmTextWidget.SESSION_TIME_TEXT_ID);
-            }
-        } catch (Exception e) {
-            //
-        }
-    }
-
     private static void removeWidgets() {
         try {
             Project p = ProjectManager.getInstance().getOpenProjects()[0];
