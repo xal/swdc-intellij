@@ -269,73 +269,75 @@ public class SoftwareCo implements ApplicationComponent {
             VirtualFile file = instance.getFile(document);
             if (file != null && !file.isDirectory()) {
                 Editor[] editors = EditorFactory.getInstance().getEditors(document);
-                String fileName = file.getPath();
-                Project project = editors[0].getProject();
-                String projectName = null;
-                String projectFilepath = null;
-                if (project != null) {
-                    projectName = project.getName();
-                    projectFilepath = project.getBaseDir().getPath();
+                if (editors != null && editors.length > 0) {
+                    String fileName = file.getPath();
+                    Project project = editors[0].getProject();
+                    String projectName = null;
+                    String projectFilepath = null;
+                    if (project != null) {
+                        projectName = project.getName();
+                        projectFilepath = project.getBaseDir().getPath();
 
-                    keystrokeMgr.addKeystrokeWrapperIfNoneExists(project);
-                    initializeKeystrokeObjectGraph(fileName, projectName, projectFilepath);
+                        keystrokeMgr.addKeystrokeWrapperIfNoneExists(project);
+                        initializeKeystrokeObjectGraph(fileName, projectName, projectFilepath);
 
-                    KeystrokeCount keystrokeCount = keystrokeMgr.getKeystrokeCount(projectName);
-                    if (keystrokeCount != null) {
+                        KeystrokeCount keystrokeCount = keystrokeMgr.getKeystrokeCount(projectName);
+                        if (keystrokeCount != null) {
 
-                        KeystrokeManager.KeystrokeCountWrapper wrapper = keystrokeMgr.getKeystrokeWrapper(projectName);
+                            KeystrokeManager.KeystrokeCountWrapper wrapper = keystrokeMgr.getKeystrokeWrapper(projectName);
 
 
-                        // Set the current text length and the current file and the current project
-                        //
-                        int currLen = document.getTextLength();
-                        wrapper.setCurrentFileName(fileName);
-                        wrapper.setCurrentTextLength(currLen);
+                            // Set the current text length and the current file and the current project
+                            //
+                            int currLen = document.getTextLength();
+                            wrapper.setCurrentFileName(fileName);
+                            wrapper.setCurrentTextLength(currLen);
 
-                        JsonObject fileInfo = keystrokeCount.getSourceByFileName(fileName);
-                        if (documentEvent.getOldLength() > 0) {
-                            //it's a delete
-                            if (documentEvent.getOldLength() > 1) {
-                                // it's a bulk delete
-                                updateFileInfoValue(fileInfo, "bulkDelete", 1);
+                            JsonObject fileInfo = keystrokeCount.getSourceByFileName(fileName);
+                            if (documentEvent.getOldLength() > 0) {
+                                //it's a delete
+                                if (documentEvent.getOldLength() > 1) {
+                                    // it's a bulk delete
+                                    updateFileInfoValue(fileInfo, "bulkDelete", 1);
+                                } else {
+                                    updateFileInfoValue(fileInfo, "delete", 1);
+                                }
                             } else {
-                                updateFileInfoValue(fileInfo, "delete", 1);
+                                // it's an add
+                                if (documentEvent.getNewLength() > 1) {
+                                    // it's a paste
+                                    updateFileInfoValue(fileInfo, "paste", 1);
+                                } else {
+                                    updateFileInfoValue(fileInfo, "add", 1);
+                                }
                             }
-                        } else {
-                            // it's an add
-                            if (documentEvent.getNewLength() > 1) {
-                                // it's a paste
-                                updateFileInfoValue(fileInfo, "paste", 1);
-                            } else {
-                                updateFileInfoValue(fileInfo, "add", 1);
-                            }
-                        }
 
-                        if (wrapper.getKeystrokeCount() != null && wrapper.getKeystrokeCount().getProject() != null
-                            && !wrapper.getKeystrokeCount().getProject().hasResource() ) {
-                            JsonObject resource = SoftwareCoUtils.getResourceInfo(projectFilepath);
-                            if (resource.has("identifier")) {
-                                wrapper.getKeystrokeCount().getProject().updateResource(resource);
-                                wrapper.getKeystrokeCount().getProject().setIdentifier(resource.get("identifier").getAsString());
+                            if (wrapper.getKeystrokeCount() != null && wrapper.getKeystrokeCount().getProject() != null
+                                    && !wrapper.getKeystrokeCount().getProject().hasResource()) {
+                                JsonObject resource = SoftwareCoUtils.getResourceInfo(projectFilepath);
+                                if (resource.has("identifier")) {
+                                    wrapper.getKeystrokeCount().getProject().updateResource(resource);
+                                    wrapper.getKeystrokeCount().getProject().setIdentifier(resource.get("identifier").getAsString());
+                                }
                             }
-                        }
-                        String trackInfo = fileInfo.get("trackInfo").getAsString();
-                        if ((trackInfo == null || trackInfo.equals(""))) {
-                            String currentTrack = SoftwareCoUtils.getCurrentMusicTrack();
-                            if (currentTrack != null && !currentTrack.equals("")) {
-                                updateFileInfoStringValue(fileInfo, "trackInfo", currentTrack);
+                            String trackInfo = fileInfo.get("trackInfo").getAsString();
+                            if ((trackInfo == null || trackInfo.equals(""))) {
+                                String currentTrack = SoftwareCoUtils.getCurrentMusicTrack();
+                                if (currentTrack != null && !currentTrack.equals("")) {
+                                    updateFileInfoStringValue(fileInfo, "trackInfo", currentTrack);
+                                }
                             }
-                        }
 
-                        int incrementedCount = Integer.parseInt(keystrokeCount.getData()) + 1;
-                        keystrokeCount.setData( String.valueOf(incrementedCount) );
+                            int incrementedCount = Integer.parseInt(keystrokeCount.getData()) + 1;
+                            keystrokeCount.setData(String.valueOf(incrementedCount));
 
-                        String newFrag = documentEvent.getNewFragment().toString();
-                        if (newFrag.matches("^\n.*") || newFrag.matches("^\n\r.*")) {
-                            // it's a new line
-                            updateFileInfoValue(fileInfo, "linesAdded", 1);
+                            String newFrag = documentEvent.getNewFragment().toString();
+                            if (newFrag.matches("^\n.*") || newFrag.matches("^\n\r.*")) {
+                                // it's a new line
+                                updateFileInfoValue(fileInfo, "linesAdded", 1);
+                            }
+                            updateFileInfoValue(fileInfo, "lines", getLineCount(fileName));
                         }
-                        updateFileInfoValue(fileInfo, "lines", getLineCount(fileName));
                     }
                 }
 
