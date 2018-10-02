@@ -526,7 +526,6 @@ public class SoftwareCo implements ApplicationComponent {
             // ZonedDateTime will get us the true seconds away from GMT
             // it'll be negative for zones before GMT and postive for zones after
             Integer offset  = ZonedDateTime.now().getOffset().getTotalSeconds();
-            int rawOffset = TimeZone.getDefault().getRawOffset();
             long startInSeconds = (int) (new Date().getTime() / 1000);
             keystrokeCount.setStart(startInSeconds);
             // add to the start in seconds since it's a negative for less than gmt and the
