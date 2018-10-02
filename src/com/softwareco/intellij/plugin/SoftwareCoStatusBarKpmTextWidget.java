@@ -14,8 +14,6 @@ public class SoftwareCoStatusBarKpmTextWidget implements StatusBarWidget {
     public static final Logger log = Logger.getInstance("SoftwareCoStatusBarKpmTextWidget");
 
     public static final String KPM_TEXT_ID = "software.kpm.text";
-    public static final String SESSION_TIME_TEXT_ID = "software.session.time.text";
-    public static final String TEXT_SEPARATOR = "software.text.separator";
 
     private String msg = "";
     private String tooltip = "";

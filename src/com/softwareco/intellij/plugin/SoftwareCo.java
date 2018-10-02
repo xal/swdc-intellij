@@ -48,10 +48,9 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Date;
+import java.time.ZonedDateTime;
+import java.util.*;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.*;
 
 /**
@@ -328,8 +327,8 @@ public class SoftwareCo implements ApplicationComponent {
                                 }
                             }
 
-                            int incrementedCount = Integer.parseInt(keystrokeCount.getData()) + 1;
-                            keystrokeCount.setData(String.valueOf(incrementedCount));
+                            int incrementedCount = Integer.parseInt(keystrokeCount.getKeystrokes()) + 1;
+                            keystrokeCount.setKeystrokes(String.valueOf(incrementedCount));
 
                             String newFrag = documentEvent.getNewFragment().toString();
                             if (newFrag.matches("^\n.*") || newFrag.matches("^\n\r.*")) {
@@ -523,10 +522,17 @@ public class SoftwareCo implements ApplicationComponent {
             //
             // create the json string
             //
-            // set the start of this record to a minute and a half ago so that it's in the immediate past.
-            long startInSeconds = (int) (new Date().getTime() / 1000 - 90);
+            // set the start time
+            // ZonedDateTime will get us the true seconds away from GMT
+            // it'll be negative for zones before GMT and postive for zones after
+            Integer offset  = ZonedDateTime.now().getOffset().getTotalSeconds();
+            int rawOffset = TimeZone.getDefault().getRawOffset();
+            long startInSeconds = (int) (new Date().getTime() / 1000);
             keystrokeCount.setStart(startInSeconds);
-            keystrokeCount.setEnd(startInSeconds + 60);
+            // add to the start in seconds since it's a negative for less than gmt and the
+            // opposite for grtr than gmt
+            keystrokeCount.setLocal_start(startInSeconds + offset);
+            keystrokeCount.setTimezone(TimeZone.getDefault().getID());
             String kpmData = gson.toJson(keystrokeCount);
 
             String endpoint = SoftwareCoUtils.api_endpoint + "/data";

@@ -22,10 +22,11 @@ public class KeystrokeCount {
 
     // non-hardcoded attributes
     private JsonObject source = new JsonObject();
-    private String data = "0"; // keystroke count
+    private String keystrokes = "0"; // keystroke count
     // start and end are in seconds
     private long start;
-    private long end;
+    private long local_start;
+    private String timezone;
     private KeystrokeProject project;
 
     public KeystrokeCount() {
@@ -38,26 +39,28 @@ public class KeystrokeCount {
 
     public KeystrokeCount clone() {
         KeystrokeCount kc = new KeystrokeCount();
-        kc.data = this.data;
+        kc.keystrokes = this.keystrokes;
         kc.start = this.start;
-        kc.end = this.end;
+        kc.local_start = this.local_start;
         kc.version = this.version;
         kc.pluginId = this.pluginId;
         kc.project = this.project;
         kc.type = this.type;
         kc.source = this.source;
+        kc.timezone = this.timezone;
 
         return kc;
     }
 
     public void resetData() {
-        this.data = "0";
+        this.keystrokes = "0";
         this.source = new JsonObject();
         if (this.project != null) {
             this.project.resetData();
         }
         this.start = 0L;
-        this.end = 0L;
+        this.local_start = 0L;
+        this.timezone = "";
     }
 
     public JsonObject getSourceByFileName(String fileName) {
@@ -107,7 +110,7 @@ public class KeystrokeCount {
     }
 
     public boolean hasData() {
-        if (Integer.parseInt(this.getData()) > 0) {
+        if (Integer.parseInt(this.getKeystrokes()) > 0) {
             return true;
         }
         Set<Map.Entry<String, JsonElement>> fileInfoDataSet = this.source.entrySet();
@@ -136,12 +139,12 @@ public class KeystrokeCount {
         return false;
     }
 
-    public String getData() {
-        return data;
+    public String getKeystrokes() {
+        return keystrokes;
     }
 
-    public void setData(String data) {
-        this.data = data;
+    public void setKeystrokes(String keystrokes) {
+        this.keystrokes = keystrokes;
     }
 
     public long getStart() {
@@ -152,12 +155,20 @@ public class KeystrokeCount {
         this.start = start;
     }
 
-    public long getEnd() {
-        return end;
+    public long getLocal_start() {
+        return local_start;
     }
 
-    public void setEnd(long end) {
-        this.end = end;
+    public void setLocal_start(long local_start) {
+        this.local_start = local_start;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public void setTimezone(String timezone) {
+        this.timezone = timezone;
     }
 
     public KeystrokeProject getProject() {
@@ -174,9 +185,10 @@ public class KeystrokeCount {
                 "type='" + type + '\'' +
                 ", pluginId=" + pluginId +
                 ", source=" + source +
-                ", data='" + data + '\'' +
+                ", keystrokes='" + keystrokes + '\'' +
                 ", start=" + start +
-                ", end=" + end +
+                ", local_start=" + local_start +
+                ", timezone='" + timezone + '\'' +
                 ", project=" + project +
                 '}';
     }

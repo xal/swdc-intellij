@@ -350,7 +350,7 @@ public class SoftwareCoSessionManager {
             }
 
             if (currentSessionKpm > 0 || currentSessionMinutes > 0) {
-                String kpmStr = String.valueOf(currentSessionKpm) + " KPM,";
+                String kpmStr = String.valueOf(currentSessionKpm) + " KPM";
                 String kpmIcon = (inFlow) ? "🚀" : "";
 
                 String msg = kpmIcon + " " + kpmStr + ", " + sessionTimeIcon + " " + sessionTimeStr;

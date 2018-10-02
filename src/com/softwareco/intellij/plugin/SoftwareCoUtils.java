@@ -9,8 +9,9 @@ import com.google.gson.JsonObject;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
-import com.intellij.openapi.util.IconLoader;
+import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.wm.StatusBar;
+import com.intellij.openapi.wm.StatusBarWidget;
 import com.intellij.openapi.wm.WindowManager;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
@@ -19,6 +20,8 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.io.*;
@@ -164,33 +167,13 @@ public class SoftwareCoUtils {
             final StatusBar statusBar = WindowManager.getInstance().getStatusBar(p);
 
             if (statusBar != null) {
-                if (statusBar.getWidget(SoftwareCoStatusBarKpmTextWidget.SESSION_TIME_TEXT_ID) != null) {
-                    statusBar.removeWidget(SoftwareCoStatusBarKpmTextWidget.SESSION_TIME_TEXT_ID);
-                }
                 if (statusBar.getWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID) != null) {
                     statusBar.removeWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID);
-                }
-
-                if (statusBar.getWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID) != null) {
-                    statusBar.removeWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID);
-                }
-                if (statusBar.getWidget(SoftwareCoStatusBarKpmIconWidget.SESSION_TIME_ICON_ID) != null) {
-                    statusBar.removeWidget(SoftwareCoStatusBarKpmIconWidget.SESSION_TIME_ICON_ID);
                 }
             }
         } catch (Exception e) {
             //
         }
-    }
-
-    public static SoftwareCoStatusBarKpmIconWidget buildStatusBarIconWidget(String iconName, String tooltip, String ID) {
-        Icon icon = IconLoader.findIcon("/com/softwareco/intellij/plugin/assets/dark/" + iconName);
-
-        SoftwareCoStatusBarKpmIconWidget iconWidget =
-                new SoftwareCoStatusBarKpmIconWidget(ID);
-        iconWidget.setIcon(icon);
-        iconWidget.setTooltip(tooltip);
-        return iconWidget;
     }
 
     public static SoftwareCoStatusBarKpmTextWidget buildStatusBarTextWidget(String msg, String tooltip, String ID) {
