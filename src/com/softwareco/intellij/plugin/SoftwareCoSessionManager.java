@@ -321,9 +321,9 @@ public class SoftwareCoSessionManager {
                     }
                 }
             }
-            int currentSessionKpm = 0;
-            if (jsonObj.has("currentSessionKpm")) {
-                currentSessionKpm = jsonObj.get("currentSessionKpm").getAsInt();
+            int lastKpm = 0;
+            if (jsonObj.has("lastKpm")) {
+                lastKpm = jsonObj.get("lastKpm").getAsInt();
             }
             boolean inFlow = false;
             if (jsonObj.has("inFlow")) {
@@ -349,8 +349,8 @@ public class SoftwareCoSessionManager {
                 sessionTimeStr = currentSessionMinutes + " min";
             }
 
-            if (currentSessionKpm > 0 || currentSessionMinutes > 0) {
-                String kpmStr = String.valueOf(currentSessionKpm) + " KPM";
+            if (lastKpm > 0 || currentSessionMinutes > 0) {
+                String kpmStr = String.valueOf(lastKpm) + " KPM";
                 String kpmIcon = (inFlow) ? "🚀" : "";
 
                 String msg = kpmIcon + " " + kpmStr + ", " + sessionTimeIcon + " " + sessionTimeStr;
