@@ -10,6 +10,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
+import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.StatusBarWidget;
 import com.intellij.openapi.wm.WindowManager;
@@ -143,18 +144,57 @@ public class SoftwareCoUtils {
     }
 
     public static synchronized void setStatusLineMessage(
-            final String statusMsg,
+            final String singleMsg, final String tooltip) {
+        setStatusLineMessage(singleMsg, null, null, null, tooltip);
+    }
+
+    public static synchronized void setStatusLineMessage(
+            final String singleIcon, final String singleMsg,
+            final String tooltip) {
+        setStatusLineMessage(singleIcon, singleMsg, null, null, tooltip);
+    }
+
+    public static synchronized void setStatusLineMessage(
+            final String kpmIcon, final String kpmMsg,
+            final String timeIcon, final String timeMsg,
             final String tooltip) {
         try {
             Project p = ProjectManager.getInstance().getOpenProjects()[0];
             final StatusBar statusBar = WindowManager.getInstance().getStatusBar(p);
 
             if (statusBar != null) {
+
                 removeWidgets();
 
-                SoftwareCoStatusBarKpmTextWidget widget = buildStatusBarTextWidget(statusMsg, tooltip, SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID);
-                statusBar.addWidget(widget);
-                statusBar.updateWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID);
+                String id = SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_kpmicon";
+                if (kpmIcon != null) {
+                    SoftwareCoStatusBarKpmIconWidget kpmIconWidget = buildStatusBarIconWidget(
+                            kpmIcon, tooltip, id);
+                    statusBar.addWidget(kpmIconWidget, id);
+                    statusBar.updateWidget(id);
+                }
+
+                id = SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_kpmmsg";
+                SoftwareCoStatusBarKpmTextWidget kpmWidget = buildStatusBarTextWidget(
+                        kpmMsg, tooltip, id);
+                statusBar.addWidget(kpmWidget, id);
+                statusBar.updateWidget(id);
+
+                id = SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_timeicon";
+                if (timeIcon != null) {
+                    SoftwareCoStatusBarKpmIconWidget timeIconWidget = buildStatusBarIconWidget(
+                            timeIcon, tooltip, id);
+                    statusBar.addWidget(timeIconWidget, id);
+                    statusBar.updateWidget(id);
+                }
+
+                id = SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_timemsg";
+                if (timeMsg != null) {
+                    SoftwareCoStatusBarKpmTextWidget timeWidget = buildStatusBarTextWidget(
+                            timeMsg, tooltip, id);
+                    statusBar.addWidget(timeWidget, id);
+                    statusBar.updateWidget(id);
+                }
             }
         } catch (Exception e) {
             //
@@ -167,8 +207,18 @@ public class SoftwareCoUtils {
             final StatusBar statusBar = WindowManager.getInstance().getStatusBar(p);
 
             if (statusBar != null) {
-                if (statusBar.getWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID) != null) {
-                    statusBar.removeWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID);
+
+                if (statusBar.getWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_kpmmsg") != null) {
+                    statusBar.removeWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_kpmmsg");
+                }
+                if (statusBar.getWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_timemsg") != null) {
+                    statusBar.removeWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_timemsg");
+                }
+                if (statusBar.getWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_kpmicon") != null) {
+                    statusBar.removeWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_kpmicon");
+                }
+                if (statusBar.getWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_timeicon") != null) {
+                    statusBar.removeWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_timeicon");
                 }
             }
         } catch (Exception e) {
@@ -176,12 +226,22 @@ public class SoftwareCoUtils {
         }
     }
 
-    public static SoftwareCoStatusBarKpmTextWidget buildStatusBarTextWidget(String msg, String tooltip, String ID) {
+    public static SoftwareCoStatusBarKpmTextWidget buildStatusBarTextWidget(String msg, String tooltip, String id) {
         SoftwareCoStatusBarKpmTextWidget textWidget =
-                new SoftwareCoStatusBarKpmTextWidget(ID);
+                new SoftwareCoStatusBarKpmTextWidget(id);
         textWidget.setText(msg);
         textWidget.setTooltip(tooltip);
         return textWidget;
+    }
+
+    public static SoftwareCoStatusBarKpmIconWidget buildStatusBarIconWidget(String iconName, String tooltip, String id) {
+        Icon icon = IconLoader.findIcon("/com/softwareco/intellij/plugin/assets/" + iconName);
+
+        SoftwareCoStatusBarKpmIconWidget iconWidget =
+                new SoftwareCoStatusBarKpmIconWidget(id);
+        iconWidget.setIcon(icon);
+        iconWidget.setTooltip(tooltip);
+        return iconWidget;
     }
 
     public static String getCurrentMusicTrack() {

@@ -96,7 +96,7 @@ public class SoftwareCoSessionManager {
         if (!isOk) {
             // update the status bar with Sign Up message
             SoftwareCoUtils.setStatusLineMessage(
-                    "⚠️Software.com", "Click to log in to Software.com");
+                    "warning.png", "Software.com", "Click to log in to Software.com");
         }
         return isOk;
     }
@@ -268,7 +268,7 @@ public class SoftwareCoSessionManager {
 
         if (tokenVal == null || tokenVal.equals("")) {
             SoftwareCoUtils.setStatusLineMessage(
-                    "⚠️Software.com", "Click to log in to Software.com");
+                    "warning.png", "Software.com", "Click to log in to Software.com");
             return;
         }
 
@@ -310,14 +310,14 @@ public class SoftwareCoSessionManager {
             if (jsonObj.has("currentSessionGoalPercent")) {
                 currentSessionGoalPercent = jsonObj.get("currentSessionGoalPercent").getAsFloat();
                 if (currentSessionGoalPercent > 0) {
-                    if (currentSessionGoalPercent < 0.40) {
-                        sessionTimeIcon = "❍";
-                    } else if (currentSessionGoalPercent < 0.75) {
-                        sessionTimeIcon = "◒";
-                    } else if (currentSessionGoalPercent < 0.95) {
-                        sessionTimeIcon = "◍";
+                    if (currentSessionGoalPercent < 0.35) {
+                        sessionTimeIcon = "0.png"; // "🌘";
+                    } else if (currentSessionGoalPercent < 0.70) {
+                        sessionTimeIcon = "25.png"; // "🌗";
+                    } else if (currentSessionGoalPercent < 0.93) {
+                        sessionTimeIcon = "50.png"; // "🌖";
                     } else {
-                        sessionTimeIcon = "●";
+                        sessionTimeIcon = "100.png"; // "🌕";
                     }
                 }
             }
@@ -350,12 +350,11 @@ public class SoftwareCoSessionManager {
             }
 
             if (lastKpm > 0 || currentSessionMinutes > 0) {
-                String kpmStr = String.valueOf(lastKpm) + " KPM";
-                String kpmIcon = (inFlow) ? "🚀" : "";
+                String kpmStr = String.valueOf(lastKpm) + " KPM,";
+                String kpmIcon = (inFlow) ? "rocket.png" : null;
 
-                String msg = kpmIcon + " " + kpmStr + ", " + sessionTimeIcon + " " + sessionTimeStr;
-
-                SoftwareCoUtils.setStatusLineMessage(msg, "Click to see more from Software.com");
+                SoftwareCoUtils.setStatusLineMessage(
+                        kpmIcon, kpmStr, sessionTimeIcon, sessionTimeStr, "Click to see more from Software.com");
             } else {
                 SoftwareCoUtils.setStatusLineMessage(
                         "Software.com", "Click to see more from Software.com");
@@ -363,7 +362,8 @@ public class SoftwareCoSessionManager {
         } else {
             log.info("Unable to get kpm summary");
             this.checkUserAuthenticationStatus();
-            SoftwareCoUtils.setStatusLineMessage("⚠️Software.com", "Click to see more from Software.com");
+            SoftwareCoUtils.setStatusLineMessage(
+                    "warning.png", "Software.com", "Click to see more from Software.com");
         }
     }
 
@@ -428,12 +428,12 @@ public class SoftwareCoSessionManager {
                 } catch (InterruptedException | ExecutionException e) {
                     log.info("Software.com: Unable to get the response from the http request.", e);
                     SoftwareCoUtils.setStatusLineMessage(
-                            "⚠️Software.com", "Click to log in to Software.com");
+                            "warning.png", "Software.com", "Click to log in to Software.com");
                 }
             }
         } catch (Exception e) {
             SoftwareCoUtils.setStatusLineMessage(
-                    "⚠️Software.com", "Click to log in to Software.com");
+                    "warning.png", "Software.com", "Click to log in to Software.com");
         }
         return null;
     }

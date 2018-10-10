@@ -1,28 +1,30 @@
 package com.softwareco.intellij.plugin;
 
+import com.intellij.openapi.wm.StatusBarWidget;
+
+
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.wm.StatusBar;
-import com.intellij.openapi.wm.StatusBarWidget;
 import com.intellij.util.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.swing.*;
 import java.awt.event.MouseEvent;
 
-public class SoftwareCoStatusBarKpmTextWidget implements StatusBarWidget {
-    public static final Logger log = Logger.getInstance("SoftwareCoStatusBarKpmTextWidget");
+public class SoftwareCoStatusBarKpmIconWidget implements StatusBarWidget {
+    public static final Logger log = Logger.getInstance("SoftwareCoStatusBarKpmIconWidget");
 
-    public static final String KPM_TEXT_ID = "software.kpm.text";
+    public static final String KPM_ICON_ID = "software.kpm.icon";
 
-    private String msg = "";
+    private Icon icon = null;
     private String tooltip = "";
     private String id;
 
+    private final IconPresentation presentation = new IconPresentation();
     private Consumer<MouseEvent> eventHandler;
 
-    private final TextPresentation presentation = new StatusPresentation();
-
-    public SoftwareCoStatusBarKpmTextWidget(String id) {
+    public SoftwareCoStatusBarKpmIconWidget(String id) {
         this.id = id;
         eventHandler = new Consumer<MouseEvent>() {
             @Override
@@ -32,37 +34,26 @@ public class SoftwareCoStatusBarKpmTextWidget implements StatusBarWidget {
         };
     }
 
-    public void setText(String msg) {
-        this.msg = msg;
+    public void setIcon(Icon icon) {
+        this.icon = icon;
     }
 
     public void setTooltip(String tooltip) {
         this.tooltip = tooltip;
     }
 
-    class StatusPresentation implements StatusBarWidget.TextPresentation {
+    class IconPresentation implements StatusBarWidget.IconPresentation {
 
         @NotNull
         @Override
-        public String getText() {
-            return SoftwareCoStatusBarKpmTextWidget.this.msg;
-        }
-
-        @NotNull
-        @Override
-        public String getMaxPossibleText() {
-            return "";
-        }
-
-        @Override
-        public float getAlignment() {
-            return 0;
+        public Icon getIcon() {
+            return SoftwareCoStatusBarKpmIconWidget.this.icon;
         }
 
         @Nullable
         @Override
         public String getTooltipText() {
-            return SoftwareCoStatusBarKpmTextWidget.this.tooltip;
+            return SoftwareCoStatusBarKpmIconWidget.this.tooltip;
         }
 
         @Nullable
