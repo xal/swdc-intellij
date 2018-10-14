@@ -1,34 +1,25 @@
 # *Software* for IntelliJ
 
-***Software* is currently in private beta. To use this plugin, please join the wait list at https://software.com**
+## Measure your coding activity in real time 
 
-*Software* measures activity in your text editor or IDE so you can see the times during the day when you are the most productive. We also help you see how much you code at work or at nights and weekends, how meetings impact the amount you code, and more. 
+*Software* shows you your coding activity to help you increase flow, decrease interrupts, and improve work-life balance. 
 
-## Setup
+It takes just a minute to install our plugin for IntelliJ (see the [setup instructions](https://www.software.com/text-editors-and-ides/intellij)).
 
-*Software* is installed and uninstalled via the IntelliJ Marketplace.
+### See your coding intensity
 
-<!--- Begin: setup --->
+Our plugin for IntelliJ features a status bar that shows your keystrokes per minute (KPM) for your last minute of activity. We show a rocket icon if your KPM is equal to or above your average KPM per day for the last 90 days--a subtle reminder of your relative coding focus and intensity. 
 
-### Install
+![IntelliJ status bar](https://uploads-ssl.webflow.com/5b589ab81371d7c6ffc8d17a/5b8cc544012ec37c12c75bb9_intellij-status-bar.png)
 
-1. Navigate to **IntelliJ IDEA** > **Preferences** > **Plugins**
-2. Click **Browse Repositories**
-3. Search for **"Software.com"**
-4. **Install** *Software*
-5. **Restart** IntelliJ
-6. **Authenticate** your account by clicking the IDE prompt (only required for the first plugin you install)
+### Time tracking
 
-![Install](https://user-images.githubusercontent.com/27828739/42647022-85f4433e-85b7-11e8-8ea8-18e2abd969f8.gif)
+Longer sessions are generally more productive because we can maintain context and more easily retain logical constructs related to our code. In the status bar, we show a circle with a partial fill (either 25%, 50%, 75%, or 100%) to indicate the duration of your current session vs. your average over the last 90 days.
 
+### Quantify your coding
 
-### Uninstall
+In addition to KPM and time, we also measure time spent by project, lines of code, characters added/deleted, and your current Spotify or iTunes track. We distill this data into interesting "datagrams" that you can view in your account at [app.software.com](https://app.software.com).
 
-1. Navigate to **Plugins**
-2. **Uninstall** *Software*
+### Safe, secure, and free
 
-<!--- End: setup --->
-
-## Privacy
-
-Your code is safe! We never process, send or store your code and we respect developer privacy. We give developers full control over their personal information, and we are fully committed to the spirit of privacy frameworks, such as GDPR. For more information, please review our [Privacy Policy](https://software.com/privacy-policy).
+All of our plugins are safe, secure, and free. We do not process, send, or store your proprietary code. We only track productivity-related data, and we make it easy to see the data we collect.
