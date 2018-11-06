@@ -4,8 +4,8 @@
  */
 package com.softwareco.intellij.plugin;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import java.util.Date;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -299,10 +299,13 @@ public class SoftwareCoSessionManager {
     }
 
     public void fetchDailyKpmSessionInfo() {
-        long fromSeconds = Math.round(System.currentTimeMillis() / 1000);
+        Date d = SoftwareCoUtils.atStartOfDay(new Date());
+        long fromSeconds = Math.round(d.getTime() / 1000);
+        String sessionsApi = "/sessions?from=" + fromSeconds +"&summary=true";
+
         // make an async call to get the kpm info
         JsonObject jsonObj = SoftwareCoUtils.getResponseInfo(
-                makeApiCall("/sessions?from=" + fromSeconds +"&summary=true", false, null)).jsonObj;
+                makeApiCall(sessionsApi, false, null)).jsonObj;
         if (jsonObj != null) {
 
             float currentSessionGoalPercent = 0f;

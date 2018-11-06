@@ -295,12 +295,7 @@ public class SoftwareCo implements ApplicationComponent {
                             JsonObject fileInfo = keystrokeCount.getSourceByFileName(fileName);
                             if (documentEvent.getOldLength() > 0) {
                                 //it's a delete
-                                if (documentEvent.getOldLength() > 1) {
-                                    // it's a bulk delete
-                                    updateFileInfoValue(fileInfo, "bulkDelete", 1);
-                                } else {
-                                    updateFileInfoValue(fileInfo, "delete", 1);
-                                }
+                                updateFileInfoValue(fileInfo, "delete", 1);
                             } else {
                                 // it's an add
                                 if (documentEvent.getNewLength() > 1) {

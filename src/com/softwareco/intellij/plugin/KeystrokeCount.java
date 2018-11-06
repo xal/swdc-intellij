@@ -70,7 +70,6 @@ public class KeystrokeCount {
 
         // create one and return the one just created
         JsonObject fileInfoData = new JsonObject();
-        fileInfoData.addProperty("bulkDelete", 0);
         fileInfoData.addProperty("add", 0);
         fileInfoData.addProperty("paste", 0);
         fileInfoData.addProperty("open", 0);
