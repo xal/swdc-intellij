@@ -268,7 +268,7 @@ public class SoftwareCoUtils {
                         "set track_genre to genre of current track\n" +
                         "set track_id to database ID of current track\n" +
                         "set track_duration to duration of current track\n" +
-                        "set json to \"genre='\" & track_genre & \"';artist='\" & track_artist & \"';id='\" & track_id & \"';name='\" & track_name & \"';state='playing';duration='\" & track_duration & \"'\"\n" +
+                        "set json to \"type='itunes';genre='\" & track_genre & \"';artist='\" & track_artist & \"';id='\" & track_id & \"';name='\" & track_name & \"';state='playing';duration='\" & track_duration & \"'\"\n" +
                     "end tell\n" +
                     "return json\n" +
                 "end buildItunesRecord\n" +
@@ -279,7 +279,7 @@ public class SoftwareCoUtils {
                         "set track_duration to duration of current track\n" +
                         "set track_id to id of current track\n" +
                         "set track_duration to duration of current track\n" +
-                        "set json to \"genre='';artist='\" & track_artist & \"';id='\" & track_id & \"';name='\" & track_name & \"';state='playing';duration='\" & track_duration & \"'\"\n" +
+                        "set json to \"type='spotify';genre='';artist='\" & track_artist & \"';id='\" & track_id & \"';name='\" & track_name & \"';state='playing';duration='\" & track_duration & \"'\"\n" +
                     "end tell\n" +
                     "return json\n" +
                 "end buildSpotifyRecord\n\n" +

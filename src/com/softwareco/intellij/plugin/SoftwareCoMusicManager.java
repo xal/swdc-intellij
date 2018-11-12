@@ -55,6 +55,12 @@ public class SoftwareCoMusicManager {
             String existingTrackId = (currentTrack.has("id")) ? currentTrack.get("id").getAsString() : null;
             String trackId = (trackInfo != null && trackInfo.has("id")) ? trackInfo.get("id").getAsString() : null;
 
+            if (trackId != null && trackId.indexOf("spotify") == -1 && trackId.indexOf("itunes") == -1) {
+                // update it to itunes since spotify uses that in the id
+                trackId = "itunes:track:" + trackId;
+                trackInfo.addProperty("id", trackId);
+            }
+
             Integer offset  = ZonedDateTime.now().getOffset().getTotalSeconds();
             long now = Math.round(System.currentTimeMillis() / 1000);
             long local_start = now + offset;
