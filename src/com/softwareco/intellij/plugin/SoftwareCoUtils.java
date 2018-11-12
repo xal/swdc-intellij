@@ -256,9 +256,9 @@ public class SoftwareCoUtils {
         return iconWidget;
     }
 
-    public static String getCurrentMusicTrack() {
+    public static JsonObject getCurrentMusicTrack() {
         if (!SoftwareCo.isMac()) {
-            return SoftwareCo.gson.toJson(new JsonObject());
+            return new JsonObject();
         }
         String script =
                 "on buildItunesRecord(appState)\n" +
@@ -267,7 +267,8 @@ public class SoftwareCoUtils {
                         "set track_name to name of current track\n" +
                         "set track_genre to genre of current track\n" +
                         "set track_id to database ID of current track\n" +
-                        "set json to \"genre='\" & track_genre & \"';artist='\" & track_artist & \"';id='\" & track_id & \"';name='\" & track_name & \"';state='playing'\"\n" +
+                        "set track_duration to duration of current track\n" +
+                        "set json to \"genre='\" & track_genre & \"';artist='\" & track_artist & \"';id='\" & track_id & \"';name='\" & track_name & \"';state='playing';duration='\" & track_duration & \"'\"\n" +
                     "end tell\n" +
                     "return json\n" +
                 "end buildItunesRecord\n" +
@@ -277,7 +278,8 @@ public class SoftwareCoUtils {
                         "set track_name to name of current track\n" +
                         "set track_duration to duration of current track\n" +
                         "set track_id to id of current track\n" +
-                        "set json to \"genre='';artist='\" & track_artist & \"';id='\" & track_id & \"';name='\" & track_name & \"';state='playing'\"\n" +
+                        "set track_duration to duration of current track\n" +
+                        "set json to \"genre='';artist='\" & track_artist & \"';id='\" & track_id & \"';name='\" & track_name & \"';state='playing';duration='\" & track_duration & \"'\"\n" +
                     "end tell\n" +
                     "return json\n" +
                 "end buildSpotifyRecord\n\n" +
@@ -333,7 +335,7 @@ public class SoftwareCoUtils {
             }
 
         }
-        return SoftwareCo.gson.toJson(jsonObj);
+        return jsonObj;
     }
 
     /**

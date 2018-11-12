@@ -77,8 +77,10 @@ public class SoftwareCo implements ApplicationComponent {
     private static KeystrokeManager keystrokeMgr;
 
     private SoftwareCoSessionManager sessionMgr = SoftwareCoSessionManager.getInstance();
+    private SoftwareCoMusicManager musicMgr = SoftwareCoMusicManager.getInstance();
 
     private Timer kpmFetchTimer;
+    private Timer trackInfoTimer;
 
     public SoftwareCo() {
     }
@@ -117,7 +119,13 @@ public class SoftwareCo implements ApplicationComponent {
 
         // run the kpm fetch task every minute
         kpmFetchTimer = new Timer();
-        kpmFetchTimer.scheduleAtFixedRate(new ProcessKpmSessionInfoTask(), 60 * 1000, 60 * 1000);
+        kpmFetchTimer.scheduleAtFixedRate(
+                new ProcessKpmSessionInfoTask(), 60 * 1000, 60 * 1000);
+
+        // run the music manager task every 15 seconds
+        trackInfoTimer = new Timer();
+        trackInfoTimer.scheduleAtFixedRate(
+                new ProcessMusicTrackInfoTask(), 6000, 15 * 1000);
 
         READY = true;
     }
@@ -137,6 +145,16 @@ public class SoftwareCo implements ApplicationComponent {
             ApplicationManager.getApplication().invokeLater(new Runnable() {
                 public void run() {
                     sessionMgr.fetchDailyKpmSessionInfo();
+                }
+            });
+        }
+    }
+
+    private class ProcessMusicTrackInfoTask extends TimerTask {
+        public void run() {
+            ApplicationManager.getApplication().invokeLater(new Runnable() {
+                public void run() {
+                    musicMgr.processMusicTrackInfo();
                 }
             });
         }
@@ -312,13 +330,6 @@ public class SoftwareCo implements ApplicationComponent {
                                 if (resource.has("identifier")) {
                                     wrapper.getKeystrokeCount().getProject().updateResource(resource);
                                     wrapper.getKeystrokeCount().getProject().setIdentifier(resource.get("identifier").getAsString());
-                                }
-                            }
-                            String trackInfo = fileInfo.get("trackInfo").getAsString();
-                            if ((trackInfo == null || trackInfo.equals(""))) {
-                                String currentTrack = SoftwareCoUtils.getCurrentMusicTrack();
-                                if (currentTrack != null && !currentTrack.equals("")) {
-                                    updateFileInfoStringValue(fileInfo, "trackInfo", currentTrack);
                                 }
                             }
 
