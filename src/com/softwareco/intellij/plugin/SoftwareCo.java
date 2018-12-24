@@ -44,6 +44,7 @@ import java.util.concurrent.*;
 
 /**
  * Intellij Plugin Application
+ * ....
  */
 public class SoftwareCo implements ApplicationComponent {
 
