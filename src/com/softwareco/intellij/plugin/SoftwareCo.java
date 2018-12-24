@@ -9,8 +9,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.intellij.ide.plugins.PluginManager;
-import com.intellij.openapi.actionSystem.ActionManager;
-import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
@@ -22,10 +20,8 @@ import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
-import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
-import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.PlatformUtils;
@@ -37,14 +33,7 @@ import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.*;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -81,6 +70,7 @@ public class SoftwareCo implements ApplicationComponent {
 
     private Timer kpmFetchTimer;
     private Timer trackInfoTimer;
+    private Timer repoInfoTimer;
 
     public SoftwareCo() {
     }
@@ -117,15 +107,22 @@ public class SoftwareCo implements ApplicationComponent {
             }
         }).start();
 
+        long one_min = 1000 * 60;
+        long one_hour = one_min * 60;
+
         // run the kpm fetch task every minute
         kpmFetchTimer = new Timer();
         kpmFetchTimer.scheduleAtFixedRate(
-                new ProcessKpmSessionInfoTask(), 60 * 1000, 60 * 1000);
+                new ProcessKpmSessionInfoTask(), one_min, one_min);
 
         // run the music manager task every 15 seconds
         trackInfoTimer = new Timer();
         trackInfoTimer.scheduleAtFixedRate(
-                new ProcessMusicTrackInfoTask(), 6000, 15 * 1000);
+                new ProcessMusicTrackInfoTask(), one_min, 15 * 1000);
+
+        repoInfoTimer = new Timer();
+        repoInfoTimer.scheduleAtFixedRate(
+                new ProcessRepoInfoTask(), one_min * 2, one_hour);
 
         READY = true;
     }
@@ -158,6 +155,29 @@ public class SoftwareCo implements ApplicationComponent {
                 }
             });
         }
+    }
+
+    private class ProcessRepoInfoTask extends TimerTask {
+        public void run() {
+            ApplicationManager.getApplication().invokeLater(new Runnable() {
+                public void run() {
+                    SoftwareCoRepoManager.getInstance().processRepoMembersInfo(getRootPath());
+                }
+            });
+        }
+    }
+
+    protected String getRootPath() {
+        Editor[] editors = EditorFactory.getInstance().getAllEditors();
+        if (editors != null && editors.length > 0) {
+            for (Editor editor : editors) {
+                Project project = editor.getProject();
+                if (project != null && project.getBaseDir() != null) {
+                    return project.getBaseDir().getPath();
+                }
+            }
+        }
+        return null;
     }
 
     private void setupEventListeners() {

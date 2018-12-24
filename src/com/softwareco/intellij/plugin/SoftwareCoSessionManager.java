@@ -403,7 +403,7 @@ public class SoftwareCoSessionManager {
         }
     }
 
-    private static HttpResponse makeApiCall(String api, boolean isPost, String payload) {
+    public static HttpResponse makeApiCall(String api, boolean isPost, String payload) {
 
         if (!SoftwareCo.TELEMTRY_ON) {
             log.info("Software.com telemetry is currently paused. Enable to view KPM metrics");
