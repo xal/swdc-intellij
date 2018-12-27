@@ -182,21 +182,18 @@ public class SoftwareCoRepoManager {
                 }
 
                 if (commits != null && commits.size() > 0) {
-                    if (commits.size() > 100) {
-                        // send it in batches of 100
-                        JsonArray batch = new JsonArray();
-                        for (int i = 0; i < commits.size(); i++) {
-                            batch.add(commits.get(i));
-                            if (i > 0 && i % 100 == 0) {
-                                this.processCommits(batch, identifier, tag, branch);
-                                batch = new JsonArray();
-                            }
-                        }
-                        if (batch.size() > 0) {
+                    // send it in batches of 100
+                    JsonArray batch = new JsonArray();
+                    for (int i = 0; i < commits.size(); i++) {
+                        batch.add(commits.get(i));
+                        if (i > 0 && i % 100 == 0) {
                             this.processCommits(batch, identifier, tag, branch);
+                            batch = new JsonArray();
                         }
                     }
-
+                    if (batch.size() > 0) {
+                        this.processCommits(batch, identifier, tag, branch);
+                    }
                 }
             }
         }
