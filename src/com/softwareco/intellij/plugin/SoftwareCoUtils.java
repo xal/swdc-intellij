@@ -11,10 +11,8 @@ import java.util.Calendar;
 import java.util.Date;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
-import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.wm.StatusBar;
-import com.intellij.openapi.wm.StatusBarWidget;
 import com.intellij.openapi.wm.WindowManager;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
@@ -23,8 +21,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.io.*;
@@ -84,6 +80,8 @@ public class SoftwareCoUtils {
                             responseInfo.jsonObj = jsonObj;
                         } catch (Exception e) {
                             // the string may be a simple message like "Unauthorized"
+                            responseInfo.jsonStr = jsonStr;
+                            responseInfo.isOk = false;
                         }
                     }
                 }

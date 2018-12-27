@@ -72,6 +72,7 @@ public class SoftwareCo implements ApplicationComponent {
     private Timer kpmFetchTimer;
     private Timer trackInfoTimer;
     private Timer repoInfoTimer;
+    private Timer repoCommitsTimer;
 
     public SoftwareCo() {
     }
@@ -125,6 +126,10 @@ public class SoftwareCo implements ApplicationComponent {
         repoInfoTimer.scheduleAtFixedRate(
                 new ProcessRepoInfoTask(), one_min * 2, one_hour);
 
+        repoCommitsTimer = new Timer();
+        repoCommitsTimer.scheduleAtFixedRate(
+                new ProcessRepoCommitsTask(), one_min * 3, one_hour + one_min);
+
         READY = true;
     }
 
@@ -163,6 +168,17 @@ public class SoftwareCo implements ApplicationComponent {
             ApplicationManager.getApplication().invokeLater(new Runnable() {
                 public void run() {
                     SoftwareCoRepoManager.getInstance().processRepoMembersInfo(getRootPath());
+                }
+            });
+        }
+    }
+
+    private class ProcessRepoCommitsTask extends TimerTask {
+        public void run() {
+            ApplicationManager.getApplication().invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    SoftwareCoRepoManager.getInstance().getHistoricalCommits(getRootPath());
                 }
             });
         }
@@ -466,7 +482,6 @@ public class SoftwareCo implements ApplicationComponent {
                     //
                     // clone it to send to the http task
                     KeystrokeCount clone = wrapper.getKeystrokeCount().clone();
-                    log.info("Resetting keystroke count data for project name wrapper: " + clone.getProject().getName());
                     keystrokeMgr.resetData(clone.getProject().getName());
                     if (clone.hasData()) {
 
