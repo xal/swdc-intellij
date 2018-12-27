@@ -246,7 +246,7 @@ public class SoftwareCoRepoManager {
             String tag = (resource.has("tag")) ? resource.get("tag").getAsString() : "";
             String branch = (resource.has("branch")) ? resource.get("branch").getAsString(): "";
 
-            String[] identifierCmd = { "git", "log", "--pretty='%an,%ae'" };
+            String[] identifierCmd = { "git", "log", "--pretty=%an,%ae" };
             String devOutput = SoftwareCoUtils.runCommand(identifierCmd, projectDir);
 
             // split the output
