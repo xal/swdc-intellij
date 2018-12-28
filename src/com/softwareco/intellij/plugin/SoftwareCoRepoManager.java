@@ -14,8 +14,6 @@ public class SoftwareCoRepoManager {
 
     private static SoftwareCoRepoManager instance = null;
 
-    private Map<String, JsonObject> latestCommitMap = new HashMap<>();
-
     private JsonObject currentTrack = new JsonObject();
 
     public static SoftwareCoRepoManager getInstance() {
@@ -29,7 +27,7 @@ public class SoftwareCoRepoManager {
         return identifier + "_" + branch + "_" + tag;
     }
 
-    public void getLatestCommit(String projectDir) {
+    public JsonObject getLatestCommit(String projectDir) {
         JsonObject resource = SoftwareCoUtils.getResourceInfo(projectDir);
         if (resource.has("identifier")) {
             String identifier = resource.get("identifier").getAsString();
@@ -38,32 +36,32 @@ public class SoftwareCoRepoManager {
 
             String repoKey = this.buildRepoKey(identifier, branch, tag);
 
-            if (!latestCommitMap.containsKey(repoKey) || latestCommitMap.get(repoKey) == null) {
-                try {
-                    String encodedIdentifier = URLEncoder.encode(identifier, "UTF-8");
-                    String encodedTag = URLEncoder.encode(tag, "UTF-8");
-                    String encodedBranch = URLEncoder.encode(branch, "UTF-8");
 
-                    String qryString = "identifier=" + encodedIdentifier;
-                    qryString += "&tag=" + encodedTag;
-                    qryString += "&branch=" + encodedBranch;
+            try {
+                String encodedIdentifier = URLEncoder.encode(identifier, "UTF-8");
+                String encodedTag = URLEncoder.encode(tag, "UTF-8");
+                String encodedBranch = URLEncoder.encode(branch, "UTF-8");
 
-                    SoftwareCoUtils.HttpResponseInfo responseData = SoftwareCoUtils.getResponseInfo(
-                            SoftwareCoSessionManager.makeApiCall("/commits/latest?" + qryString, false, null));
-                    if (responseData != null && responseData.isOk) {
-                        JsonObject payload = responseData.jsonObj;
-                        // will get a single commit object back with the following attributes
-                        // commitId, message, changes, timestamp
-                        JsonObject latestCommit = payload.get("commit").getAsJsonObject();
-                        latestCommitMap.put(repoKey, latestCommit);
-                    } else {
-                        log.debug("Software.com: Unable to fetch latest commit info");
-                    }
-                } catch (Exception e) {
-                    //
+                String qryString = "identifier=" + encodedIdentifier;
+                qryString += "&tag=" + encodedTag;
+                qryString += "&branch=" + encodedBranch;
+
+                SoftwareCoUtils.HttpResponseInfo responseData = SoftwareCoUtils.getResponseInfo(
+                        SoftwareCoSessionManager.makeApiCall("/commits/latest?" + qryString, false, null));
+                if (responseData != null && responseData.isOk) {
+                    JsonObject payload = responseData.jsonObj;
+                    // will get a single commit object back with the following attributes
+                    // commitId, message, changes, timestamp
+                    JsonObject latestCommit = payload.get("commit").getAsJsonObject();
+                    return latestCommit;
+                } else {
+                    log.debug("Software.com: Unable to fetch latest commit info");
                 }
+            } catch (Exception e) {
+                //
             }
         }
+        return null;
     }
 
     public void getHistoricalCommits(String projectDir) {
@@ -75,10 +73,9 @@ public class SoftwareCoRepoManager {
             String email = (resource.has("email")) ? resource.get("email").getAsString() : "";
             String repoKey = this.buildRepoKey(identifier, branch, tag);
 
-            getLatestCommit(projectDir);
+            JsonObject latestCommit = getLatestCommit(projectDir);
 
             String sinceOption = null;
-            JsonObject latestCommit = latestCommitMap.get(repoKey);
             if (latestCommit != null && latestCommit.has("timestamp")) {
                 long unixTs = latestCommit.get("timestamp").getAsLong();
                 sinceOption = "--since=" + unixTs;
