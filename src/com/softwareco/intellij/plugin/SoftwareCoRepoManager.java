@@ -145,34 +145,39 @@ public class SoftwareCoRepoManager {
                         }
                     } else if (commit != null && line.indexOf("|") != -1) {
                         line = line.replaceAll("\\s+"," ");
-                        String[] fileInfos = line.split(" ");
-                        if (fileInfos != null && fileInfos.length > 3) {
-                            String file = fileInfos[0].trim();
-                            String addAndDeletes = fileInfos[3].trim();
-                            // count the number of plus signs and negative signs to find
-                            // out how many additions and deletions per file
-                            int len = addAndDeletes.length();
-                            int lastPlusIdx = addAndDeletes.lastIndexOf("+");
-                            int insertions = 0;
-                            int deletions = 0;
-                            if (lastPlusIdx != -1) {
-                                insertions = lastPlusIdx + 1;
-                                deletions = len - insertions;
-                            } else if (len > 0) {
-                                // all deletions
-                                deletions = len;
-                            }
-                            JsonObject fileChanges = new JsonObject();
-                            fileChanges.addProperty("insertions", insertions);
-                            fileChanges.addProperty("deletions", deletions);
-                            JsonObject changesObj = commit.get("changes").getAsJsonObject();
-                            changesObj.add(file, fileChanges);
+                        String[] lineInfos = line.split("|");
 
-                            JsonObject swftTotalsObj = changesObj.get("__sftwTotal__").getAsJsonObject();
-                            int insertionTotal = swftTotalsObj.get("insertions").getAsInt() + insertions;
-                            int deletionsTotal = swftTotalsObj.get("deletions").getAsInt() + deletions;
-                            swftTotalsObj.addProperty("insertions", insertionTotal);
-                            swftTotalsObj.addProperty("deletions", deletionsTotal);
+                        if (lineInfos != null && lineInfos.length > 1) {
+                            String file = lineInfos[0].trim();
+                            String metricsLine = lineInfos[1].trim();
+                            String[] metricInfos = metricsLine.split(" ");
+                            if (metricInfos != null && metricInfos.length > 1) {
+                                String addAndDeletes = metricInfos[1].trim();
+                                // count the number of plus signs and negative signs to find
+                                // out how many additions and deletions per file
+                                int len = addAndDeletes.length();
+                                int lastPlusIdx = addAndDeletes.lastIndexOf("+");
+                                int insertions = 0;
+                                int deletions = 0;
+                                if (lastPlusIdx != -1) {
+                                    insertions = lastPlusIdx + 1;
+                                    deletions = len - insertions;
+                                } else if (len > 0) {
+                                    // all deletions
+                                    deletions = len;
+                                }
+                                JsonObject fileChanges = new JsonObject();
+                                fileChanges.addProperty("insertions", insertions);
+                                fileChanges.addProperty("deletions", deletions);
+                                JsonObject changesObj = commit.get("changes").getAsJsonObject();
+                                changesObj.add(file, fileChanges);
+
+                                JsonObject swftTotalsObj = changesObj.get("__sftwTotal__").getAsJsonObject();
+                                int insertionTotal = swftTotalsObj.get("insertions").getAsInt() + insertions;
+                                int deletionsTotal = swftTotalsObj.get("deletions").getAsInt() + deletions;
+                                swftTotalsObj.addProperty("insertions", insertionTotal);
+                                swftTotalsObj.addProperty("deletions", deletionsTotal);
+                            }
                         }
                     }
                 }
