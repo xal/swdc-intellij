@@ -11,9 +11,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.ui.Messages;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.*;
 import org.apache.http.entity.StringEntity;
 
 import java.io.*;
@@ -91,7 +89,7 @@ public class SoftwareCoSessionManager {
         if (tokenVal == null) {
             isOk = false;
         } else {
-            isOk = SoftwareCoUtils.getResponseInfo(makeApiCall("/users/ping/", false, null)).isOk;
+            isOk = SoftwareCoUtils.getResponseInfo(makeApiCall("/users/ping/", HttpGet.METHOD_NAME, null)).isOk;
         }
         if (!isOk) {
             // update the status bar with Sign Up message
@@ -102,7 +100,7 @@ public class SoftwareCoSessionManager {
     }
 
     private boolean isServerOnline() {
-        return SoftwareCoUtils.getResponseInfo(makeApiCall("/ping", false, null)).isOk;
+        return SoftwareCoUtils.getResponseInfo(makeApiCall("/ping", HttpGet.METHOD_NAME, null)).isOk;
     }
 
     public void storePayload(String payload) {
@@ -152,7 +150,7 @@ public class SoftwareCoSessionManager {
                     String payloads = sb.toString();
                     payloads = payloads.substring(0, payloads.lastIndexOf(","));
                     payloads = "[" + payloads + "]";
-                    if (SoftwareCoUtils.getResponseInfo(makeApiCall("/data/batch", true, payloads)).isOk) {
+                    if (SoftwareCoUtils.getResponseInfo(makeApiCall("/data/batch", HttpPost.METHOD_NAME, payloads)).isOk) {
 
                         // delete the file
                         this.deleteFile(dataStoreFile);
@@ -273,7 +271,7 @@ public class SoftwareCoSessionManager {
         }
 
         JsonObject responseData = SoftwareCoUtils.getResponseInfo(
-                makeApiCall("/users/plugin/confirm?token=" + tokenVal, false, null)).jsonObj;
+                makeApiCall("/users/plugin/confirm?token=" + tokenVal, HttpGet.METHOD_NAME, null)).jsonObj;
         if (responseData != null && responseData.has("jwt")) {
             // update the jwt, user and eclipse_lastUpdateTime
             setItem("jwt", responseData.get("jwt").getAsString());
@@ -305,7 +303,7 @@ public class SoftwareCoSessionManager {
 
         // make an async call to get the kpm info
         JsonObject jsonObj = SoftwareCoUtils.getResponseInfo(
-                makeApiCall(sessionsApi, false, null)).jsonObj;
+                makeApiCall(sessionsApi, HttpGet.METHOD_NAME, null)).jsonObj;
         if (jsonObj != null) {
 
             float currentSessionGoalPercent = 0f;
@@ -403,7 +401,7 @@ public class SoftwareCoSessionManager {
         }
     }
 
-    public static HttpResponse makeApiCall(String api, boolean isPost, String payload) {
+    public static HttpResponse makeApiCall(String api, String httpMethodName, String payload) {
 
         if (!SoftwareCo.TELEMTRY_ON) {
             log.info("Software.com telemetry is currently paused. Enable to view KPM metrics");
@@ -411,7 +409,7 @@ public class SoftwareCoSessionManager {
         }
 
         try {
-            SessionManagerHttpClient sendTask = new SessionManagerHttpClient(api, isPost, payload);
+            SessionManagerHttpClient sendTask = new SessionManagerHttpClient(api, httpMethodName, payload);
 
             Future<HttpResponse> response = SoftwareCoUtils.executorService.submit(sendTask);
 
@@ -445,11 +443,11 @@ public class SoftwareCoSessionManager {
 
         private String payload = null;
         private String api = null;
-        private boolean isPost = false;
+        private String httpMethodName = HttpGet.METHOD_NAME;
 
-        public SessionManagerHttpClient(String api, boolean isPost, String payload) {
+        public SessionManagerHttpClient(String api, String httpMethodName, String payload) {
             this.payload = payload;
-            this.isPost = isPost;
+            this.httpMethodName = httpMethodName;
             this.api = api;
         }
 
@@ -460,9 +458,7 @@ public class SoftwareCoSessionManager {
 
                 HttpResponse response = null;
 
-                if (!isPost) {
-                    req = new HttpGet(SoftwareCoUtils.api_endpoint + "" + this.api);
-                } else {
+                if (httpMethodName.equals(HttpPost.METHOD_NAME)) {
                     req = new HttpPost(SoftwareCoUtils.api_endpoint + "" + this.api);
 
                     if (payload != null) {
@@ -470,8 +466,12 @@ public class SoftwareCoSessionManager {
                         // add the json payload
                         //
                         StringEntity params = new StringEntity(payload);
-                        ((HttpPost)req).setEntity(params);
+                        ((HttpPost) req).setEntity(params);
                     }
+                } else if (httpMethodName.equals(HttpDelete.METHOD_NAME)) {
+                    req = new HttpDelete(SoftwareCoUtils.api_endpoint + "" + this.api);
+                } else {
+                    req = new HttpGet(SoftwareCoUtils.api_endpoint + "" + this.api);
                 }
 
                 String jwtToken = getItem("jwt");

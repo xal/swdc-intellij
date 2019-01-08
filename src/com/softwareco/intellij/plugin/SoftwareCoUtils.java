@@ -39,6 +39,10 @@ public class SoftwareCoUtils {
     public static ExecutorService executorService;
     public static HttpClient httpClient;
 
+    // sublime = 1, vs code = 2, eclipse = 3, intellij = 4, visual studio = 6, atom = 7
+    public static int pluginId = 4;
+    public static String version = "0.1.49";
+
     private final static int EOF = -1;
 
     static {

@@ -4,6 +4,8 @@ import com.google.common.collect.Maps;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.intellij.openapi.diagnostic.Logger;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 
 import java.net.URLEncoder;
 import java.util.*;
@@ -47,7 +49,7 @@ public class SoftwareCoRepoManager {
                 qryString += "&branch=" + encodedBranch;
 
                 SoftwareCoUtils.HttpResponseInfo responseData = SoftwareCoUtils.getResponseInfo(
-                        SoftwareCoSessionManager.makeApiCall("/commits/latest?" + qryString, false, null));
+                        SoftwareCoSessionManager.makeApiCall("/commits/latest?" + qryString, HttpGet.METHOD_NAME, null));
                 if (responseData != null && responseData.isOk) {
                     JsonObject payload = responseData.jsonObj;
                     // will get a single commit object back with the following attributes
@@ -214,7 +216,7 @@ public class SoftwareCoRepoManager {
 
             SoftwareCoUtils.HttpResponseInfo responseData = SoftwareCoUtils.getResponseInfo(
                     SoftwareCoSessionManager.makeApiCall(
-                            "/commits", true, commitDataStr));
+                            "/commits", HttpPost.METHOD_NAME, commitDataStr));
 
             if (responseData != null) {
 
@@ -281,7 +283,7 @@ public class SoftwareCoRepoManager {
                     String repoDataStr = repoData.toString();
                     JsonObject responseData = SoftwareCoUtils.getResponseInfo(
                             SoftwareCoSessionManager.makeApiCall(
-                                    "/repo/members", true, repoDataStr)).jsonObj;
+                                    "/repo/members", HttpPost.METHOD_NAME, repoDataStr)).jsonObj;
 
                     // {"status":"success","message":"Updated repo members"}
                     // {"status":"failed","data":"Unable to process repo information"}

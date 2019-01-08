@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>com.softwareco.intellij.plugin</id>
   <name>Software.com</name>
-  <version>0.1.48</version>
+  <version>0.1.49</version>
   <vendor email="support@software.com" url="https://software.com">Software.com</vendor>
 
   <description><![CDATA[
@@ -9,7 +9,7 @@
     ]]></description>
 
   <change-notes><![CDATA[
-      Software.com release 0.1.48<br>
+      Software.com release 0.1.49<br>
     ]]>
   </change-notes>
 
@@ -29,6 +29,7 @@
 
   <extensions defaultExtensionNs="com.intellij">
     <!-- Add your extensions here -->
+    <postStartupActivity implementation="com.softwareco.intellij.plugin.PluginPostStartupActivity" />
   </extensions>
 
   <actions>

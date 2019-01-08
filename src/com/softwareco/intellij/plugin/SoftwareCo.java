@@ -9,6 +9,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.intellij.ide.plugins.PluginManager;
+import com.intellij.ide.plugins.PluginStateListener;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
@@ -200,6 +201,7 @@ public class SoftwareCo implements ApplicationComponent {
     private void setupEventListeners() {
         ApplicationManager.getApplication().invokeLater(new Runnable(){
             public void run() {
+
                 // edit document
                 EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new SoftwareCoDocumentListener());
 

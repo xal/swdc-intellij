@@ -16,12 +16,11 @@ public class KeystrokeCount {
 
     // TODO: backend driven, we should look at getting a list of types at some point
     private String type = "Events";
-    // sublime = 1, vs code = 2, eclipse = 3, intellij = 4, visual studio = 6, atom = 7
-    private int pluginId = 4;
-    private String version = "0.1.9";
 
     // non-hardcoded attributes
     private JsonObject source = new JsonObject();
+    private String version;
+    private int pluginId;
     private String keystrokes = "0"; // keystroke count
     // start and end are in seconds
     private long start;
@@ -34,7 +33,10 @@ public class KeystrokeCount {
         String appVersion = PluginManager.getPlugin(PluginId.getId("com.softwareco.intellij.plugin")).getVersion();
         if (appVersion != null) {
             this.version = appVersion;
+        } else {
+            this.version = SoftwareCoUtils.version;
         }
+        this.pluginId = SoftwareCoUtils.pluginId;
     }
 
     public KeystrokeCount clone() {
