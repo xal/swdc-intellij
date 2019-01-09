@@ -5,6 +5,7 @@
 package com.softwareco.intellij.plugin;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.time.ZonedDateTime;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -192,8 +193,10 @@ public class SoftwareCoMusicManager {
                             if (httpResponse.getEntity() != null) {
                                 try {
                                     entityResult = EntityUtils.toString(httpResponse.getEntity());
-                                } catch (ParseException | IOException e) {
-                                    log.error("Software.com: Unable to parse the non-null plugin manager response.", e);
+                                } catch (SocketException e) {
+                                    // no need to post an error, we're just unable to communicate right now
+                                } catch (Exception e) {
+                                    log.error("Software.com: error retrieving response.", e.getMessage());
                                 }
                             }
 

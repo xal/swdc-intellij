@@ -35,6 +35,7 @@ import org.apache.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -523,8 +524,10 @@ public class SoftwareCo implements ApplicationComponent {
                 if (r.getEntity() != null) {
                     try {
                         entityResult = EntityUtils.toString(r.getEntity());
+                    } catch (SocketException e) {
+                        // no need to post an error, we're just unable to communicate right now
                     } catch (Exception e) {
-                        log.debug("Software.com: Unable to parse the non-null plugin manager response, reason: " + e.toString());
+                        log.error("Software.com: error retrieving response.", e.getMessage());
                     }
                 }
                 int responseStatus = r.getStatusLine().getStatusCode();
