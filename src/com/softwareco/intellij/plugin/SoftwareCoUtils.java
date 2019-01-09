@@ -45,6 +45,9 @@ public class SoftwareCoUtils {
 
     private final static int EOF = -1;
 
+    private static boolean fetchingResourceInfo = false;
+    private static JsonObject lastResourceInfo = new JsonObject();
+
     static {
         // initialize the HttpClient
         RequestConfig config = RequestConfig.custom()
@@ -380,8 +383,14 @@ public class SoftwareCoUtils {
         return count;
     }
 
+    // get the git resource config information
     public static JsonObject getResourceInfo(String projectDir) {
-        JsonObject jsonObj = new JsonObject();
+        if (fetchingResourceInfo) {
+            return null;
+        }
+
+        fetchingResourceInfo = true;
+        lastResourceInfo = new JsonObject();
 
         // is the project dir avail?
         if (projectDir != null && !projectDir.equals("")) {
@@ -399,17 +408,19 @@ public class SoftwareCoUtils {
                 String tag = runCommand(tagCmd, projectDir);
 
                 if (StringUtils.isNotBlank(branch) && StringUtils.isNotBlank(identifier)) {
-                    jsonObj.addProperty("identifier", identifier);
-                    jsonObj.addProperty("branch", branch);
-                    jsonObj.addProperty("email", email);
-                    jsonObj.addProperty("tag", tag);
+                    lastResourceInfo.addProperty("identifier", identifier);
+                    lastResourceInfo.addProperty("branch", branch);
+                    lastResourceInfo.addProperty("email", email);
+                    lastResourceInfo.addProperty("tag", tag);
                 }
             } catch (Exception e) {
                 //
             }
         }
 
-        return jsonObj;
+        fetchingResourceInfo = false;
+
+        return lastResourceInfo;
     }
 
 }

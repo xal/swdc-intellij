@@ -9,7 +9,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.intellij.ide.plugins.PluginManager;
-import com.intellij.ide.plugins.PluginStateListener;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
@@ -23,6 +22,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.PlatformUtils;
@@ -96,13 +96,10 @@ public class SoftwareCo implements ApplicationComponent {
         setupScheduledProcessor();
         log.info("Software.com: Finished initializing SoftwareCo plugin");
 
-        SoftwareCoUtils.setStatusLineMessage(
-                "Software.com", "Click to see more from Software.com");
-
-        // run the initial calls in 5 seconds
+        // run the initial calls in 6 seconds
         new Thread(() -> {
             try {
-                Thread.sleep(1000 * 10);
+                Thread.sleep(1000 * 6);
                 initializeCalls();
             }
             catch (Exception e){
@@ -216,6 +213,9 @@ public class SoftwareCo implements ApplicationComponent {
                         keystrokeMgr.addKeystrokeWrapperIfNoneExists(project);
                     }
                 }
+
+                SoftwareCoUtils.setStatusLineMessage(
+                        "Software.com", "Click to see more from Software.com");
             }
         });
     }
@@ -366,7 +366,7 @@ public class SoftwareCo implements ApplicationComponent {
                             if (wrapper.getKeystrokeCount() != null && wrapper.getKeystrokeCount().getProject() != null
                                     && !wrapper.getKeystrokeCount().getProject().hasResource()) {
                                 JsonObject resource = SoftwareCoUtils.getResourceInfo(projectFilepath);
-                                if (resource.has("identifier")) {
+                                if (resource != null && resource.has("identifier")) {
                                     wrapper.getKeystrokeCount().getProject().updateResource(resource);
                                     wrapper.getKeystrokeCount().getProject().setIdentifier(resource.get("identifier").getAsString());
                                 }

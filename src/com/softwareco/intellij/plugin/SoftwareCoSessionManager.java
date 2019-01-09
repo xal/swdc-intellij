@@ -9,6 +9,9 @@ import java.util.Date;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.EditorFactory;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.*;
@@ -217,12 +220,25 @@ public class SoftwareCoSessionManager {
         }
     }
 
+    private Project getCurrentProject() {
+        Project project = null;
+        Editor[] editors = EditorFactory.getInstance().getAllEditors();
+        if (editors != null && editors.length > 0) {
+            project = editors[0].getProject();
+        }
+        return project;
+    }
+
     public void checkUserAuthenticationStatus() {
+        Project project = this.getCurrentProject();
+
         boolean isOnline = isServerOnline();
         boolean authenticated = isAuthenticated();
         boolean pastThresholdTime = isPastTimeThreshold();
 
-        if (isOnline && !authenticated && pastThresholdTime && !confirmWindowOpen) {
+        boolean requiresLogin = (isOnline && !authenticated && pastThresholdTime && !confirmWindowOpen) ? true : false;
+
+        if (requiresLogin && project != null) {
             // set the last update time so we don't try to ask too frequently
             setItem("eclipse_lastUpdateTime", String.valueOf(System.currentTimeMillis()));
             confirmWindowOpen = true;
@@ -231,10 +247,12 @@ public class SoftwareCoSessionManager {
 
             final String dialogMsg = msg;
 
+            Project currentProject = this.getCurrentProject();
             ApplicationManager.getApplication().invokeLater(new Runnable() {
                 public void run() {
                     // ask to download the PM
                     int options = Messages.showDialog(
+                            currentProject,
                             msg,
                             "Software", new String[]{"Not now", "Log in"},
                             1, Messages.getInformationIcon());
@@ -244,7 +262,17 @@ public class SoftwareCoSessionManager {
                     confirmWindowOpen = false;
                 }
             });
-
+        } else if (requiresLogin && project == null) {
+            // try again in 25 seconds
+            new Thread(() -> {
+                try {
+                    Thread.sleep(1000 * 25);
+                    checkUserAuthenticationStatus();
+                }
+                catch (Exception e){
+                    System.err.println(e);
+                }
+            }).start();
         }
     }
 
@@ -353,6 +381,9 @@ public class SoftwareCoSessionManager {
             if (lastKpm > 0 || currentSessionMinutes > 0) {
                 String kpmStr = String.valueOf(lastKpm) + " KPM,";
                 String kpmIcon = (inFlow) ? "rocket.png" : null;
+                if (kpmIcon == null) {
+                    kpmStr = "<S> " + kpmStr;
+                }
 
                 SoftwareCoUtils.setStatusLineMessage(
                         kpmIcon, kpmStr, sessionTimeIcon, sessionTimeStr, "Click to see more from Software.com");

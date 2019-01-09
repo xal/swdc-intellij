@@ -31,7 +31,7 @@ public class SoftwareCoRepoManager {
 
     public JsonObject getLatestCommit(String projectDir) {
         JsonObject resource = SoftwareCoUtils.getResourceInfo(projectDir);
-        if (resource.has("identifier")) {
+        if (resource != null && resource.has("identifier")) {
             String identifier = resource.get("identifier").getAsString();
             String tag = (resource.has("tag")) ? resource.get("tag").getAsString() : "";
             String branch = (resource.has("branch")) ? resource.get("branch").getAsString() : "";
@@ -68,7 +68,7 @@ public class SoftwareCoRepoManager {
 
     public void getHistoricalCommits(String projectDir) {
         JsonObject resource = SoftwareCoUtils.getResourceInfo(projectDir);
-        if (resource.has("identifier")) {
+        if (resource != null && resource.has("identifier")) {
             String identifier = resource.get("identifier").getAsString();
             String tag = (resource.has("tag")) ? resource.get("tag").getAsString() : "";
             String branch = (resource.has("branch")) ? resource.get("branch").getAsString() : "";
@@ -242,7 +242,7 @@ public class SoftwareCoRepoManager {
 
     public void processRepoMembersInfo(final String projectDir) {
         JsonObject resource = SoftwareCoUtils.getResourceInfo(projectDir);
-        if (resource.has("identifier")) {
+        if (resource != null && resource.has("identifier")) {
             String identifier = resource.get("identifier").getAsString();
             String tag = (resource.has("tag")) ? resource.get("tag").getAsString() : "";
             String branch = (resource.has("branch")) ? resource.get("branch").getAsString(): "";
