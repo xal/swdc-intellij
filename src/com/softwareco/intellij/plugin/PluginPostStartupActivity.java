@@ -6,7 +6,6 @@ import com.intellij.ide.plugins.PluginStateListener;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,12 +25,10 @@ public class PluginPostStartupActivity implements StartupActivity {
             @Override
             public void uninstall(@NotNull IdeaPluginDescriptor ideaPluginDescriptor) {
                 // send a quick update to the app to delete the integration
-                HttpResponse response =
-                        SoftwareCoSessionManager.makeApiCall(
+                SoftwareResponse response =
+                        SoftwareCoUtils.makeApiCall(
                                 "/integrations/" + SoftwareCoUtils.pluginId, HttpDelete.METHOD_NAME, null);
-                SoftwareCoUtils.HttpResponseInfo responseInfo =
-                        SoftwareCoUtils.getResponseInfo(response);
-                if (responseInfo.isOk) {
+                if (response.isOk()) {
                     log.info("Software.com: Uninstalled plugin.");
                 } else {
                     log.error("Software.com: Failed to update Software.com about the uninstall event.");

@@ -4,8 +4,6 @@
  */
 package com.softwareco.intellij.plugin;
 
-import java.io.IOException;
-import java.net.SocketException;
 import java.time.ZonedDateTime;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -13,12 +11,7 @@ import java.util.concurrent.Future;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.softwareco.intellij.plugin.SoftwareCoUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.ParseException;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.util.EntityUtils;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -38,10 +31,10 @@ public class SoftwareCoMusicManager {
         return instance;
     }
 
-    protected class MusicSendDataTask implements Callable<HttpResponse> {
+    protected class MusicSendDataTask implements Callable<SoftwareResponse> {
 
         @Override
-        public HttpResponse call() throws Exception {
+        public SoftwareResponse call() throws Exception {
             //
             // get the music track json string
             //
@@ -51,7 +44,7 @@ public class SoftwareCoMusicManager {
                 return null;
             }
 
-            HttpResponse response = null;
+            SoftwareResponse response = null;
 
             String existingTrackId = (currentTrack.has("id")) ? currentTrack.get("id").getAsString() : null;
             String trackId = (trackInfo != null && trackInfo.has("id")) ? trackInfo.get("id").getAsString() : null;
@@ -66,13 +59,15 @@ public class SoftwareCoMusicManager {
             long now = Math.round(System.currentTimeMillis() / 1000);
             long local_start = now + offset;
 
+            String trackStr = null;
+
             if (trackId != null) {
 
                 if (existingTrackId != null && !existingTrackId.equals(trackId)) {
                     // update the end time on the previous track and send it as well
                     currentTrack.addProperty("end", now);
                     // send the post to end the previous track
-                    postTrackInfo(SoftwareCo.gson.toJson(currentTrack));
+                    trackStr = SoftwareCo.gson.toJson(currentTrack);
                 }
 
 
@@ -83,7 +78,7 @@ public class SoftwareCoMusicManager {
                     trackInfo.addProperty("start", now);
                     trackInfo.addProperty("local_start", local_start);
 
-                    response = postTrackInfo(SoftwareCo.gson.toJson(trackInfo));
+                    trackStr = SoftwareCo.gson.toJson(trackInfo);
 
                     // update the current track
                     cloneTrackInfoToCurrent(trackInfo);
@@ -94,11 +89,15 @@ public class SoftwareCoMusicManager {
                     // update the end time on the previous track and send it as well
                     currentTrack.addProperty("end", now);
                     // send the post to end the previous track
-                    response = postTrackInfo(SoftwareCo.gson.toJson(currentTrack));
+                    trackStr = SoftwareCo.gson.toJson(currentTrack);
                 }
 
                 // song has ended, clear out the current track
                 currentTrack = new JsonObject();
+            }
+
+            if (trackStr != null) {
+                response = SoftwareCoUtils.makeApiCall("/data/music", HttpPost.METHOD_NAME, trackStr);
             }
 
             return response;
@@ -129,42 +128,6 @@ public class SoftwareCoMusicManager {
             currentTrack.addProperty("state", state);
             currentTrack.addProperty("id", trackInfo.get("id").getAsString());
         }
-
-        private HttpResponse postTrackInfo(String trackInfo) {
-            HttpPost request = null;
-            try {
-
-                //
-                // Add the json body to the outgoing post request
-                //
-                request = new HttpPost(SoftwareCoUtils.api_endpoint + "/data/music");
-                String jwtToken = SoftwareCoSessionManager.getItem("jwt");
-                // we need the header, but check if it's null anyway
-                if (jwtToken != null) {
-                    request.addHeader("Authorization", jwtToken);
-                }
-                StringEntity params = new StringEntity(trackInfo);
-                request.addHeader("Content-type", "application/json");
-                request.setEntity(params);
-
-                //
-                // Send the POST request
-                //
-                SoftwareCoUtils.logApiRequest(request, trackInfo);
-                HttpResponse response = SoftwareCoUtils.httpClient.execute(request);
-                //
-                // Return the response
-                //
-                return response;
-            } catch (Exception e) {
-                log.error("Software.com: Unable to send the keystroke payload request.", e);
-            } finally {
-                if (request != null) {
-                    request.releaseConnection();
-                }
-            }
-            return null;
-        }
     }
 
 
@@ -175,43 +138,23 @@ public class SoftwareCoMusicManager {
 
                 MusicSendDataTask sendTask = new MusicSendDataTask();
 
-                Future<HttpResponse> response = SoftwareCoUtils.executorService.submit(sendTask);
+                Future<SoftwareResponse> response = SoftwareCoUtils.executorService.submit(sendTask);
 
                 //
                 // Handle the Future if it exist
                 //
                 if ( response != null ) {
-                    HttpResponse httpResponse = null;
+                    SoftwareResponse httpResponse = null;
                     try {
                         httpResponse = response.get();
 
-                        if (httpResponse != null) {
-                            //
-                            // Handle the response from the Future (consume the entity to prevent connection pool leak/timeout)
-                            //
-                            String entityResult = "";
-                            if (httpResponse.getEntity() != null) {
-                                try {
-                                    entityResult = EntityUtils.toString(httpResponse.getEntity());
-                                } catch (SocketException e) {
-                                    // no need to post an error, we're just unable to communicate right now
-                                } catch (Exception e) {
-                                    log.error("Software.com: error retrieving response.", e.getMessage());
-                                }
-                            }
-
-                            //
-                            // If it's a response status of anything other than the 200 series then the POST request failed
-                            //
-                            int responseStatus = httpResponse.getStatusLine().getStatusCode();
-                            if (responseStatus >= 300) {
-                                log.error("Software.com: Unable to send the music track payload, "
-                                        + "response: [status: " + responseStatus + ", entityResult: '" + entityResult + "']");
-                            }
+                        if (httpResponse == null || !httpResponse.isOk()) {
+                            String errorStr = (httpResponse != null && httpResponse.getErrorMessage() != null) ? httpResponse.getErrorMessage() : "";
+                            log.info("Software.com: Unable to get the music track response from the http request, error: " + errorStr);
                         }
 
                     } catch (InterruptedException | ExecutionException e) {
-                        log.error("Software.com: Unable to get the music track response from the http request.", e);
+                        log.info("Software.com: Unable to get the music track response from the http request, error: " + e.getMessage());
                     }
                 }
 

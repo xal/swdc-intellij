@@ -364,15 +364,6 @@ public class SoftwareCo implements ApplicationComponent {
                                 }
                             }
 
-                            if (wrapper.getKeystrokeCount() != null && wrapper.getKeystrokeCount().getProject() != null
-                                    && !wrapper.getKeystrokeCount().getProject().hasResource()) {
-                                JsonObject resource = SoftwareCoUtils.getResourceInfo(projectFilepath);
-                                if (resource != null && resource.has("identifier")) {
-                                    wrapper.getKeystrokeCount().getProject().updateResource(resource);
-                                    wrapper.getKeystrokeCount().getProject().setIdentifier(resource.get("identifier").getAsString());
-                                }
-                            }
-
                             int incrementedCount = Integer.parseInt(keystrokeCount.getKeystrokes()) + 1;
                             keystrokeCount.setKeystrokes(String.valueOf(incrementedCount));
 
@@ -476,142 +467,35 @@ public class SoftwareCo implements ApplicationComponent {
 
     private void processKeystrokes() {
         if (READY) {
-
             List<KeystrokeManager.KeystrokeCountWrapper> wrappers = keystrokeMgr.getKeystrokeCountWrapperList();
             for (KeystrokeManager.KeystrokeCountWrapper wrapper : wrappers) {
                 if (wrapper.getKeystrokeCount() != null) {
-                    //
-                    // reset the current keystroke count object
-                    //
-                    // clone it to send to the http task
-                    KeystrokeCount clone = wrapper.getKeystrokeCount().clone();
-                    keystrokeMgr.resetData(clone.getProject().getName());
-                    if (clone.hasData()) {
+                    // ZonedDateTime will get us the true seconds away from GMT
+                    // it'll be negative for zones before GMT and postive for zones after
+                    Integer offset  = ZonedDateTime.now().getOffset().getTotalSeconds();
+                    long startInSeconds = (int) (new Date().getTime() / 1000);
+                    wrapper.getKeystrokeCount().setStart(startInSeconds);
+                    // add to the start in seconds since it's a negative for less than gmt and the
+                    // opposite for grtr than gmt
+                    wrapper.getKeystrokeCount().setLocal_start(startInSeconds + offset);
+                    wrapper.getKeystrokeCount().setTimezone(TimeZone.getDefault().getID());
+                    String payload = SoftwareCo.gson.toJson(wrapper.getKeystrokeCount());
 
-                        //
-                        // Send the info now
-                        //
-                        sendKeystrokeData(clone);
+                    if (!SoftwareCo.TELEMTRY_ON) {
+                        log.info("Software.com telemetry is currently paused. Enable to view KPM metrics");
+                        sessionMgr.storePayload(payload);
+                        continue;
                     }
-                }
-            }
-        }
-    }
 
-    private void sendKeystrokeData(KeystrokeCount keystrokeCount) {
-
-        if (!SoftwareCo.TELEMTRY_ON) {
-            log.info("Software.com telemetry is currently paused. Enable to view KPM metrics");
-            String payload = SoftwareCo.gson.toJson(keystrokeCount);
-            sessionMgr.storePayload(payload);
-            return;
-        }
-
-        KeystrokeDataSendTask sendTask = new KeystrokeDataSendTask(keystrokeCount);
-        Future<HttpResponse> response = SoftwareCoUtils.executorService.submit(sendTask);
-
-        boolean postFailed = true;
-
-        if (response != null) {
-            HttpResponse r = null;
-            try {
-                r = response.get();
-
-                //
-                // Handle the response
-                //
-                String entityResult = "";
-                if (r.getEntity() != null) {
-                    try {
-                        entityResult = EntityUtils.toString(r.getEntity());
-                    } catch (SocketException e) {
-                        // no need to post an error, we're just unable to communicate right now
-                    } catch (Exception e) {
-                        log.error("Software.com: error retrieving response.", e.getMessage());
+                    SoftwareResponse resp = SoftwareCoUtils.makeApiCall("/data", HttpPost.METHOD_NAME, payload);
+                    if (!resp.isOk() && !SoftwareCoSessionManager.isDeactivated()) {
+                        sessionMgr.storePayload(payload);
+                        sessionMgr.checkUserAuthenticationStatus();
                     }
-                }
-                int responseStatus = r.getStatusLine().getStatusCode();
 
-                //
-                // Anything greater or equal to 300 http status code is not what the plugin expects, log the error
-                //
-                if (responseStatus >= 300) {
-                    log.debug("Software.com: Unable to send the keystroke payload, "
-                            + "response: [status: " + responseStatus + ", entityResult: '" + entityResult + "']");
-                } else {
-                    // only condition where postFailed will be set to false
-                    postFailed = false;
+                    keystrokeMgr.resetData(wrapper.getKeystrokeCount().getProject().getName());
                 }
-            } catch (Exception e) {
-                log.debug("Software.com: Unable to get the response from the http request, reason: " + e.toString());
             }
-        }
-
-        if (postFailed) {
-            log.info("Saving kpm info offline");
-            // save the data offline
-            String payload = SoftwareCo.gson.toJson(keystrokeCount);
-            sessionMgr.storePayload(payload);
-            sessionMgr.checkUserAuthenticationStatus();
-        }
-    }
-
-    protected static class KeystrokeDataSendTask implements Callable<HttpResponse> {
-
-        private KeystrokeCount keystrokeCount;
-
-        public KeystrokeDataSendTask(KeystrokeCount keystrokeCount) {
-            this.keystrokeCount = keystrokeCount;
-        }
-
-        @Override
-        public HttpResponse call() throws Exception {
-            //
-            // create the json string
-            //
-            // set the start time
-            // ZonedDateTime will get us the true seconds away from GMT
-            // it'll be negative for zones before GMT and postive for zones after
-            Integer offset  = ZonedDateTime.now().getOffset().getTotalSeconds();
-            long startInSeconds = (int) (new Date().getTime() / 1000);
-            keystrokeCount.setStart(startInSeconds);
-            // add to the start in seconds since it's a negative for less than gmt and the
-            // opposite for grtr than gmt
-            keystrokeCount.setLocal_start(startInSeconds + offset);
-            keystrokeCount.setTimezone(TimeZone.getDefault().getID());
-            String kpmData = gson.toJson(keystrokeCount);
-
-            String endpoint = SoftwareCoUtils.api_endpoint + "/data";
-
-            try {
-                HttpPost request = new HttpPost(endpoint);
-                StringEntity params = new StringEntity(kpmData);
-                request.addHeader("Content-type", "application/json");
-
-                // add the auth token
-                String jwtToken = SoftwareCoSessionManager.getItem("jwt");
-                // we need the header, but check if it's null anyway
-                if (jwtToken != null) {
-                    request.addHeader("Authorization", jwtToken);
-                }
-
-                request.setEntity(params);
-
-                //
-                // Send the POST request
-                //
-                SoftwareCoUtils.logApiRequest(request, kpmData);
-                HttpResponse response = SoftwareCoUtils.httpClient.execute(request);
-
-                //
-                // Return the response
-                //
-                return response;
-            } catch (Exception e) {
-                log.debug("Software.com: Unable to complete software.com request to the plugin manager, reason: " + e.toString());
-            }
-
-            return null;
         }
     }
 }

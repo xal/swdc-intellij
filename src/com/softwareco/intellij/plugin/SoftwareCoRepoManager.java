@@ -48,10 +48,9 @@ public class SoftwareCoRepoManager {
                 qryString += "&tag=" + encodedTag;
                 qryString += "&branch=" + encodedBranch;
 
-                SoftwareCoUtils.HttpResponseInfo responseData = SoftwareCoUtils.getResponseInfo(
-                        SoftwareCoSessionManager.makeApiCall("/commits/latest?" + qryString, HttpGet.METHOD_NAME, null));
-                if (responseData != null && responseData.isOk) {
-                    JsonObject payload = responseData.jsonObj;
+                SoftwareResponse responseData = SoftwareCoUtils.makeApiCall("/commits/latest?" + qryString, HttpGet.METHOD_NAME, null);
+                if (responseData != null && responseData.isOk()) {
+                    JsonObject payload = responseData.getJsonObj();
                     // will get a single commit object back with the following attributes
                     // commitId, message, changes, timestamp
                     JsonObject latestCommit = payload.get("commit").getAsJsonObject();
@@ -214,15 +213,14 @@ public class SoftwareCoRepoManager {
             commitData.addProperty("branch", branch);
             String commitDataStr = commitData.toString();
 
-            SoftwareCoUtils.HttpResponseInfo responseData = SoftwareCoUtils.getResponseInfo(
-                    SoftwareCoSessionManager.makeApiCall(
-                            "/commits", HttpPost.METHOD_NAME, commitDataStr));
+            SoftwareResponse resp = SoftwareCoUtils.makeApiCall(
+                            "/commits", HttpPost.METHOD_NAME, commitDataStr);
 
-            if (responseData != null) {
+            if (resp != null && resp.getJsonObj() != null) {
 
                 // {"status":"success","message":"Updated commits"}
                 // {"status":"failed","data":"Unable to process commits data"}
-                JsonObject responseObj = responseData.jsonObj;
+                JsonObject responseObj = resp.getJsonObj();
                 String message = "";
                 if (responseObj.has("data")) {
                     JsonObject data = responseObj.get("data").getAsJsonObject();
@@ -281,9 +279,8 @@ public class SoftwareCoRepoManager {
                     repoData.addProperty("tag", tag);
                     repoData.addProperty("branch", branch);
                     String repoDataStr = repoData.toString();
-                    JsonObject responseData = SoftwareCoUtils.getResponseInfo(
-                            SoftwareCoSessionManager.makeApiCall(
-                                    "/repo/members", HttpPost.METHOD_NAME, repoDataStr)).jsonObj;
+                    JsonObject responseData = SoftwareCoUtils.makeApiCall(
+                                    "/repo/members", HttpPost.METHOD_NAME, repoDataStr).getJsonObj();
 
                     // {"status":"success","message":"Updated repo members"}
                     // {"status":"failed","data":"Unable to process repo information"}

@@ -6,9 +6,10 @@ package com.softwareco.intellij.plugin;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.intellij.openapi.diagnostic.Logger;
 import java.util.Calendar;
 import java.util.Date;
+
+import com.google.gson.JsonParser;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.IconLoader;
@@ -24,12 +25,16 @@ import org.apache.http.impl.client.HttpClientBuilder;
 
 import javax.swing.*;
 import java.io.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class SoftwareCoUtils {
 
-    public static final Logger log = Logger.getInstance("SoftwareCoUtils");
+    public static final Logger LOG = Logger.getLogger("SoftwareCoUtils");
 
     // set the api endpoint to use
     public final static String api_endpoint = "https://api.software.com";
@@ -39,9 +44,13 @@ public class SoftwareCoUtils {
     public static ExecutorService executorService;
     public static HttpClient httpClient;
 
+    public static JsonParser jsonParser = new JsonParser();
+
     // sublime = 1, vs code = 2, eclipse = 3, intellij = 4, visual studio = 6, atom = 7
     public static int pluginId = 4;
-    public static String version = "0.1.49";
+    public static String version = "0.1.52";
+
+    private final static ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
 
     private final static int EOF = -1;
 
@@ -64,44 +73,82 @@ public class SoftwareCoUtils {
         executorService = Executors.newCachedThreadPool();
     }
 
-    public static class HttpResponseInfo {
-        public boolean isOk = false;
-        public String jsonStr = null;
-        public JsonObject jsonObj = null;
-    }
+    public static SoftwareResponse makeApiCall(String api, String httpMethodName, String payload) {
 
-    public static HttpResponseInfo getResponseInfo(HttpResponse response) {
-        HttpResponseInfo responseInfo = new HttpResponseInfo();
+        SoftwareResponse softwareResponse = new SoftwareResponse();
+        if (!SoftwareCo.TELEMTRY_ON) {
+            softwareResponse.setIsOk(true);
+            return softwareResponse;
+        }
+
+        SoftwareHttpManager httpTask = new SoftwareHttpManager(api, httpMethodName, payload);
+        Future<HttpResponse> response = EXECUTOR_SERVICE.submit(httpTask);
+
+        //
+        // Handle the Future if it exist
+        //
         if (response != null) {
             try {
-                // get the entity json string
-                // (consume the entity so there's no connection leak causing a connection pool timeout)
-                String jsonStr = getStringRepresentation(response.getEntity());
-                if (jsonStr != null) {
-                    responseInfo.jsonStr = jsonStr;
-                    if (jsonStr.indexOf("{") != -1 && jsonStr.indexOf("}") != -1) {
-                        JsonElement jsonEl = null;
+                HttpResponse httpResponse = response.get();
+                if (httpResponse != null) {
+                    int statusCode = httpResponse.getStatusLine().getStatusCode();
+                    if (statusCode < 300) {
+                        softwareResponse.setIsOk(true);
+                    }
+                    HttpEntity entity = httpResponse.getEntity();
+                    JsonObject jsonObj = null;
+                    if (entity != null) {
                         try {
-                            jsonEl = SoftwareCo.jsonParser.parse(jsonStr);
-                            JsonObject jsonObj = jsonEl.getAsJsonObject();
-                            responseInfo.jsonObj = jsonObj;
-                        } catch (Exception e) {
-                            // the string may be a simple message like "Unauthorized"
-                            responseInfo.jsonStr = jsonStr;
-                            responseInfo.isOk = false;
+                            String jsonStr = getStringRepresentation(entity);
+                            softwareResponse.setJsonStr(jsonStr);
+                            LOG.log(Level.ALL.INFO, "Sofware.com: API response {0}", jsonStr);
+                            if (jsonStr != null) {
+                                Object jsonEl = jsonParser.parse(jsonStr);
+
+                                if (jsonEl instanceof JsonElement) {
+                                    try {
+                                        JsonElement el = (JsonElement)jsonEl;
+                                        if (el.isJsonPrimitive()) {
+                                            if (statusCode < 300) {
+                                                softwareResponse.setDataMessage(el.getAsString());
+                                            } else {
+                                                softwareResponse.setErrorMessage(el.getAsString());
+                                            }
+                                        } else {
+                                            jsonObj = ((JsonElement) jsonEl).getAsJsonObject();
+                                            softwareResponse.setJsonObj(jsonObj);
+                                        }
+                                    } catch (Exception e) {
+                                        LOG.log(Level.WARNING, "Unable to parse response data: {0}", e.getMessage());
+                                    }
+                                }
+                            }
+                        } catch (IOException e) {
+                            String errorMessage = "Software.com: Unable to get the response from the http request, error: " + e.getMessage();
+                            softwareResponse.setErrorMessage(errorMessage);
+                            LOG.log(Level.WARNING, errorMessage);
+                        }
+                    }
+
+                    if (statusCode >= 400 && statusCode < 500 && jsonObj != null) {
+                        if (jsonObj.has("code")) {
+                            String code = jsonObj.get("code").getAsString();
+                            if (code != null && code.equals("DEACTIVATED")) {
+                                SoftwareCoUtils.setStatusLineMessage(
+                                        "warning.png", "Software.com", "To see your coding data in Software.com, please reactivate your account.");
+                                softwareResponse.setDeactivated(true);
+                            }
                         }
                     }
                 }
-                responseInfo.isOk = isOk(response);
-            } catch (Exception e) {
-                log.error("Unable to get http response info.", e);
+            } catch (InterruptedException | ExecutionException e) {
+                String errorMessage = "Software.com: Unable to get the response from the http request, error: " + e.getMessage();
+                softwareResponse.setErrorMessage(errorMessage);
+                LOG.log(Level.WARNING, errorMessage);
             }
-
-        } else {
-            responseInfo.jsonStr = "Unauthorized";
-            responseInfo.isOk = false;
         }
-        return responseInfo;
+
+        return softwareResponse;
     }
 
     private static String getStringRepresentation(HttpEntity res) throws IOException {
@@ -154,8 +201,7 @@ public class SoftwareCoUtils {
     }
 
     public static void logApiRequest(HttpUriRequest req, String payload) {
-
-        log.info("Software.com: executing request "
+        LOG.info("Software.com: executing request "
                 + "[method: " + req.getMethod() + ", URI: " + req.getURI()
                 + ", payload: " + payload + "]");
     }

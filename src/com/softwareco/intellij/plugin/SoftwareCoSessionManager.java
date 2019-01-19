@@ -13,18 +13,13 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.*;
-import org.apache.http.entity.StringEntity;
 
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 public class SoftwareCoSessionManager {
 
@@ -92,7 +87,7 @@ public class SoftwareCoSessionManager {
         if (tokenVal == null) {
             isOk = false;
         } else {
-            isOk = SoftwareCoUtils.getResponseInfo(makeApiCall("/users/ping/", HttpGet.METHOD_NAME, null)).isOk;
+            isOk = SoftwareCoUtils.makeApiCall("/users/ping/", HttpGet.METHOD_NAME, null).isOk();
         }
         if (!isOk) {
             // update the status bar with Sign Up message
@@ -102,8 +97,23 @@ public class SoftwareCoSessionManager {
         return isOk;
     }
 
+    public static boolean isDeactivated() {
+        String tokenVal = getItem("token");
+        if (tokenVal == null) {
+            return false;
+        }
+
+        SoftwareResponse resp = SoftwareCoUtils.makeApiCall("/users/ping/", HttpGet.METHOD_NAME, null);
+        if (!resp.isOk() && resp.isDeactivated()) {
+            // update the status bar with Sign Up message
+            SoftwareCoUtils.setStatusLineMessage(
+                    "warning.png", "Software.com", "Click to log in to Software.com");
+        }
+        return resp.isDeactivated();
+    }
+
     private boolean isServerOnline() {
-        return SoftwareCoUtils.getResponseInfo(makeApiCall("/ping", HttpGet.METHOD_NAME, null)).isOk;
+        return SoftwareCoUtils.makeApiCall("/ping", HttpGet.METHOD_NAME, null).isOk();
     }
 
     public void storePayload(String payload) {
@@ -153,8 +163,8 @@ public class SoftwareCoSessionManager {
                     String payloads = sb.toString();
                     payloads = payloads.substring(0, payloads.lastIndexOf(","));
                     payloads = "[" + payloads + "]";
-                    if (SoftwareCoUtils.getResponseInfo(makeApiCall("/data/batch", HttpPost.METHOD_NAME, payloads)).isOk) {
-
+                    SoftwareResponse resp = SoftwareCoUtils.makeApiCall("/data/batch", HttpPost.METHOD_NAME, payloads);
+                    if (resp.isOk() || resp.isDeactivated()) {
                         // delete the file
                         this.deleteFile(dataStoreFile);
                     }
@@ -234,6 +244,7 @@ public class SoftwareCoSessionManager {
 
         boolean isOnline = isServerOnline();
         boolean authenticated = isAuthenticated();
+        boolean deactivated = isDeactivated();
         boolean pastThresholdTime = isPastTimeThreshold();
 
         boolean requiresLogin = (isOnline && !authenticated && pastThresholdTime && !confirmWindowOpen) ? true : false;
@@ -247,12 +258,11 @@ public class SoftwareCoSessionManager {
 
             final String dialogMsg = msg;
 
-            Project currentProject = this.getCurrentProject();
             ApplicationManager.getApplication().invokeLater(new Runnable() {
                 public void run() {
                     // ask to download the PM
                     int options = Messages.showDialog(
-                            currentProject,
+                            project,
                             msg,
                             "Software", new String[]{"Not now", "Log in"},
                             1, Messages.getInformationIcon());
@@ -263,10 +273,14 @@ public class SoftwareCoSessionManager {
                 }
             });
         } else if (requiresLogin && project == null) {
-            // try again in 25 seconds
+
             new Thread(() -> {
                 try {
-                    Thread.sleep(1000 * 25);
+                    if (deactivated) {
+                        Thread.sleep(1000 * 60 * 60 * 24);
+                    } else {
+                        Thread.sleep(1000 * 25);
+                    }
                     checkUserAuthenticationStatus();
                 }
                 catch (Exception e){
@@ -298,18 +312,22 @@ public class SoftwareCoSessionManager {
             return;
         }
 
-        JsonObject responseData = SoftwareCoUtils.getResponseInfo(
-                makeApiCall("/users/plugin/confirm?token=" + tokenVal, HttpGet.METHOD_NAME, null)).jsonObj;
+        JsonObject responseData = SoftwareCoUtils.makeApiCall("/users/plugin/confirm?token=" + tokenVal, HttpGet.METHOD_NAME, null).getJsonObj();
         if (responseData != null && responseData.has("jwt")) {
             // update the jwt, user and eclipse_lastUpdateTime
             setItem("jwt", responseData.get("jwt").getAsString());
             setItem("user", responseData.get("user").getAsString());
             setItem("eclipse_lastUpdateTime", String.valueOf(System.currentTimeMillis()));
         } else {
+            boolean deactivated = isDeactivated();
             // check again in a couple of minutes
             new Thread(() -> {
                 try {
-                    Thread.sleep(1000 * 120);
+                    if (deactivated) {
+                        Thread.sleep(1000 * 60 * 60 * 24);
+                    } else {
+                        Thread.sleep(1000 * 120);
+                    }
                     checkTokenAvailability();
                 }
                 catch (Exception e){
@@ -330,8 +348,7 @@ public class SoftwareCoSessionManager {
         String sessionsApi = "/sessions?from=" + fromSeconds +"&summary=true";
 
         // make an async call to get the kpm info
-        JsonObject jsonObj = SoftwareCoUtils.getResponseInfo(
-                makeApiCall(sessionsApi, HttpGet.METHOD_NAME, null)).jsonObj;
+        JsonObject jsonObj = SoftwareCoUtils.makeApiCall(sessionsApi, HttpGet.METHOD_NAME, null).getJsonObj();
         if (jsonObj != null) {
 
             float currentSessionGoalPercent = 0f;
@@ -392,10 +409,12 @@ public class SoftwareCoSessionManager {
                         "Software.com", "Click to see more from Software.com");
             }
         } else {
-            log.info("Unable to get kpm summary");
-            this.checkUserAuthenticationStatus();
-            SoftwareCoUtils.setStatusLineMessage(
-                    "warning.png", "Software.com", "Click to see more from Software.com");
+            if (!isDeactivated()) {
+                log.info("Unable to get kpm summary");
+                this.checkUserAuthenticationStatus();
+                SoftwareCoUtils.setStatusLineMessage(
+                        "warning.png", "Software.com", "Click to see more from Software.com");
+            }
         }
     }
 
@@ -429,103 +448,6 @@ public class SoftwareCoSessionManager {
                     System.err.println(e);
                 }
             }).start();
-        }
-    }
-
-    public static HttpResponse makeApiCall(String api, String httpMethodName, String payload) {
-
-        if (!SoftwareCo.TELEMTRY_ON) {
-            log.info("Software.com telemetry is currently paused. Enable to view KPM metrics");
-            return null;
-        }
-
-        try {
-            SessionManagerHttpClient sendTask = new SessionManagerHttpClient(api, httpMethodName, payload);
-
-            Future<HttpResponse> response = SoftwareCoUtils.executorService.submit(sendTask);
-
-            //
-            // Handle the Future if it exist
-            //
-            if (response != null) {
-
-                HttpResponse httpResponse = null;
-                try {
-                    httpResponse = response.get();
-
-                    if (httpResponse != null) {
-                        return httpResponse;
-                    }
-
-                } catch (InterruptedException | ExecutionException e) {
-                    log.info("Software.com: Unable to get the response from the http request.", e);
-                    SoftwareCoUtils.setStatusLineMessage(
-                            "warning.png", "Software.com", "Click to log in to Software.com");
-                }
-            }
-        } catch (Exception e) {
-            SoftwareCoUtils.setStatusLineMessage(
-                    "warning.png", "Software.com", "Click to log in to Software.com");
-        }
-        return null;
-    }
-
-    protected static class SessionManagerHttpClient implements Callable<HttpResponse> {
-
-        private String payload = null;
-        private String api = null;
-        private String httpMethodName = HttpGet.METHOD_NAME;
-
-        public SessionManagerHttpClient(String api, String httpMethodName, String payload) {
-            this.payload = payload;
-            this.httpMethodName = httpMethodName;
-            this.api = api;
-        }
-
-        @Override
-        public HttpResponse call() throws Exception {
-            HttpUriRequest req = null;
-            try {
-
-                HttpResponse response = null;
-
-                if (httpMethodName.equals(HttpPost.METHOD_NAME)) {
-                    req = new HttpPost(SoftwareCoUtils.api_endpoint + "" + this.api);
-
-                    if (payload != null) {
-                        //
-                        // add the json payload
-                        //
-                        StringEntity params = new StringEntity(payload);
-                        ((HttpPost) req).setEntity(params);
-                    }
-                } else if (httpMethodName.equals(HttpDelete.METHOD_NAME)) {
-                    req = new HttpDelete(SoftwareCoUtils.api_endpoint + "" + this.api);
-                } else {
-                    req = new HttpGet(SoftwareCoUtils.api_endpoint + "" + this.api);
-                }
-
-                String jwtToken = getItem("jwt");
-                // obtain the jwt session token if we have it
-                if (jwtToken != null) {
-                    req.addHeader("Authorization", jwtToken);
-                }
-
-                req.addHeader("Content-type", "application/json");
-
-                // execute the request
-                SoftwareCoUtils.logApiRequest(req, payload);
-                response = SoftwareCoUtils.httpClient.execute(req);
-
-                //
-                // Return the response
-                //
-                return response;
-            } catch (Exception e) {
-                log.info("Software.com: Unable to make api request. " + e.toString(), null);
-            }
-
-            return null;
         }
     }
 }
