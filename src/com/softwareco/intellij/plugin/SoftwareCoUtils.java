@@ -111,7 +111,7 @@ public class SoftwareCoUtils {
                             String jsonStr = getStringRepresentation(entity);
                             softwareResponse.setJsonStr(jsonStr);
                             LOG.log(Level.ALL.INFO, "Sofware.com: API response {0}", jsonStr);
-                            if (jsonStr != null && !mimeType.equals("text/plain")) {
+                            if (jsonStr != null && mimeType.indexOf("text/plain") == -1) {
                                 Object jsonEl = jsonParser.parse(jsonStr);
 
                                 if (jsonEl instanceof JsonElement) {
@@ -165,6 +165,10 @@ public class SoftwareCoUtils {
             return null;
         }
 
+        ContentType contentType = ContentType.getOrDefault(res);
+        String mimeType = contentType.getMimeType();
+        boolean isPlainText = (mimeType.indexOf("text/plain") == -1) ? false : true;
+
         InputStream inputStream = res.getContent();
 
         // Timing information--- verified that the data is still streaming
@@ -183,6 +187,9 @@ public class SoftwareCoUtils {
             String aLine = br.readLine();
             if (aLine != null) {
                 sb.append(aLine);
+                if (isPlainText) {
+                    sb.append("\n");
+                }
             } else {
                 done = true;
             }
