@@ -150,11 +150,11 @@ public class SoftwareCoMusicManager {
 
                         if (httpResponse == null || !httpResponse.isOk()) {
                             String errorStr = (httpResponse != null && httpResponse.getErrorMessage() != null) ? httpResponse.getErrorMessage() : "";
-                            log.info("Software.com: Unable to get the music track response from the http request, error: " + errorStr);
+                            log.info("Code Time: Unable to get the music track response from the http request, error: " + errorStr);
                         }
 
                     } catch (InterruptedException | ExecutionException e) {
-                        log.info("Software.com: Unable to get the music track response from the http request, error: " + e.getMessage());
+                        log.info("Code Time: Unable to get the music track response from the http request, error: " + e.getMessage());
                     }
                 }
 

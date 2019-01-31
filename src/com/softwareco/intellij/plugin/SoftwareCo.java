@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManager;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
@@ -81,8 +82,9 @@ public class SoftwareCo implements ApplicationComponent {
 
     public void initComponent() {
 
-        VERSION = PluginManager.getPlugin(PluginId.getId("com.softwareco.intellij.plugin")).getVersion();
-        log.info("Software.com: Loaded v" + VERSION);
+        IdeaPluginDescriptor pluginDescriptor = PluginManager.getPlugin(PluginId.getId("com.softwareco.intellij.plugin"));
+        VERSION = pluginDescriptor.getVersion();
+        log.info("Code Time: Loaded v" + VERSION);
 
         // Set runtime constants
         IDE_NAME = PlatformUtils.getPlatformPrefix();
@@ -95,7 +97,7 @@ public class SoftwareCo implements ApplicationComponent {
 
         setupEventListeners();
         setupScheduledProcessor();
-        log.info("Software.com: Finished initializing SoftwareCo plugin");
+        log.info("Code Time: Finished initializing SoftwareCo plugin");
 
         // run the initial calls in 6 seconds
         new Thread(() -> {
@@ -216,7 +218,7 @@ public class SoftwareCo implements ApplicationComponent {
                 }
 
                 SoftwareCoUtils.setStatusLineMessage(
-                        "Software.com", "Click to see more from Software.com");
+                        "Code Time", "Click to see more from Code Time");
             }
         });
     }
@@ -268,7 +270,7 @@ public class SoftwareCo implements ApplicationComponent {
             return;
         }
         updateFileInfoValue(fileInfo,"open", 1);
-        log.info("Software.com: file opened: " + fileName);
+        log.info("Code Time: file opened: " + fileName);
 
         // update the line count since we're here
         int lines = getLineCount(fileName);
@@ -286,7 +288,7 @@ public class SoftwareCo implements ApplicationComponent {
             return;
         }
         updateFileInfoValue(fileInfo,"close", 1);
-        log.info("Software.com: file closed: " + fileName);
+        log.info("Code Time: file closed: " + fileName);
     }
 
     public static String getUserHomeDir() {
@@ -306,7 +308,7 @@ public class SoftwareCo implements ApplicationComponent {
         try {
             return (int) Files.lines(path).count();
         } catch (IOException e) {
-            log.info("Software.com: failed to get the line count for file " + fileName);
+            log.info("Code Time: failed to get the line count for file " + fileName);
             return 0;
         }
     }
@@ -482,7 +484,7 @@ public class SoftwareCo implements ApplicationComponent {
                     String payload = SoftwareCo.gson.toJson(wrapper.getKeystrokeCount());
 
                     if (!SoftwareCo.TELEMTRY_ON) {
-                        log.info("Software.com telemetry is currently paused. Enable to view KPM metrics");
+                        log.info("Code Time telemetry is currently paused. Enable to view KPM metrics");
                         sessionMgr.storePayload(payload);
                         continue;
                     }

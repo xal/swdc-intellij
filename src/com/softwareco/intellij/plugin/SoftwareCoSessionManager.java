@@ -40,6 +40,16 @@ public class SoftwareCoSessionManager {
         return instance;
     }
 
+    public static String getCodeTimeDashboardFile() {
+        String dashboardFile = getSoftwareDir();
+        if (SoftwareCo.isWindows()) {
+            dashboardFile += "\\CodeTime";
+        } else {
+            dashboardFile += "/CodeTime";
+        }
+        return dashboardFile;
+    }
+
     private static String getSoftwareDir() {
         String softwareDataDir = SoftwareCo.getUserHomeDir();
         if (SoftwareCo.isWindows()) {
@@ -92,7 +102,7 @@ public class SoftwareCoSessionManager {
         if (!isOk) {
             // update the status bar with Sign Up message
             SoftwareCoUtils.setStatusLineMessage(
-                    "warning.png", "Software.com", "Click to log in to Software.com");
+                    "warning.png", "Code Time", "Click to log in to Code Time");
         }
         return isOk;
     }
@@ -107,7 +117,7 @@ public class SoftwareCoSessionManager {
         if (!resp.isOk() && resp.isDeactivated()) {
             // update the status bar with Sign Up message
             SoftwareCoUtils.setStatusLineMessage(
-                    "warning.png", "Software.com", "Click to log in to Software.com");
+                    "warning.png", "Code Time", "Click to log in to Code Time");
         }
         return resp.isDeactivated();
     }
@@ -133,7 +143,7 @@ public class SoftwareCoSessionManager {
             output.append(payload);
             output.close();
         } catch (Exception e) {
-            log.info("Software.com: Error appending to the Software data store file", e);
+            log.info("Code Time: Error appending to the Software data store file", e);
         }
     }
 
@@ -169,10 +179,10 @@ public class SoftwareCoSessionManager {
                         this.deleteFile(dataStoreFile);
                     }
                 } else {
-                    log.info("Software.com: No offline data to send");
+                    log.info("Code Time: No offline data to send");
                 }
             } catch (Exception e) {
-                log.info("Software.com: Error trying to read and send offline data.", e);
+                log.info("Code Time: Error trying to read and send offline data.", e);
             }
         }
     }
@@ -190,7 +200,7 @@ public class SoftwareCoSessionManager {
             output.write(content);
             output.close();
         } catch (Exception e) {
-            log.info("Software.com: Failed to write the key value pair (" + key + ", " + val + ") into the session.", e);
+            log.info("Code Time: Failed to write the key value pair (" + key + ", " + val + ") into the session.", e);
         }
     }
 
@@ -216,7 +226,7 @@ public class SoftwareCoSessionManager {
                     data = SoftwareCo.jsonParser.parse(content).getAsJsonObject();
                 }
             } catch (Exception e) {
-                log.info("Software.com: Error trying to read and json parse the session file.", e);
+                log.info("Code Time: Error trying to read and json parse the session file.", e);
             }
         }
         return (data == null) ? new JsonObject() : data;
@@ -254,7 +264,7 @@ public class SoftwareCoSessionManager {
             setItem("eclipse_lastUpdateTime", String.valueOf(System.currentTimeMillis()));
             confirmWindowOpen = true;
 
-            String msg = "To see your coding data in Software.com, please log in your account.";
+            String msg = "To see your coding data in Code Time, please log in your account.";
 
             final String dialogMsg = msg;
 
@@ -308,7 +318,7 @@ public class SoftwareCoSessionManager {
 
         if (tokenVal == null || tokenVal.equals("")) {
             SoftwareCoUtils.setStatusLineMessage(
-                    "warning.png", "Software.com", "Click to log in to Software.com");
+                    "warning.png", "Code Time", "Click to log in to Code Time");
             return;
         }
 
@@ -345,7 +355,7 @@ public class SoftwareCoSessionManager {
     public void fetchDailyKpmSessionInfo() {
         Date d = SoftwareCoUtils.atStartOfDay(new Date());
         long fromSeconds = Math.round(d.getTime() / 1000);
-        String sessionsApi = "/sessions?from=" + fromSeconds +"&summary=true";
+        String sessionsApi = "/sessions?summary=true";
 
         // make an async call to get the kpm info
         JsonObject jsonObj = SoftwareCoUtils.makeApiCall(sessionsApi, HttpGet.METHOD_NAME, null).getJsonObj();
@@ -379,41 +389,31 @@ public class SoftwareCoSessionManager {
             if (jsonObj.has("currentSessionMinutes")) {
                 currentSessionMinutes = jsonObj.get("currentSessionMinutes").getAsLong();
             }
-            String sessionTimeStr = "";
-            if (currentSessionMinutes == 60) {
-                sessionTimeStr = "1 hr";
-            } else if (currentSessionMinutes > 60) {
-                float fval = (float)currentSessionMinutes / 60;
-                try {
-                    sessionTimeStr = String.format("%.2f", fval) + " hrs";
-                } catch (Exception e) {
-                    sessionTimeStr = String.valueOf(fval);
-                }
-            } else if (currentSessionMinutes == 1) {
-                sessionTimeStr = "1 min";
-            } else {
-                sessionTimeStr = currentSessionMinutes + " min";
+            long currentDayMinutes = 0;
+            if (jsonObj.has("currentDayMinutes")) {
+                currentDayMinutes = jsonObj.get("currentDayMinutes").getAsLong();
+            }
+            long averageDailyMinutes = 0;
+            if (jsonObj.has("averageDailyMinutes")) {
+                averageDailyMinutes = jsonObj.get("averageDailyMinutes").getAsLong();
+            }
+            String sessionTimeStr = SoftwareCoUtils.humanizeMinutes(currentSessionMinutes);
+            String currentDayTimeStr = SoftwareCoUtils.humanizeMinutes(currentDayMinutes);
+            String averageDailyMinutesTimeStr = SoftwareCoUtils.humanizeMinutes(averageDailyMinutes);
+
+            String inFlowIcon = currentDayMinutes > averageDailyMinutes ? "rocket.png" : null;
+            String msg = "Code time today: " + currentDayTimeStr;
+            if (averageDailyMinutes > 0) {
+                msg += " | Avg: " + averageDailyMinutesTimeStr;
             }
 
-            if (lastKpm > 0 || currentSessionMinutes > 0) {
-                String kpmStr = String.valueOf(lastKpm) + " KPM,";
-                String kpmIcon = (inFlow) ? "rocket.png" : null;
-                if (kpmIcon == null) {
-                    kpmStr = "<S> " + kpmStr;
-                }
-
-                SoftwareCoUtils.setStatusLineMessage(
-                        kpmIcon, kpmStr, sessionTimeIcon, sessionTimeStr, "Click to see more from Software.com");
-            } else {
-                SoftwareCoUtils.setStatusLineMessage(
-                        "Software.com", "Click to see more from Software.com");
-            }
+            SoftwareCoUtils.setStatusLineMessage(inFlowIcon, msg, "Click to see more from Code Time");
         } else {
             if (!isDeactivated()) {
                 log.info("Unable to get kpm summary");
                 this.checkUserAuthenticationStatus();
                 SoftwareCoUtils.setStatusLineMessage(
-                        "warning.png", "Software.com", "Click to see more from Software.com");
+                        "warning.png", "Code Time", "Click to see more from Code Time");
             }
         }
     }

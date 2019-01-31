@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018 by Software.com
+ * Copyright (c) 2019 by Software.com
  * All rights reserved
  */
 package com.softwareco.intellij.plugin.actions;
@@ -8,21 +8,19 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.editor.Editor;
-import com.softwareco.intellij.plugin.SoftwareCo;
 import com.softwareco.intellij.plugin.SoftwareCoUtils;
 
-public class EnableMetricsAction extends AnAction {
+public class CodeTimeMetricsAction extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent anActionEvent) {
-        SoftwareCo.TELEMTRY_ON = true;
-        SoftwareCoUtils.setStatusLineMessage("Code Time", "Click to see more from Code Time");
+        SoftwareCoUtils.launchCodeTimeMetricsDashboard();
     }
 
     @Override
     public void update(AnActionEvent event) {
         Editor editor = event.getData(CommonDataKeys.EDITOR);
         event.getPresentation().setVisible(true);
-        event.getPresentation().setEnabled(!SoftwareCo.TELEMTRY_ON);
+        event.getPresentation().setEnabled(true);
     }
 }

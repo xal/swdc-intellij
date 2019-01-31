@@ -28,8 +28,7 @@ public class SoftwareCoStatusBarKpmIconWidget implements StatusBarWidget {
         this.id = id;
         eventHandler = new Consumer<MouseEvent>() {
             @Override
-            public void consume(MouseEvent mouseEvent) {
-                SoftwareCoSessionManager.launchDashboard();
+            public void consume(MouseEvent mouseEvent) { SoftwareCoSessionManager.launchDashboard();
             }
         };
     }

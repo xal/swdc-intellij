@@ -29,9 +29,9 @@ public class PluginPostStartupActivity implements StartupActivity {
                         SoftwareCoUtils.makeApiCall(
                                 "/integrations/" + SoftwareCoUtils.pluginId, HttpDelete.METHOD_NAME, null);
                 if (response.isOk()) {
-                    log.info("Software.com: Uninstalled plugin.");
+                    log.info("Code Time: Uninstalled plugin.");
                 } else {
-                    log.error("Software.com: Failed to update Software.com about the uninstall event.");
+                    log.error("Code Time: Failed to update Code Time about the uninstall event.");
                 }
             }
         });

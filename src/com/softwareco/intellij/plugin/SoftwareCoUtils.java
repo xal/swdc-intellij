@@ -10,17 +10,24 @@ import java.util.Calendar;
 import java.util.Date;
 
 import com.google.gson.JsonParser;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.IconLoader;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.WindowManager;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 import javax.swing.*;
@@ -99,10 +106,12 @@ public class SoftwareCoUtils {
                     JsonObject jsonObj = null;
                     if (entity != null) {
                         try {
+                            ContentType contentType = ContentType.getOrDefault(entity);
+                            String mimeType = contentType.getMimeType();
                             String jsonStr = getStringRepresentation(entity);
                             softwareResponse.setJsonStr(jsonStr);
                             LOG.log(Level.ALL.INFO, "Sofware.com: API response {0}", jsonStr);
-                            if (jsonStr != null) {
+                            if (jsonStr != null && !mimeType.equals("text/plain")) {
                                 Object jsonEl = jsonParser.parse(jsonStr);
 
                                 if (jsonEl instanceof JsonElement) {
@@ -124,7 +133,7 @@ public class SoftwareCoUtils {
                                 }
                             }
                         } catch (IOException e) {
-                            String errorMessage = "Software.com: Unable to get the response from the http request, error: " + e.getMessage();
+                            String errorMessage = "Code Time: Unable to get the response from the http request, error: " + e.getMessage();
                             softwareResponse.setErrorMessage(errorMessage);
                             LOG.log(Level.WARNING, errorMessage);
                         }
@@ -135,14 +144,14 @@ public class SoftwareCoUtils {
                             String code = jsonObj.get("code").getAsString();
                             if (code != null && code.equals("DEACTIVATED")) {
                                 SoftwareCoUtils.setStatusLineMessage(
-                                        "warning.png", "Software.com", "To see your coding data in Software.com, please reactivate your account.");
+                                        "warning.png", "Code Time", "To see your coding data in Code Time, please reactivate your account.");
                                 softwareResponse.setDeactivated(true);
                             }
                         }
                     }
                 }
             } catch (InterruptedException | ExecutionException e) {
-                String errorMessage = "Software.com: Unable to get the response from the http request, error: " + e.getMessage();
+                String errorMessage = "Code Time: Unable to get the response from the http request, error: " + e.getMessage();
                 softwareResponse.setErrorMessage(errorMessage);
                 LOG.log(Level.WARNING, errorMessage);
             }
@@ -201,14 +210,14 @@ public class SoftwareCoUtils {
     }
 
     public static void logApiRequest(HttpUriRequest req, String payload) {
-        LOG.info("Software.com: executing request "
+        LOG.info("Code Time: executing request "
                 + "[method: " + req.getMethod() + ", URI: " + req.getURI()
                 + ", payload: " + payload + "]");
     }
 
     public static synchronized void setStatusLineMessage(
             final String singleMsg, final String tooltip) {
-        setStatusLineMessage(singleMsg, null, null, null, tooltip);
+        setStatusLineMessage(null, singleMsg, null, null, tooltip);
     }
 
     public static synchronized void setStatusLineMessage(
@@ -217,12 +226,24 @@ public class SoftwareCoUtils {
         setStatusLineMessage(singleIcon, singleMsg, null, null, tooltip);
     }
 
+    public static Project getOpenProject() {
+        ProjectManager projMgr = ProjectManager.getInstance();
+        Project[] projects = projMgr.getOpenProjects();
+        if (projects != null && projects.length > 0) {
+            return projects[0];
+        }
+        return null;
+    }
+
     public static synchronized void setStatusLineMessage(
             final String kpmIcon, final String kpmMsg,
             final String timeIcon, final String timeMsg,
             final String tooltip) {
         try {
-            Project p = ProjectManager.getInstance().getOpenProjects()[0];
+            Project p = getOpenProject();
+            if (p == null) {
+                return;
+            }
             final StatusBar statusBar = WindowManager.getInstance().getStatusBar(p);
 
             if (statusBar != null) {
@@ -305,6 +326,30 @@ public class SoftwareCoUtils {
         iconWidget.setIcon(icon);
         iconWidget.setTooltip(tooltip);
         return iconWidget;
+    }
+
+    public static String humanizeMinutes(long minutes) {
+        String minutesStr = "";
+        if (minutes == 60) {
+            minutesStr = "1 hr";
+        } else if (minutes > 60) {
+            float fval = (float)minutes / 60;
+            try {
+                if (fval % 1 == 0) {
+                    // don't return a number with 2 decimal place precision
+                    minutesStr = String.format("%.0f", fval) + " hrs";
+                } else {
+                    minutesStr = String.format("%.2f", fval) + " hrs";
+                }
+            } catch (Exception e) {
+                minutesStr = String.valueOf(fval);
+            }
+        } else if (minutes == 1) {
+            minutesStr = "1 min";
+        } else {
+            minutesStr = minutes + " min";
+        }
+        return minutesStr;
     }
 
     public static JsonObject getCurrentMusicTrack() {
@@ -467,6 +512,31 @@ public class SoftwareCoUtils {
         fetchingResourceInfo = false;
 
         return lastResourceInfo;
+    }
+
+    public static void launchCodeTimeMetricsDashboard() {
+        Project p = getOpenProject();
+        if (p == null) {
+            return;
+        }
+        String api = "/dashboard";
+        String dashboardContent = SoftwareCoUtils.makeApiCall(api, HttpGet.METHOD_NAME, null).getJsonStr();
+        String codeTimeFile = SoftwareCoSessionManager.getCodeTimeDashboardFile();
+        File f = new File(codeTimeFile);
+
+        Writer writer = null;
+        try {
+            writer = new BufferedWriter(new OutputStreamWriter(
+                    new FileOutputStream(codeTimeFile), "utf-8"));
+            writer.write(dashboardContent);
+        } catch (IOException ex) {
+            // Report
+        } finally {
+            try {writer.close();} catch (Exception ex) {/*ignore*/}
+        }
+        VirtualFile vFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(f);
+        OpenFileDescriptor descriptor = new OpenFileDescriptor(p, vFile);
+        FileEditorManager.getInstance(p).openTextEditor(descriptor, true);
     }
 
 }

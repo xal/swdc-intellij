@@ -56,7 +56,7 @@ public class SoftwareCoRepoManager {
                     JsonObject latestCommit = payload.get("commit").getAsJsonObject();
                     return latestCommit;
                 } else {
-                    log.debug("Software.com: Unable to fetch latest commit info");
+                    log.debug("Code Time: Unable to fetch latest commit info");
                 }
             } catch (Exception e) {
                 //
@@ -229,12 +229,12 @@ public class SoftwareCoRepoManager {
                     message = responseObj.get("message").getAsString();
                 }
 
-                log.debug("Software.com: completed commits update - " + message);
+                log.debug("Code Time: completed commits update - " + message);
             } else {
-                log.debug("Software.com: Unable to process repo commits");
+                log.debug("Code Time: Unable to process repo commits");
             }
         } catch (Exception e) {
-            log.debug("Software.com: Unable to process repo commits, error: " + e.getMessage());
+            log.debug("Code Time: Unable to process repo commits, error: " + e.getMessage());
         }
     }
 
@@ -285,14 +285,14 @@ public class SoftwareCoRepoManager {
                     // {"status":"success","message":"Updated repo members"}
                     // {"status":"failed","data":"Unable to process repo information"}
                     if (responseData != null && responseData.has("message")) {
-                        log.debug("Software.com: " + responseData.get("message").getAsString());
+                        log.debug("Code Time: " + responseData.get("message").getAsString());
                     } else if (responseData != null && responseData.has("data")) {
-                        log.debug("Software.com: " + responseData.get("data").getAsString());
+                        log.debug("Code Time: " + responseData.get("data").getAsString());
                     } else {
-                        log.debug("Software.com: Unable to process repo member metrics");
+                        log.debug("Code Time: Unable to process repo member metrics");
                     }
                 } catch (Exception e) {
-                    log.debug("Software.com: Unable to process repo member metrics, error: " + e.getMessage());
+                    log.debug("Code Time: Unable to process repo member metrics, error: " + e.getMessage());
                 }
             }
         }

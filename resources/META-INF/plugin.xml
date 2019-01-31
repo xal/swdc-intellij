@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>com.softwareco.intellij.plugin</id>
-  <name>Software.com</name>
-  <version>0.1.52</version>
+  <name>Code Time</name>
+  <version>0.1.54</version>
   <vendor email="support@software.com" url="https://software.com">Software.com</vendor>
 
   <description><![CDATA[
@@ -9,7 +9,7 @@
     ]]></description>
 
   <change-notes><![CDATA[
-      Software.com release 0.1.52<br>
+      Code Time release 0.1.54<br>
     ]]>
   </change-notes>
 
@@ -36,10 +36,12 @@
     <group id="CustomDefaultActionGroup" class="com.softwareco.intellij.plugin.actions.CustomDefaultActionGroup" popup="true"
            text="Software.com" description="Software.com menu actions">
         <add-to-group group-id="ToolsMenu" anchor="last"/>
+        <action class="com.softwareco.intellij.plugin.actions.CodeTimeMetricsAction" id="CodeTimeMetrics"
+                text="Code time metrics" description="View your latest coding metrics"/>
         <action class="com.softwareco.intellij.plugin.actions.PauseMetricsAction" id="PauseMetricsAction"
-              text="Pause metrics" description="Pause software.com metrics"/>
+              text="Pause metrics" description="Pause code time metrics"/>
         <action class="com.softwareco.intellij.plugin.actions.EnableMetricsAction" id="EnableMetricsAction"
-              text="Enable metrics" description="Enable software.com metrics"/>
+              text="Enable metrics" description="Enable code time metrics"/>
         <action class="com.softwareco.intellij.plugin.actions.SoftwareDashboardAction" id="SoftwareDashboardAction"
                 text="Go to software.com" description="View your KPM metrics"/>
     </group>
