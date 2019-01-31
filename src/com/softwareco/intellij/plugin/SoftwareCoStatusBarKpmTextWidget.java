@@ -27,8 +27,7 @@ public class SoftwareCoStatusBarKpmTextWidget implements StatusBarWidget {
         eventHandler = new Consumer<MouseEvent>() {
             @Override
             public void consume(MouseEvent mouseEvent) {
-                // SoftwareCoSessionManager.launchDashboard();
-                SoftwareCoUtils.launchCodeTimeMetricsDashboard();
+                SoftwareCoSessionManager.launchDashboard();
             }
         };
     }
