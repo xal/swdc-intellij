@@ -5,7 +5,6 @@
 package com.softwareco.intellij.plugin;
 
 import com.google.gson.JsonObject;
-import java.util.Date;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -19,6 +18,7 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Date;
 import java.util.UUID;
 
 public class SoftwareCoSessionManager {
@@ -257,7 +257,7 @@ public class SoftwareCoSessionManager {
         boolean deactivated = isDeactivated();
         boolean pastThresholdTime = isPastTimeThreshold();
 
-        boolean requiresLogin = (isOnline && !authenticated && pastThresholdTime && !confirmWindowOpen) ? true : false;
+        boolean requiresLogin = isOnline && !authenticated && pastThresholdTime && !confirmWindowOpen;
 
         if (requiresLogin && project != null) {
             // set the last update time so we don't try to ask too frequently
@@ -306,11 +306,8 @@ public class SoftwareCoSessionManager {
     private boolean isPastTimeThreshold() {
         String lastUpdateTimeStr = getItem("eclipse_lastUpdateTime");
         Long lastUpdateTime = (lastUpdateTimeStr != null) ? Long.valueOf(lastUpdateTimeStr) : null;
-        if (lastUpdateTime != null &&
-                System.currentTimeMillis() - lastUpdateTime.longValue() < MILLIS_PER_HOUR * LONG_THRESHOLD_HOURS) {
-            return false;
-        }
-        return true;
+        return lastUpdateTime == null ||
+                System.currentTimeMillis() - lastUpdateTime.longValue() >= MILLIS_PER_HOUR * LONG_THRESHOLD_HOURS;
     }
 
     public static void checkTokenAvailability() {
@@ -402,7 +399,7 @@ public class SoftwareCoSessionManager {
             String averageDailyMinutesTimeStr = SoftwareCoUtils.humanizeMinutes(averageDailyMinutes);
 
             String inFlowIcon = currentDayMinutes > averageDailyMinutes ? "rocket.png" : null;
-            String msg = "Code time today: " + currentDayTimeStr;
+            String msg = "Code time: " + currentDayTimeStr;
             if (averageDailyMinutes > 0) {
                 msg += " | Avg: " + averageDailyMinutesTimeStr;
             }

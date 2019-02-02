@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>com.softwareco.intellij.plugin</id>
   <name>Code Time</name>
-  <version>0.1.56</version>
+  <version>0.1.57</version>
   <vendor email="support@software.com" url="https://software.com">Software.com</vendor>
 
   <description><![CDATA[
@@ -9,7 +9,7 @@
     ]]></description>
 
   <change-notes><![CDATA[
-      Code Time release 0.1.56<br>
+      Code Time release 0.1.57<br>
     ]]>
   </change-notes>
 

@@ -42,17 +42,14 @@ public class KeystrokeProject {
         this.identifier = identifier;
     }
 
-    public String getIdentifier() { return identifier; };
+    public String getIdentifier() { return identifier; }
 
     public void updateResource(JsonObject resource) {
         this.resource = resource;
     }
 
     public boolean hasResource() {
-        if (this.resource != null && this.resource.has("identifier")) {
-            return true;
-        }
-        return false;
+        return this.resource != null && this.resource.has("identifier");
     }
 
     public String getResource() {

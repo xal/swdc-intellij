@@ -4,17 +4,16 @@
  */
 package com.softwareco.intellij.plugin;
 
-import java.time.ZonedDateTime;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import org.apache.http.client.methods.HttpPost;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import java.time.ZonedDateTime;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 public class SoftwareCoMusicManager {
 
@@ -55,6 +54,18 @@ public class SoftwareCoMusicManager {
                 trackInfo.addProperty("id", trackId);
             }
 
+            boolean isSpotify = (trackId.indexOf("spotify") != -1) ? true : false;
+            if (isSpotify) {
+                // convert the duration from milliseconds to seconds
+                String durationStr = trackInfo.get("duration").getAsString();
+                long duration = Long.parseLong(durationStr);
+                int durationInSec = Math.round(duration / 1000);
+                trackInfo.addProperty("duration", durationInSec);
+            }
+            String trackState = (trackInfo.get("state").getAsString());
+
+            boolean isPaused = (trackState.toLowerCase().equals("playing")) ? false : true;
+
             Integer offset  = ZonedDateTime.now().getOffset().getTotalSeconds();
             long now = Math.round(System.currentTimeMillis() / 1000);
             long local_start = now + offset;
@@ -63,7 +74,7 @@ public class SoftwareCoMusicManager {
 
             if (trackId != null) {
 
-                if (existingTrackId != null && !existingTrackId.equals(trackId)) {
+                if (existingTrackId != null && (!existingTrackId.equals(trackId) || isPaused)) {
                     // update the end time on the previous track and send it as well
                     currentTrack.addProperty("end", now);
                     // send the post to end the previous track
@@ -72,7 +83,7 @@ public class SoftwareCoMusicManager {
 
 
                 // if the current track doesn't have an "id" then a song has started
-                if (existingTrackId == null  || !existingTrackId.equals(trackId)) {
+                if (!isPaused && (existingTrackId == null  || !existingTrackId.equals(trackId))) {
 
                     // send the post to send the new track info
                     trackInfo.addProperty("start", now);

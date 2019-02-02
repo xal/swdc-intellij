@@ -6,9 +6,6 @@ package com.softwareco.intellij.plugin;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import java.util.Calendar;
-import java.util.Date;
-
 import com.google.gson.JsonParser;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
@@ -20,7 +17,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.WindowManager;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -32,6 +28,9 @@ import org.apache.http.impl.client.HttpClientBuilder;
 
 import javax.swing.*;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -110,7 +109,7 @@ public class SoftwareCoUtils {
                             String mimeType = contentType.getMimeType();
                             String jsonStr = getStringRepresentation(entity);
                             softwareResponse.setJsonStr(jsonStr);
-                            LOG.log(Level.ALL.INFO, "Sofware.com: API response {0}", jsonStr);
+                            LOG.log(Level.INFO, "Sofware.com: API response {0}", jsonStr);
                             if (jsonStr != null && mimeType.indexOf("text/plain") == -1) {
                                 Object jsonEl = jsonParser.parse(jsonStr);
 
@@ -167,7 +166,7 @@ public class SoftwareCoUtils {
 
         ContentType contentType = ContentType.getOrDefault(res);
         String mimeType = contentType.getMimeType();
-        boolean isPlainText = (mimeType.indexOf("text/plain") == -1) ? false : true;
+        boolean isPlainText = mimeType.indexOf("text/plain") != -1;
 
         InputStream inputStream = res.getContent();
 
@@ -210,10 +209,7 @@ public class SoftwareCoUtils {
     }
 
     private static boolean isOk(HttpResponse response) {
-        if (response == null || response.getStatusLine() == null || response.getStatusLine().getStatusCode() != 200) {
-            return false;
-        }
-        return true;
+        return response != null && response.getStatusLine() != null && response.getStatusLine().getStatusCode() == 200;
     }
 
     public static void logApiRequest(HttpUriRequest req, String payload) {
@@ -359,76 +355,84 @@ public class SoftwareCoUtils {
         return minutesStr;
     }
 
-    public static JsonObject getCurrentMusicTrack() {
-        if (!SoftwareCo.isMac()) {
-            return new JsonObject();
-        }
-        String script =
-                "on buildItunesRecord(appState)\n" +
-                    "tell application \"iTunes\"\n" +
-                        "set track_artist to artist of current track\n" +
-                        "set track_name to name of current track\n" +
-                        "set track_genre to genre of current track\n" +
-                        "set track_id to database ID of current track\n" +
-                        "set track_duration to duration of current track\n" +
-                        "set json to \"type='itunes';genre='\" & track_genre & \"';artist='\" & track_artist & \"';id='\" & track_id & \"';name='\" & track_name & \"';state='playing';duration='\" & track_duration & \"'\"\n" +
-                    "end tell\n" +
-                    "return json\n" +
-                "end buildItunesRecord\n" +
-                "on buildSpotifyRecord(appState)\n\n" +
-                    "tell application \"Spotify\"\n" +
-                        "set track_artist to artist of current track\n" +
-                        "set track_name to name of current track\n" +
-                        "set track_duration to duration of current track\n" +
-                        "set track_id to id of current track\n" +
-                        "set track_duration to duration of current track\n" +
-                        "set json to \"type='spotify';genre='';artist='\" & track_artist & \"';id='\" & track_id & \"';name='\" & track_name & \"';state='playing';duration='\" & track_duration & \"'\"\n" +
-                    "end tell\n" +
-                    "return json\n" +
-                "end buildSpotifyRecord\n\n" +
-                "try\n" +
-                    "if application \"Spotify\" is running and application \"iTunes\" is not running then\n" +
-                        "tell application \"Spotify\" to set spotifyState to (player state as text)\n" +
-                        "-- spotify is running and itunes is not\n" +
-                        "if (spotifyState is \"paused\" or spotifyState is \"playing\") then\n" +
-                            "set jsonRecord to buildSpotifyRecord(spotifyState)\n" +
-                        "else\n" +
-                            "set jsonRecord to {}\n" +
-                        "end if\n" +
-                    "else if application \"Spotify\" is running and application \"iTunes\" is running then\n" +
-                        "tell application \"Spotify\" to set spotifyState to (player state as text)\n" +
-                        "tell application \"iTunes\" to set itunesState to (player state as text)\n" +
-                        "-- both are running but use spotify as a higher priority\n" +
-                        "if spotifyState is \"playing\" then\n" +
-                            "set jsonRecord to buildSpotifyRecord(spotifyState)\n" +
-                        "else if itunesState is \"playing\" then\n" +
-                            "set jsonRecord to buildItunesRecord(itunesState)\n" +
-                        "else if spotifyState is \"paused\" then\n" +
-                            "set jsonRecord to buildSpotifyRecord(spotifyState)\n" +
-                        "else\n" +
-                            "set jsonRecord to {}\n" +
-                        "end if\n" +
-                    "else if application \"iTunes\" is running and application \"Spotify\" is not running then\n" +
-                        "tell application \"iTunes\" to set itunesState to (player state as text)\n" +
-                        "set jsonRecord to buildItunesRecord(itunesState)\n" +
-                    "else\n" +
-                        "set jsonRecord to {}\n" +
-                    "end if\n" +
-                    "return jsonRecord\n" +
-                "on error\n" +
-                    "return {}\n" +
-                "end try";
+//    public static String getItunesTrackState() {
+//        String[] args = { "osascript", "-e", "tell application \"iTunes\" to get player state" };
+//        return runCommand(args, null);
+//    }
 
-        String[] args = { "osascript", "-e", script };
-        String trackInfoStr = runCommand(args, null);
-        // genre:Alternative, artist:AWOLNATION, id:6761, name:Kill Your Heroes, state:playing
+    protected static boolean isItunesRunning() {
+        // String[] args = { "osascript", "-e", "get running of application \"iTunes\"" };
+        String[] args = { "ps", "-e" };
+        String result = runCommand(args, null);
+        return (result != null && result.indexOf("iTunes") != -1) ? true : false;
+    }
+
+    protected static String itunesTrackScript = "tell application \"iTunes\"\n" +
+            "set track_artist to artist of current track\n" +
+            "set track_album to album of current track\n" +
+            "set track_name to name of current track\n" +
+            "set track_duration to duration of current track\n" +
+            "set track_id to id of current track\n" +
+            "set track_genre to genre of current track\n" +
+            "set track_state to player state\n" +
+            "set json to \"type='itunes';album='\" & track_album & \"';genre='\" & track_genre & \"';artist='\" & track_artist & \"';id='\" & track_id & \"';name='\" & track_name & \"';state='\" & track_state & \"';duration='\" & track_duration & \"'\"\n" +
+            "end tell\n" +
+            "return json\n";
+
+    protected static String getItunesTrack() {
+        // String[] args = { "osascript", "-e", "tell application \"iTunes\" to get {genre, artist, album, id, name, time} of the current track"};
+        String[] args = { "osascript", "-e", itunesTrackScript };
+        return runCommand(args, null);
+    }
+
+//    public static String getSpotifyTrackState() {
+//        String[] args = { "osascript", "-e", "tell application \"Spotify\" to get player state" };
+//        return runCommand(args, null);
+//    }
+
+    protected static boolean isSpotifyRunning() {
+        // String[] args = { "osascript", "-e", "get running of application \"Spotify\"" };
+        String[] args = { "ps", "-e" };
+        String result = runCommand(args, null);
+        return (result != null && result.indexOf("Spotify") != -1) ? true : false;
+    }
+
+    protected static String spotifyTrackScript = "tell application \"Spotify\"\n" +
+                "set track_artist to artist of current track\n" +
+                "set track_album to album of current track\n" +
+                "set track_name to name of current track\n" +
+                "set track_duration to duration of current track\n" +
+                "set track_id to id of current track\n" +
+                "set track_state to player state\n" +
+                "set json to \"type='spotify';album='\" & track_album & \"';genre='';artist='\" & track_artist & \"';id='\" & track_id & \"';name='\" & track_name & \"';state='\" & track_state & \"';duration='\" & track_duration & \"'\"\n" +
+            "end tell\n" +
+            "return json\n";
+
+    protected static String getSpotifyTrack() {
+        String[] args = { "osascript", "-e", spotifyTrackScript };
+        return runCommand(args, null);
+    }
+
+    public static JsonObject getCurrentMusicTrack() {
         JsonObject jsonObj = new JsonObject();
-        if (trackInfoStr != null && !trackInfoStr.equals("")) {
+        if (!SoftwareCo.isMac()) {
+            return jsonObj;
+        }
+
+        String trackInfo = "";
+        // Vintage Trouble, My Whole World Stopped Without You, spotify:track:7awBL5Pu8LD6Fl7iTrJotx, My Whole World Stopped Without You, 244080
+        if (isSpotifyRunning()) {
+            trackInfo = getSpotifyTrack();
+        } else if (isItunesRunning()) {
+            trackInfo = getItunesTrack();
+        }
+
+        if (trackInfo != null && !trackInfo.equals("")) {
             // trim and replace things
-            trackInfoStr = trackInfoStr.trim();
-            trackInfoStr = trackInfoStr.replace("\"", "");
-            trackInfoStr = trackInfoStr.replace("'", "");
-            String[] paramParts = trackInfoStr.split(";");
+            trackInfo = trackInfo.trim();
+            trackInfo = trackInfo.replace("\"", "");
+            trackInfo = trackInfo.replace("'", "");
+            String[] paramParts = trackInfo.split(";");
             for (String paramPart : paramParts) {
                 paramPart = paramPart.trim();
                 String[] params = paramPart.split("=");
@@ -534,7 +538,7 @@ public class SoftwareCoUtils {
         Writer writer = null;
         try {
             writer = new BufferedWriter(new OutputStreamWriter(
-                    new FileOutputStream(codeTimeFile), "utf-8"));
+                    new FileOutputStream(codeTimeFile), StandardCharsets.UTF_8));
             writer.write(dashboardContent);
         } catch (IOException ex) {
             // Report

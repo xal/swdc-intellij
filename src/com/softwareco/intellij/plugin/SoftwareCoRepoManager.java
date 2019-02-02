@@ -1,6 +1,5 @@
 package com.softwareco.intellij.plugin;
 
-import com.google.common.collect.Maps;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.intellij.openapi.diagnostic.Logger;
@@ -251,7 +250,7 @@ public class SoftwareCoRepoManager {
             // split the output
             String[] devList = devOutput.split("\n");
             JsonArray members = new JsonArray();
-            Map<String, String> memberMap = Maps.newHashMap();
+            Map<String, String> memberMap = new HashMap<>();
             if (devList != null && devList.length > 0) {
                 for (String line : devList) {
                     line = line.trim();
