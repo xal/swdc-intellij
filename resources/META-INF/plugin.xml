@@ -5,7 +5,58 @@
   <vendor email="cody@software.com" url="https://software.com">Software</vendor>
 
   <description><![CDATA[
-      Code Time is an open source plugin that provides programming metrics right in your code editor.
+      <h1 id="codetimeforintellij">Code Time for IntelliJ</h1>
+
+      <blockquote>
+        <p><strong>Code Time</strong> is an open source plugin that provides programming metrics right in your code editor.</p>
+      </blockquote>
+
+      <p align="center" style="margin: 0 10%">
+        <img src="https://raw.githubusercontent.com/swdotcom/swdc-intellij/master/resources/assets/intellij-dashboard.gif" alt="Code Time for IntelliJ" />
+      </p>
+
+      <h2 id="powerupyourdevelopment">Power up your development</h2>
+
+      <p><strong>In-editor dashboard</strong>
+      Get daily and weekly reports of your programming activity right in your code editor.</p>
+
+      <p><strong>Status bar metrics</strong>
+      After installing our plugin, your status bar will show real-time metrics about time coded per day.</p>
+
+      <p><strong>Weekly email reports</strong>
+      Get a weekly report delivered right to your email inbox.</p>
+
+      <p><strong>Data visualizations</strong>
+      Go to our web app to get simple data visualizations, such as a rolling heatmap of your best programming times by hour of the day.</p>
+
+      <p><strong>Calendar integration</strong>
+      Integrate with Google Calendar to automatically set calendar events to protect your best programming times from meetings and interrupts.</p>
+
+      <p><strong>More stats</strong>
+      See your best music for coding and the speed, frequency, and top files across your commits.</p>
+
+      <h2 id="whyyoushouldtryitout">Why you should try it out</h2>
+
+      <ul>
+      <li>Automatic time reports by project</li>
+
+      <li>See what time you code your best—find your “flow”</li>
+
+      <li>Defend your best code times against meetings and interrupts</li>
+
+      <li>Find out what you can learn from your data</li>
+      </ul>
+
+      <h2 id="itssafesecureandfree">It’s safe, secure, and free</h2>
+
+      <p><strong>We never access your code</strong>
+      We do not process, send, or store your proprietary code. We only provide metrics about programming, and we make it easy to see the data we collect.</p>
+
+      <p><strong>Your data is private</strong>
+      We will never share your individually identifiable data with your boss. In the future, we will roll up data into groups and teams but we will keep your data anonymized.</p>
+
+      <p><strong>Free for you, forever</strong>
+      We provide 90 days of data history for free, forever. In the future, we will provide premium plans for advanced features and historical data access.</p>
     ]]></description>
 
   <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
