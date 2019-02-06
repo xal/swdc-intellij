@@ -39,13 +39,33 @@ public class SoftwareCoMusicManager {
             //
             JsonObject trackInfo = SoftwareCoUtils.getCurrentMusicTrack();
 
+            SoftwareResponse response = null;
+            String existingTrackId = (currentTrack.has("id")) ? currentTrack.get("id").getAsString() : null;
+            String trackStr = null;
+
+            Integer offset  = ZonedDateTime.now().getOffset().getTotalSeconds();
+            long now = Math.round(System.currentTimeMillis() / 1000);
+            long local_start = now + offset;
+
             if (trackInfo == null || !trackInfo.has("id") || !trackInfo.has("name")) {
+                if (existingTrackId != null) {
+                    // update the end time on the previous track and send it as well
+                    currentTrack.addProperty("end", now);
+                    // send the post to end the previous track
+                    trackStr = SoftwareCo.gson.toJson(currentTrack);
+                    if (trackStr != null) {
+                        response = SoftwareCoUtils.makeApiCall("/data/music", HttpPost.METHOD_NAME, trackStr);
+                    }
+
+                    // song has ended, clear out the current track
+                    currentTrack = new JsonObject();
+
+                    return response;
+                }
                 return null;
             }
 
-            SoftwareResponse response = null;
 
-            String existingTrackId = (currentTrack.has("id")) ? currentTrack.get("id").getAsString() : null;
             String trackId = (trackInfo != null && trackInfo.has("id")) ? trackInfo.get("id").getAsString() : null;
 
             if (trackId != null && trackId.indexOf("spotify") == -1 && trackId.indexOf("itunes") == -1) {
@@ -54,7 +74,7 @@ public class SoftwareCoMusicManager {
                 trackInfo.addProperty("id", trackId);
             }
 
-            boolean isSpotify = (trackId.indexOf("spotify") != -1) ? true : false;
+            boolean isSpotify = (trackId != null && trackId.indexOf("spotify") != -1) ? true : false;
             if (isSpotify) {
                 // convert the duration from milliseconds to seconds
                 String durationStr = trackInfo.get("duration").getAsString();
@@ -65,12 +85,6 @@ public class SoftwareCoMusicManager {
             String trackState = (trackInfo.get("state").getAsString());
 
             boolean isPaused = (trackState.toLowerCase().equals("playing")) ? false : true;
-
-            Integer offset  = ZonedDateTime.now().getOffset().getTotalSeconds();
-            long now = Math.round(System.currentTimeMillis() / 1000);
-            long local_start = now + offset;
-
-            String trackStr = null;
 
             if (trackId != null) {
 
@@ -94,17 +108,6 @@ public class SoftwareCoMusicManager {
                     // update the current track
                     cloneTrackInfoToCurrent(trackInfo);
                 }
-
-            } else {
-                if (existingTrackId != null) {
-                    // update the end time on the previous track and send it as well
-                    currentTrack.addProperty("end", now);
-                    // send the post to end the previous track
-                    trackStr = SoftwareCo.gson.toJson(currentTrack);
-                }
-
-                // song has ended, clear out the current track
-                currentTrack = new JsonObject();
             }
 
             if (trackStr != null) {

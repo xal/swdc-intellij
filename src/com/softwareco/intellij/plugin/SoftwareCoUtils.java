@@ -339,27 +339,28 @@ public class SoftwareCoUtils {
     }
 
     public static String humanizeMinutes(long minutes) {
-        String minutesStr = "";
+        String str = "";
         if (minutes == 60) {
-            minutesStr = "1 hr";
+            str = "1 hr";
         } else if (minutes > 60) {
-            float fval = (float)minutes / 60;
+            float hours = (float)minutes / 60;
             try {
-                if (fval % 1 == 0) {
+                if (hours % 1 == 0) {
                     // don't return a number with 2 decimal place precision
-                    minutesStr = String.format("%.0f", fval) + " hrs";
+                    str = String.format("%.0f", hours) + " hrs";
                 } else {
-                    minutesStr = String.format("%.2f", fval) + " hrs";
+                    hours = Math.round(hours * 10) / 10;
+                    str = String.format("%.1f", hours) + " hrs";
                 }
             } catch (Exception e) {
-                minutesStr = String.valueOf(fval);
+                str = String.valueOf(Math.round(hours)) + " hrs";
             }
         } else if (minutes == 1) {
-            minutesStr = "1 min";
+            str = "1 min";
         } else {
-            minutesStr = minutes + " min";
+            str = minutes + " min";
         }
-        return minutesStr;
+        return str;
     }
 
 //    public static String getItunesTrackState() {

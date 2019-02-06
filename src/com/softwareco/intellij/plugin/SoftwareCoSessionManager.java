@@ -359,29 +359,7 @@ public class SoftwareCoSessionManager {
         if (jsonObj != null) {
 
             float currentSessionGoalPercent = 0f;
-            String sessionTimeIcon = "";
-            if (jsonObj.has("currentSessionGoalPercent")) {
-                currentSessionGoalPercent = jsonObj.get("currentSessionGoalPercent").getAsFloat();
-                if (currentSessionGoalPercent > 0) {
-                    if (currentSessionGoalPercent < 0.35) {
-                        sessionTimeIcon = "0.png"; // "🌘";
-                    } else if (currentSessionGoalPercent < 0.70) {
-                        sessionTimeIcon = "25.png"; // "🌗";
-                    } else if (currentSessionGoalPercent < 0.93) {
-                        sessionTimeIcon = "50.png"; // "🌖";
-                    } else {
-                        sessionTimeIcon = "100.png"; // "🌕";
-                    }
-                }
-            }
-            int lastKpm = 0;
-            if (jsonObj.has("lastKpm")) {
-                lastKpm = jsonObj.get("lastKpm").getAsInt();
-            }
-            boolean inFlow = false;
-            if (jsonObj.has("inFlow")) {
-                inFlow = jsonObj.get("inFlow").getAsBoolean();
-            }
+
             long currentSessionMinutes = 0;
             if (jsonObj.has("currentSessionMinutes")) {
                 currentSessionMinutes = jsonObj.get("currentSessionMinutes").getAsLong();
