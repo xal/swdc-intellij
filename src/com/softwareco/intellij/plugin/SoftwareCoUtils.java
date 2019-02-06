@@ -252,44 +252,16 @@ public class SoftwareCoUtils {
 
             if (statusBar != null) {
 
-                removeWidgets();
-
-                String id = SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_kpmicon";
-                if (kpmIcon != null) {
-                    SoftwareCoStatusBarKpmIconWidget kpmIconWidget = buildStatusBarIconWidget(
-                            kpmIcon, tooltip, id);
-                    statusBar.addWidget(kpmIconWidget, id);
-                    statusBar.updateWidget(id);
-                }
-
-                id = SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_kpmmsg";
-                SoftwareCoStatusBarKpmTextWidget kpmWidget = buildStatusBarTextWidget(
-                        kpmMsg, tooltip, id);
-                statusBar.addWidget(kpmWidget, id);
-                statusBar.updateWidget(id);
-
-                id = SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_timeicon";
-                if (timeIcon != null) {
-                    SoftwareCoStatusBarKpmIconWidget timeIconWidget = buildStatusBarIconWidget(
-                            timeIcon, tooltip, id);
-                    statusBar.addWidget(timeIconWidget, id);
-                    statusBar.updateWidget(id);
-                }
-
-                id = SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_timemsg";
-                if (timeMsg != null) {
-                    SoftwareCoStatusBarKpmTextWidget timeWidget = buildStatusBarTextWidget(
-                            timeMsg, tooltip, id);
-                    statusBar.addWidget(timeWidget, id);
-                    statusBar.updateWidget(id);
-                }
+                updateStatusBar(kpmIcon, kpmMsg, timeIcon, timeMsg, tooltip);
             }
         } catch (Exception e) {
             //
         }
     }
 
-    private static void removeWidgets() {
+    private static void updateStatusBar(final String kpmIcon, final String kpmMsg,
+                                        final String timeIcon, final String timeMsg,
+                                        final String tooltip) {
         ApplicationManager.getApplication().invokeLater(new Runnable() {
             public void run() {
                 ProjectManager pm = ProjectManager.getInstance();
@@ -310,6 +282,36 @@ public class SoftwareCoUtils {
                             }
                             if (statusBar.getWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_timeicon") != null) {
                                 statusBar.removeWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_timeicon");
+                            }
+
+                            String id = SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_kpmicon";
+                            if (kpmIcon != null) {
+                                SoftwareCoStatusBarKpmIconWidget kpmIconWidget = buildStatusBarIconWidget(
+                                        kpmIcon, tooltip, id);
+                                statusBar.addWidget(kpmIconWidget, id);
+                                statusBar.updateWidget(id);
+                            }
+
+                            id = SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_kpmmsg";
+                            SoftwareCoStatusBarKpmTextWidget kpmWidget = buildStatusBarTextWidget(
+                                    kpmMsg, tooltip, id);
+                            statusBar.addWidget(kpmWidget, id);
+                            statusBar.updateWidget(id);
+
+                            id = SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_timeicon";
+                            if (timeIcon != null) {
+                                SoftwareCoStatusBarKpmIconWidget timeIconWidget = buildStatusBarIconWidget(
+                                        timeIcon, tooltip, id);
+                                statusBar.addWidget(timeIconWidget, id);
+                                statusBar.updateWidget(id);
+                            }
+
+                            id = SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_timemsg";
+                            if (timeMsg != null) {
+                                SoftwareCoStatusBarKpmTextWidget timeWidget = buildStatusBarTextWidget(
+                                        timeMsg, tooltip, id);
+                                statusBar.addWidget(timeWidget, id);
+                                statusBar.updateWidget(id);
                             }
                         }
                     } catch(Exception e){
