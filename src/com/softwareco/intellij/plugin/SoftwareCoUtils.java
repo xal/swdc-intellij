@@ -102,6 +102,7 @@ public class SoftwareCoUtils {
                     if (statusCode < 300) {
                         softwareResponse.setIsOk(true);
                     }
+                    softwareResponse.setCode(statusCode);
                     HttpEntity entity = httpResponse.getEntity();
                     JsonObject jsonObj = null;
                     if (entity != null) {
@@ -112,9 +113,14 @@ public class SoftwareCoUtils {
                             softwareResponse.setJsonStr(jsonStr);
                             LOG.log(Level.INFO, "Sofware.com: API response {0}", jsonStr);
                             if (jsonStr != null && mimeType.indexOf("text/plain") == -1) {
-                                Object jsonEl = jsonParser.parse(jsonStr);
+                                Object jsonEl = null;
+                                try {
+                                    jsonEl = jsonParser.parse(jsonStr);
+                                } catch (Exception e) {
+                                    //
+                                }
 
-                                if (jsonEl instanceof JsonElement) {
+                                if (jsonEl != null && jsonEl instanceof JsonElement) {
                                     try {
                                         JsonElement el = (JsonElement)jsonEl;
                                         if (el.isJsonPrimitive()) {

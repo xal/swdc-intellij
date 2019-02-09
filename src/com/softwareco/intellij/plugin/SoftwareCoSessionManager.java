@@ -31,8 +31,6 @@ public class SoftwareCoSessionManager {
 
     private boolean confirmWindowOpen = false;
 
-    private long lastTimeAuthenticated = 0;
-
     public static SoftwareCoSessionManager getInstance() {
         if (instance == null) {
             instance = new SoftwareCoSessionManager();

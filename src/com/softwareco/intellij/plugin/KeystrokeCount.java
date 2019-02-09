@@ -1,16 +1,12 @@
 /**
  * Copyright (c) 2018 by Software.com
- * All rights reserved
+ * All rights reserved...
  */
 package com.softwareco.intellij.plugin;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.intellij.ide.plugins.PluginManager;
 import com.intellij.openapi.extensions.PluginId;
-
-import java.util.Map;
-import java.util.Set;
 
 public class KeystrokeCount {
 
@@ -112,18 +108,6 @@ public class KeystrokeCount {
     public boolean hasData() {
         if (Integer.parseInt(this.getKeystrokes()) > 0) {
             return true;
-        }
-        Set<Map.Entry<String, JsonElement>> fileInfoDataSet = this.source.entrySet();
-        for ( Map.Entry<String, JsonElement> fileInfoData : fileInfoDataSet ) {
-            JsonObject fileinfoDataJsonObj = (JsonObject) fileInfoData.getValue();
-            // go through all of the different types of event vals and check if we have an incremented value
-            if (this.hasValueDataForProperty(fileinfoDataJsonObj, "add") ||
-                    this.hasValueDataForProperty(fileinfoDataJsonObj, "open") ||
-                    this.hasValueDataForProperty(fileinfoDataJsonObj, "close") ||
-                    this.hasValueDataForProperty(fileinfoDataJsonObj, "paste") ||
-                    this.hasValueDataForProperty(fileinfoDataJsonObj, "delete")) {
-                return true;
-            }
         }
 
         return false;

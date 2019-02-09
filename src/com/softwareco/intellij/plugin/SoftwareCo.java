@@ -467,7 +467,7 @@ public class SoftwareCo implements ApplicationComponent {
         if (READY) {
             List<KeystrokeManager.KeystrokeCountWrapper> wrappers = keystrokeMgr.getKeystrokeCountWrapperList();
             for (KeystrokeManager.KeystrokeCountWrapper wrapper : wrappers) {
-                if (wrapper.getKeystrokeCount() != null) {
+                if (wrapper.getKeystrokeCount() != null && wrapper.getKeystrokeCount().hasData()) {
                     // ZonedDateTime will get us the true seconds away from GMT
                     // it'll be negative for zones before GMT and postive for zones after
                     Integer offset  = ZonedDateTime.now().getOffset().getTotalSeconds();

@@ -62,6 +62,8 @@ public class SoftwareCoMusicManager {
 
                     return response;
                 }
+
+                // no existing track or current track, return null
                 return null;
             }
 
@@ -162,7 +164,7 @@ public class SoftwareCoMusicManager {
                     try {
                         httpResponse = response.get();
 
-                        if (httpResponse == null || !httpResponse.isOk()) {
+                        if (httpResponse != null && !httpResponse.isOk()) {
                             String errorStr = (httpResponse != null && httpResponse.getErrorMessage() != null) ? httpResponse.getErrorMessage() : "";
                             log.info("Code Time: Unable to get the music track response from the http request, error: " + errorStr);
                         }
