@@ -9,7 +9,6 @@ import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.editor.Editor;
 
 /**
- * @author Anna Bulenkova
  */
 public class CustomDefaultActionGroup extends DefaultActionGroup {
     @Override

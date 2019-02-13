@@ -5,38 +5,28 @@
 package com.softwareco.intellij.plugin;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManager;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
-import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.extensions.PluginId;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.SystemInfo;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.PlatformUtils;
 import com.intellij.util.messages.MessageBusConnection;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.ZonedDateTime;
-import java.util.*;
+
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -62,11 +52,10 @@ public class SoftwareCo implements ApplicationComponent {
     private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private ScheduledFuture<?> scheduledFixture;
 
-    private static boolean READY = false;
-    private static KeystrokeManager keystrokeMgr;
-
-    private SoftwareCoSessionManager sessionMgr = SoftwareCoSessionManager.getInstance();
     private SoftwareCoMusicManager musicMgr = SoftwareCoMusicManager.getInstance();
+    private KeystrokeManager keystrokeMgr = KeystrokeManager.getInstance();
+    private SoftwareCoSessionManager sessionMgr = SoftwareCoSessionManager.getInstance();
+    private SoftwareCoEventManager eventMgr = SoftwareCoEventManager.getInstance();
 
     private Timer kpmFetchTimer;
     private Timer trackInfoTimer;
@@ -88,7 +77,6 @@ public class SoftwareCo implements ApplicationComponent {
 
         setLoggingLevel();
 
-        keystrokeMgr = KeystrokeManager.getInstance();
         gson = new Gson();
 
         setupEventListeners();
@@ -127,7 +115,7 @@ public class SoftwareCo implements ApplicationComponent {
         repoCommitsTimer.scheduleAtFixedRate(
                 new ProcessRepoCommitsTask(), one_min * 3, one_hour + one_min);
 
-        READY = true;
+        eventMgr.setAppIsReady(true);
     }
 
     private void initializeCalls() {
@@ -209,7 +197,6 @@ public class SoftwareCo implements ApplicationComponent {
                         MessageBusConnection connection = project.getMessageBus().connect(project);
                         connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new SoftwareCoFileEditorListener());
                         connections[i] = connection;
-                        keystrokeMgr.addKeystrokeWrapperIfNoneExists(project);
                     }
                 }
 
@@ -220,7 +207,7 @@ public class SoftwareCo implements ApplicationComponent {
     }
 
     private void setupScheduledProcessor() {
-        final Runnable handler = () -> processKeystrokes();
+        final Runnable handler = () -> eventMgr.processKeystrokesData();
         scheduledFixture = scheduler.scheduleAtFixedRate(
                 handler, SEND_INTERVAL, SEND_INTERVAL, java.util.concurrent.TimeUnit.SECONDS);
     }
@@ -243,7 +230,7 @@ public class SoftwareCo implements ApplicationComponent {
 
         // process one last time
         // this will ensure we process the latest keystroke updates
-        processKeystrokes();
+        eventMgr.processKeystrokesData();
     }
 
     public static void setLoggingLevel() {
@@ -255,37 +242,7 @@ public class SoftwareCo implements ApplicationComponent {
         return "SoftwareCo";
     }
 
-    public static void handleFileOpenedEvents(String fileName, Project project) {
-        KeystrokeCount keystrokeCount = keystrokeMgr.getKeystrokeCount(project.getName());
-        if (keystrokeCount == null) {
-            initializeKeystrokeObjectGraph(fileName, project.getName(), project.getProjectFilePath());
-            keystrokeCount = keystrokeMgr.getKeystrokeCount(project.getName());
-        }
-        JsonObject fileInfo = keystrokeCount.getSourceByFileName(fileName);
-        if (fileInfo == null) {
-            return;
-        }
-        updateFileInfoValue(fileInfo,"open", 1);
-        log.info("Code Time: file opened: " + fileName);
 
-        // update the line count since we're here
-        int lines = getLineCount(fileName);
-        updateFileInfoValue(fileInfo, "lines", lines);
-    }
-
-    public static void handleFileClosedEvents(String fileName, Project project) {
-        KeystrokeCount keystrokeCount = keystrokeMgr.getKeystrokeCount(project.getName());
-        if (keystrokeCount == null) {
-            initializeKeystrokeObjectGraph(fileName, project.getName(), project.getProjectFilePath());
-            keystrokeCount = keystrokeMgr.getKeystrokeCount(project.getName());
-        }
-        JsonObject fileInfo = keystrokeCount.getSourceByFileName(fileName);
-        if (fileInfo == null) {
-            return;
-        }
-        updateFileInfoValue(fileInfo,"close", 1);
-        log.info("Code Time: file closed: " + fileName);
-    }
 
     public static String getUserHomeDir() {
         return System.getProperty("user.home");
@@ -299,201 +256,6 @@ public class SoftwareCo implements ApplicationComponent {
         return SystemInfo.isMac;
     }
 
-    protected static int getLineCount(String fileName) {
-        Path path = Paths.get(fileName);
-        try {
-            return (int) Files.lines(path).count();
-        } catch (IOException e) {
-            log.info("Code Time: failed to get the line count for file " + fileName);
-            return 0;
-        }
-    }
-
-    /**
-     * Handles character change events in a file
-     * @param document
-     * @param documentEvent
-     */
-    public static void handleChangeEvents(Document document, DocumentEvent documentEvent) {
-
-        if (document == null) {
-            return;
-        }
-        FileDocumentManager instance = FileDocumentManager.getInstance();
-        if (instance != null) {
-            VirtualFile file = instance.getFile(document);
-            if (file != null && !file.isDirectory()) {
-                Editor[] editors = EditorFactory.getInstance().getEditors(document);
-                if (editors != null && editors.length > 0) {
-                    String fileName = file.getPath();
-                    Project project = editors[0].getProject();
-                    String projectName = null;
-                    String projectFilepath = null;
-                    if (project != null) {
-                        projectName = project.getName();
-                        projectFilepath = project.getBaseDir().getPath();
-
-                        keystrokeMgr.addKeystrokeWrapperIfNoneExists(project);
-                        initializeKeystrokeObjectGraph(fileName, projectName, projectFilepath);
-
-                        KeystrokeCount keystrokeCount = keystrokeMgr.getKeystrokeCount(projectName);
-                        if (keystrokeCount != null) {
-
-                            KeystrokeManager.KeystrokeCountWrapper wrapper = keystrokeMgr.getKeystrokeWrapper(projectName);
 
 
-                            // Set the current text length and the current file and the current project
-                            //
-                            int currLen = document.getTextLength();
-                            wrapper.setCurrentFileName(fileName);
-                            wrapper.setCurrentTextLength(currLen);
-
-                            JsonObject fileInfo = keystrokeCount.getSourceByFileName(fileName);
-                            if (documentEvent.getOldLength() > 0) {
-                                //it's a delete
-                                updateFileInfoValue(fileInfo, "delete", 1);
-                            } else {
-                                // it's an add
-                                if (documentEvent.getNewLength() > 1) {
-                                    // it's a paste
-                                    updateFileInfoValue(fileInfo, "paste", 1);
-                                } else {
-                                    updateFileInfoValue(fileInfo, "add", 1);
-                                }
-                            }
-
-                            int incrementedCount = Integer.parseInt(keystrokeCount.getKeystrokes()) + 1;
-                            keystrokeCount.setKeystrokes(String.valueOf(incrementedCount));
-
-                            String newFrag = documentEvent.getNewFragment().toString();
-                            if (newFrag.matches("^\n.*") || newFrag.matches("^\n\r.*")) {
-                                // it's a new line
-                                updateFileInfoValue(fileInfo, "linesAdded", 1);
-                            }
-                            updateFileInfoValue(fileInfo, "lines", getLineCount(fileName));
-                        }
-                    }
-                }
-
-            }
-        }
-    }
-
-    private static int getPreviousLineCount(JsonObject fileInfo) {
-        JsonPrimitive keysVal = fileInfo.getAsJsonPrimitive("lines");
-        return keysVal.getAsInt();
-    }
-
-    private static void updateFileInfoStringValue(JsonObject fileInfo, String key, String value) {
-        fileInfo.addProperty(key, value);
-    }
-
-    private static void updateFileInfoValue(JsonObject fileInfo, String key, int incrementVal) {
-        JsonPrimitive keysVal = fileInfo.getAsJsonPrimitive(key);
-        if (key.equals("length") || key.equals("lines")) {
-            // length, lines, or syntax are not additive
-            fileInfo.addProperty(key, incrementVal);
-        } else {
-            int totalVal = keysVal.getAsInt() + incrementVal;
-            fileInfo.addProperty(key, totalVal);
-        }
-
-        if (key.equals("add") || key.equals("delete")) {
-            // update the netkeys and the keys
-            // "netkeys" = add - delete
-            int deleteCount = fileInfo.get("delete").getAsInt();
-            int addCount = fileInfo.get("add").getAsInt();
-            fileInfo.addProperty("netkeys", (addCount - deleteCount));
-        }
-    }
-
-    private static void initializeKeystrokeObjectGraph(String fileName, String projectName, String projectFilepath) {
-        // initialize it in case it's not initialized yet
-        initializeKeystrokeCount(projectName, projectFilepath);
-
-        KeystrokeCount keystrokeCount = keystrokeMgr.getKeystrokeCount(projectName);
-
-        //
-        // Make sure we have the project name and directory info
-        updateKeystrokeProject(projectName, fileName, keystrokeCount);
-    }
-
-    private static void initializeKeystrokeCount(String projectName, String projectFilepath) {
-        KeystrokeCount keystrokeCount = keystrokeMgr.getKeystrokeCount(projectName);
-        if ( keystrokeCount == null ) {
-            //
-            // Create one since it hasn't been created yet
-            // and set the start time (in seconds)
-            //
-            keystrokeCount = new KeystrokeCount();
-
-            KeystrokeProject keystrokeProject = new KeystrokeProject( projectName, projectFilepath );
-            keystrokeCount.setProject( keystrokeProject );
-
-            //
-            // Update the manager with the newly created KeystrokeCount object
-            //
-            keystrokeMgr.setKeystrokeCount(projectName, keystrokeCount);
-        }
-    }
-
-    private static void updateKeystrokeProject(String projectName, String fileName, KeystrokeCount keystrokeCount) {
-        if (keystrokeCount == null) {
-            return;
-        }
-        KeystrokeProject project = keystrokeCount.getProject();
-        String projectDirectory = getProjectDirectory(projectName, fileName);
-
-        if (project == null) {
-            project = new KeystrokeProject( projectName, projectDirectory );
-            keystrokeCount.setProject( project );
-        } else if (project.getName() == null || project.getName() == "") {
-            project.setDirectory(projectDirectory);
-            project.setName(projectName);
-        }
-    }
-
-    private static String getProjectDirectory(String projectName, String fileName) {
-        String projectDirectory = "";
-        if ( projectName != null && projectName.length() > 0 &&
-                fileName != null && fileName.length() > 0 &&
-                fileName.indexOf(projectName) > 0 ) {
-            projectDirectory = fileName.substring( 0, fileName.indexOf( projectName ) - 1 );
-        }
-        return projectDirectory;
-    }
-
-    private void processKeystrokes() {
-        if (READY) {
-            List<KeystrokeManager.KeystrokeCountWrapper> wrappers = keystrokeMgr.getKeystrokeCountWrapperList();
-            for (KeystrokeManager.KeystrokeCountWrapper wrapper : wrappers) {
-                if (wrapper.getKeystrokeCount() != null && wrapper.getKeystrokeCount().hasData()) {
-                    // ZonedDateTime will get us the true seconds away from GMT
-                    // it'll be negative for zones before GMT and postive for zones after
-                    Integer offset  = ZonedDateTime.now().getOffset().getTotalSeconds();
-                    long startInSeconds = (int) (new Date().getTime() / 1000);
-                    wrapper.getKeystrokeCount().setStart(startInSeconds);
-                    // add to the start in seconds since it's a negative for less than gmt and the
-                    // opposite for grtr than gmt
-                    wrapper.getKeystrokeCount().setLocal_start(startInSeconds + offset);
-                    wrapper.getKeystrokeCount().setTimezone(TimeZone.getDefault().getID());
-                    String payload = SoftwareCo.gson.toJson(wrapper.getKeystrokeCount());
-
-                    if (!SoftwareCo.TELEMTRY_ON) {
-                        log.info("Code Time telemetry is currently paused. Enable to view KPM metrics");
-                        sessionMgr.storePayload(payload);
-                        continue;
-                    }
-
-                    SoftwareResponse resp = SoftwareCoUtils.makeApiCall("/data", HttpPost.METHOD_NAME, payload);
-                    if (!resp.isOk() && !SoftwareCoSessionManager.isDeactivated()) {
-                        sessionMgr.storePayload(payload);
-                        sessionMgr.checkUserAuthenticationStatus();
-                    }
-
-                    keystrokeMgr.resetData(wrapper.getKeystrokeCount().getProject().getName());
-                }
-            }
-        }
-    }
 }

@@ -18,6 +18,8 @@ public class SoftwareCoStatusBarKpmTextWidget implements StatusBarWidget {
     private String tooltip = "";
     private String id;
 
+    private SoftwareCoSessionManager sessionMgr = SoftwareCoSessionManager.getInstance();
+
     private Consumer<MouseEvent> eventHandler;
 
     private final TextPresentation presentation = new StatusPresentation();
@@ -27,7 +29,7 @@ public class SoftwareCoStatusBarKpmTextWidget implements StatusBarWidget {
         eventHandler = new Consumer<MouseEvent>() {
             @Override
             public void consume(MouseEvent mouseEvent) {
-                SoftwareCoSessionManager.launchDashboard();
+                sessionMgr.statusBarClickHandler();
             }
         };
     }

@@ -6,14 +6,11 @@ package com.softwareco.intellij.plugin;
 
 import com.intellij.openapi.project.Project;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class KeystrokeManager {
 
     private static KeystrokeManager instance = null;
 
-    List<KeystrokeCountWrapper> keystrokeCountWrapperList = new ArrayList<KeystrokeCountWrapper>();
+    KeystrokeCountWrapper wrapper = new KeystrokeCountWrapper();
 
     /**
      * Protected constructor to defeat instantiation
@@ -30,57 +27,35 @@ public class KeystrokeManager {
     }
 
     public void addKeystrokeWrapperIfNoneExists(Project project) {
-        if (this.getKeystrokeWrapper(project.getName()) == null) {
-            KeystrokeCountWrapper wrapper = new KeystrokeCountWrapper();
+        if (wrapper == null || wrapper.getProjectName() == null) {
+            wrapper = new KeystrokeCountWrapper();
             wrapper.setProjectName(project.getName());
-            keystrokeCountWrapperList.add(wrapper);
         }
     }
 
-    public void resetData(String projectName) {
-        for (KeystrokeCountWrapper wrapper : keystrokeCountWrapperList) {
-            if (wrapper.getProjectName() != null && projectName.equals(wrapper.getProjectName())) {
-                wrapper.getKeystrokeCount().resetData();
-                break;
-            }
+    public void resetData() {
+        if (wrapper != null && wrapper.getKeystrokeCount() != null) {
+            wrapper.getKeystrokeCount().resetData();;
         }
     }
 
-    public KeystrokeCount getKeystrokeCount(String projectName) {
-        for (KeystrokeCountWrapper wrapper : keystrokeCountWrapperList) {
-            if (wrapper.getProjectName() != null && projectName.equals(wrapper.getProjectName())) {
-                return wrapper.getKeystrokeCount();
-            }
+    public KeystrokeCount getKeystrokeCount() {
+        if (wrapper != null) {
+            return wrapper.getKeystrokeCount();
         }
         return null;
     }
 
     public void setKeystrokeCount(String projectName, KeystrokeCount keystrokeCount) {
-        for (KeystrokeCountWrapper wrapper : keystrokeCountWrapperList) {
-            if (wrapper.getProjectName() != null && projectName.equals(wrapper.getProjectName())) {
-                wrapper.setKeystrokeCount(keystrokeCount);
-                return;
-            }
+        if (wrapper == null) {
+            wrapper = new KeystrokeCountWrapper();
         }
-
-        // didn't find it, time to create a wrapper
-        KeystrokeCountWrapper wrapper = new KeystrokeCountWrapper();
         wrapper.setKeystrokeCount(keystrokeCount);
         wrapper.setProjectName(projectName);
-        keystrokeCountWrapperList.add(wrapper);
     }
 
-    public KeystrokeCountWrapper getKeystrokeWrapper(String projectName) {
-        for (KeystrokeCountWrapper wrapper : keystrokeCountWrapperList) {
-            if (wrapper.getProjectName() != null && projectName.equals(wrapper.getProjectName())) {
-                return wrapper;
-            }
-        }
-        return null;
-    }
-
-    public List<KeystrokeCountWrapper> getKeystrokeCountWrapperList() {
-        return this.keystrokeCountWrapperList;
+    public KeystrokeCountWrapper getKeystrokeWrapper() {
+        return wrapper;
     }
 
     public class KeystrokeCountWrapper {

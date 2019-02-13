@@ -391,6 +391,27 @@ public class SoftwareCoSessionManager {
         }
     }
 
+    public void statusBarClickHandler() {
+        final Project project = this.getCurrentProject();
+        ApplicationManager.getApplication().invokeLater(new Runnable() {
+            public void run() {
+                // ask to download the PM
+                int options = Messages.showDialog(
+                        project,
+                        "Click to view your Code Time dashboard or visit the app.",
+                        "Code Time",
+                        new String[]{"Software.com", "Dashboard"},
+                        1,
+                        Messages.getInformationIcon());
+                if (options == 1) {
+                    SoftwareCoUtils.launchCodeTimeMetricsDashboard();
+                } else {
+                    launchDashboard();
+                }
+            }
+        });
+    }
+
     public static void launchDashboard() {
         String url = SoftwareCoUtils.launch_url;
         String jwtToken = getItem("jwt");

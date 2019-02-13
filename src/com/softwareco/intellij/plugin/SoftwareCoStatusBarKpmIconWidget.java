@@ -17,6 +17,8 @@ public class SoftwareCoStatusBarKpmIconWidget implements StatusBarWidget {
 
     public static final String KPM_ICON_ID = "software.kpm.icon";
 
+    private SoftwareCoSessionManager sessionMgr = SoftwareCoSessionManager.getInstance();
+
     private Icon icon = null;
     private String tooltip = "";
     private String id;
@@ -28,7 +30,8 @@ public class SoftwareCoStatusBarKpmIconWidget implements StatusBarWidget {
         this.id = id;
         eventHandler = new Consumer<MouseEvent>() {
             @Override
-            public void consume(MouseEvent mouseEvent) { SoftwareCoSessionManager.launchDashboard();
+            public void consume(MouseEvent mouseEvent) {
+                sessionMgr.statusBarClickHandler();
             }
         };
     }
