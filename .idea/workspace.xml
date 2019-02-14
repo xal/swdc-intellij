@@ -4,14 +4,9 @@
     <list default="true" id="61d9d7cd-8671-4d44-8440-e3cb732d8890" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/META-INF/plugin.xml" beforeDir="false" afterPath="$PROJECT_DIR$/resources/META-INF/plugin.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/KeystrokeManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/KeystrokeManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCo.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoDocumentListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoDocumentListener.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoFileEditorListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoFileEditorListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/softwareco.zip" beforeDir="false" afterPath="$PROJECT_DIR$/softwareco.zip" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoSessionManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoSessionManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoStatusBarKpmIconWidget.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoStatusBarKpmIconWidget.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoStatusBarKpmTextWidget.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoStatusBarKpmTextWidget.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/actions/CustomDefaultActionGroup.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/actions/CustomDefaultActionGroup.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoUtils.java" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -24,47 +19,36 @@
     <option name="optimizeImportsOnTheFly" value="true" />
   </component>
   <component name="FileEditorManager">
-    <leaf>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/resources/META-INF/plugin.xml">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="444">
-              <caret line="85" column="31" selection-start-line="85" selection-start-column="31" selection-end-line="85" selection-end-column="31" />
-            </state>
-          </provider>
-        </entry>
-      </file>
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/actions/SoftwareDashboardAction.java">
+        <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/actions/EnableMetricsAction.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="150">
-              <caret line="19" column="13" lean-forward="true" selection-start-line="19" selection-start-column="13" selection-end-line="19" selection-end-column="13" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/actions/CodeTimeMetricsAction.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="240">
-              <caret line="16" column="23" selection-start-line="16" selection-start-column="8" selection-end-line="16" selection-end-column="23" />
+            <state relative-caret-position="186">
+              <caret line="13" column="13" selection-start-line="13" selection-start-column="13" selection-end-line="13" selection-end-column="13" />
               <folding>
                 <element signature="n#!!doc" expanded="true" />
                 <element signature="imports" expanded="true" />
-                <element signature="e#511#512#0" expanded="true" />
-                <element signature="e#575#576#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/actions/CustomDefaultActionGroup.java">
+        <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoMusicManager.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="120">
-              <caret line="10" column="3" selection-start-line="10" selection-start-column="3" selection-end-line="10" selection-end-column="3" />
+            <state relative-caret-position="190">
+              <caret line="39" column="59" lean-forward="true" selection-start-line="39" selection-start-column="51" selection-end-line="39" selection-end-column="71" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoUtils.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="156">
+              <caret line="425" column="52" lean-forward="true" selection-start-line="425" selection-start-column="52" selection-end-line="425" selection-end-column="52" />
               <folding>
-                <element signature="n#!!doc" expanded="true" />
+                <element signature="imports" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -82,13 +66,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>ProjectManager.getInstance().getOpenProjects()</find>
-      <find>lic</find>
-      <find>Maps</find>
-      <find>Code time today</find>
-      <find>invokeLater</find>
-      <find>getCurrentMusicTrack</find>
-      <find>humaniz</find>
       <find>Unable to get the music track response from the http request</find>
       <find>Code Time: Unable to get the music track response from the http request</find>
       <find>SoftwareCoUtils.makeApiCall</find>
@@ -112,6 +89,13 @@
       <find>getCurrentProject</find>
       <find>launchCodeTimeMetricsDashboard</find>
       <find>software.com</find>
+      <find>CodeTime</find>
+      <find>delete</find>
+      <find>isItunesRunning</find>
+      <find>getCurrentMusicTrack</find>
+      <find>getItunesTrack</find>
+      <find>code time</find>
+      <find>getSpotifyTrack</find>
     </findStrings>
     <replaceStrings>
       <replace>softwareco</replace>
@@ -152,7 +136,6 @@
         <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/PluginPostStartupActivity.java" />
         <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/actions/CodeTimeMetricsAction.java" />
         <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoRepoManager.java" />
-        <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoUtils.java" />
         <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoMusicManager.java" />
         <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/KeystrokeCount.java" />
         <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/KeystrokeManager.java" />
@@ -162,9 +145,10 @@
         <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCo.java" />
         <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoStatusBarKpmIconWidget.java" />
         <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoStatusBarKpmTextWidget.java" />
-        <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoSessionManager.java" />
         <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/actions/CustomDefaultActionGroup.java" />
         <option value="$PROJECT_DIR$/resources/META-INF/plugin.xml" />
+        <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoSessionManager.java" />
+        <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoUtils.java" />
       </list>
     </option>
   </component>
@@ -176,10 +160,10 @@
     <option name="CUSTOM_FILTER" value="" />
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="32" />
-    <option name="y" value="23" />
-    <option name="width" value="1311" />
-    <option name="height" value="861" />
+    <option name="x" value="69" />
+    <option name="y" value="84" />
+    <option name="width" value="1286" />
+    <option name="height" value="789" />
   </component>
   <component name="ProjectInspectionProfilesVisibleTreeState">
     <entry key="Project Default">
@@ -216,6 +200,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="PackagesPane" />
       <pane id="Scope">
         <subPane subId="Problems">
           <expand>
@@ -238,7 +223,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -287,7 +271,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="SearchEverywhereHistoryKey" value="0.1.&#9;FILE&#9;jar:///Applications/IntelliJ IDEA CE.app/Contents/lib/jsch-0.1.54.jar!/" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1550070718078" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1550170792139" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="project.structure.last.edited" value="Project" />
     <property name="project.structure.proportion" value="0.15" />
@@ -403,10 +387,10 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="32" y="23" width="1311" height="861" extended-state="0" />
+    <frame x="69" y="84" width="1286" height="789" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.27659574" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.28617364" />
       <window_info id="Structure" order="1" weight="0.39895013" />
       <window_info id="Capture Tool" order="2" />
       <window_info id="Designer" order="3" />
@@ -414,14 +398,14 @@
       <window_info id="Favorites" order="5" side_tool="true" />
       <window_info id="Image Layers" order="6" />
       <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Find" order="1" sideWeight="0.3711584" weight="0.33029908" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.8266351" weight="0.20676203" />
-      <window_info active="true" anchor="bottom" id="Debug" order="3" sideWeight="0.64460206" visible="true" weight="0.24187256" />
+      <window_info anchor="bottom" id="Find" order="1" sideWeight="0.37057877" weight="0.26398852" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.8255627" weight="0.20659971" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.6430868" weight="0.241033" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="bottom" id="Event Log" order="7" sideWeight="0.35539794" side_tool="true" visible="true" weight="0.24187256" />
-      <window_info anchor="bottom" id="Messages" order="8" sideWeight="0.534279" weight="0.22626787" />
+      <window_info anchor="bottom" id="Event Log" order="7" sideWeight="0.4670418" side_tool="true" visible="true" weight="0.241033" />
+      <window_info anchor="bottom" id="Messages" order="8" sideWeight="0.5329582" weight="0.22525108" />
       <window_info anchor="bottom" id="Terminal" order="9" />
       <window_info anchor="bottom" id="Version Control" order="10" />
       <window_info anchor="bottom" id="Inspection Results" order="11" weight="0.32933334" />
@@ -437,7 +421,6 @@
     </layout>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoStatusBarWidget.java" />
     <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/assets/dark/50_circle_light.png">
       <provider selected="true" editor-type-id="images" />
     </entry>
@@ -572,16 +555,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoUtils.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2">
-          <caret line="104" column="57" selection-start-line="104" selection-start-column="57" selection-end-line="104" selection-end-column="57" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/KeystrokeProject.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="285">
@@ -604,13 +577,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-2280">
           <caret line="5" column="40" selection-start-line="5" selection-start-column="40" selection-end-line="5" selection-end-column="40" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoMusicManager.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="129">
-          <caret line="21" column="4" lean-forward="true" selection-start-line="21" selection-start-column="4" selection-end-line="30" selection-end-column="5" />
         </state>
       </provider>
     </entry>
@@ -664,17 +630,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/actions/EnableMetricsAction.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="195">
-          <caret line="13" column="13" selection-start-line="13" selection-start-column="13" selection-end-line="13" selection-end-column="13" />
-          <folding>
-            <element signature="n#!!doc" expanded="true" />
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/actions/PauseMetricsAction.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="90">
@@ -705,16 +660,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoSessionManager.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="288">
-          <caret line="400" column="45" lean-forward="true" selection-start-line="400" selection-start-column="45" selection-end-line="400" selection-end-column="45" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/actions/CustomDefaultActionGroup.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="120">
@@ -732,13 +677,29 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoSessionManager.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="170">
+          <caret line="233" column="18" lean-forward="true" selection-start-line="233" selection-start-column="18" selection-end-line="233" selection-end-column="18" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="167">
+          <caret line="32" column="21" selection-start-line="32" selection-start-column="21" selection-end-line="32" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/actions/CodeTimeMetricsAction.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="240">
-          <caret line="16" column="23" selection-start-line="16" selection-start-column="8" selection-end-line="16" selection-end-column="23" />
+        <state relative-caret-position="134">
+          <caret line="9" column="42" lean-forward="true" selection-start-line="9" selection-start-column="42" selection-end-line="9" selection-end-column="42" />
           <folding>
             <element signature="n#!!doc" expanded="true" />
-            <element signature="imports" expanded="true" />
             <element signature="e#511#512#0" expanded="true" />
             <element signature="e#575#576#0" expanded="true" />
           </folding>
@@ -747,8 +708,36 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/resources/META-INF/plugin.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="444">
-          <caret line="85" column="31" selection-start-line="85" selection-start-column="31" selection-end-line="85" selection-end-column="31" />
+        <state relative-caret-position="299">
+          <caret line="85" column="58" lean-forward="true" selection-start-line="85" selection-start-column="58" selection-end-line="85" selection-end-column="58" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/actions/EnableMetricsAction.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="186">
+          <caret line="13" column="13" selection-start-line="13" selection-start-column="13" selection-end-line="13" selection-end-column="13" />
+          <folding>
+            <element signature="n#!!doc" expanded="true" />
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoMusicManager.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="190">
+          <caret line="39" column="59" lean-forward="true" selection-start-line="39" selection-start-column="51" selection-end-line="39" selection-end-column="71" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoUtils.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="156">
+          <caret line="425" column="52" lean-forward="true" selection-start-line="425" selection-start-column="52" selection-end-line="425" selection-end-column="52" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

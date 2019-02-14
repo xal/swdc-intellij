@@ -41,9 +41,9 @@ public class SoftwareCoSessionManager {
     public static String getCodeTimeDashboardFile() {
         String dashboardFile = getSoftwareDir();
         if (SoftwareCo.isWindows()) {
-            dashboardFile += "\\CodeTime";
+            dashboardFile += "\\CodeTime.txt";
         } else {
-            dashboardFile += "/CodeTime";
+            dashboardFile += "/CodeTime.txt";
         }
         return dashboardFile;
     }

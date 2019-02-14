@@ -371,16 +371,11 @@ public class SoftwareCoUtils {
         return str;
     }
 
-//    public static String getItunesTrackState() {
-//        String[] args = { "osascript", "-e", "tell application \"iTunes\" to get player state" };
-//        return runCommand(args, null);
-//    }
-
     protected static boolean isItunesRunning() {
-        // String[] args = { "osascript", "-e", "get running of application \"iTunes\"" };
-        String[] args = { "ps", "-e" };
+        // get running of application "iTunes"
+        String[] args = { "osascript", "-e", "get running of application \"iTunes\"" };
         String result = runCommand(args, null);
-        return (result != null && result.indexOf("iTunes") != -1) ? true : false;
+        return (result != null) ? Boolean.valueOf(result) : false;
     }
 
     protected static String itunesTrackScript = "tell application \"iTunes\"\n" +
@@ -396,21 +391,14 @@ public class SoftwareCoUtils {
             "return json\n";
 
     protected static String getItunesTrack() {
-        // String[] args = { "osascript", "-e", "tell application \"iTunes\" to get {genre, artist, album, id, name, time} of the current track"};
         String[] args = { "osascript", "-e", itunesTrackScript };
         return runCommand(args, null);
     }
 
-//    public static String getSpotifyTrackState() {
-//        String[] args = { "osascript", "-e", "tell application \"Spotify\" to get player state" };
-//        return runCommand(args, null);
-//    }
-
     protected static boolean isSpotifyRunning() {
-        // String[] args = { "osascript", "-e", "get running of application \"Spotify\"" };
-        String[] args = { "ps", "-e" };
+        String[] args = { "osascript", "-e", "get running of application \"Spotify\"" };
         String result = runCommand(args, null);
-        return (result != null && result.indexOf("Spotify") != -1) ? true : false;
+        return (result != null) ? Boolean.valueOf(result) : false;
     }
 
     protected static String spotifyTrackScript = "tell application \"Spotify\"\n" +
@@ -435,11 +423,14 @@ public class SoftwareCoUtils {
             return jsonObj;
         }
 
+        boolean spotifyRunning = isSpotifyRunning();
+        boolean itunesRunning = isItunesRunning();
+
         String trackInfo = "";
         // Vintage Trouble, My Whole World Stopped Without You, spotify:track:7awBL5Pu8LD6Fl7iTrJotx, My Whole World Stopped Without You, 244080
-        if (isSpotifyRunning()) {
+        if (spotifyRunning) {
             trackInfo = getSpotifyTrack();
-        } else if (isItunesRunning()) {
+        } else if (itunesRunning) {
             trackInfo = getItunesTrack();
         }
 
@@ -564,6 +555,13 @@ public class SoftwareCoUtils {
         VirtualFile vFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(f);
         OpenFileDescriptor descriptor = new OpenFileDescriptor(p, vFile);
         FileEditorManager.getInstance(p).openTextEditor(descriptor, true);
+
+        // delete the legacy file if we have one
+        String legacyFileName = codeTimeFile.substring(0, codeTimeFile.lastIndexOf("."));
+        File legacyFile = new File(legacyFileName);
+        if (legacyFile.exists()) {
+            legacyFile.delete();
+        }
     }
 
 }
