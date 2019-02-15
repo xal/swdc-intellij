@@ -7,6 +7,7 @@ package com.softwareco.intellij.plugin;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
@@ -530,6 +531,10 @@ public class SoftwareCoUtils {
         fetchingResourceInfo = false;
 
         return lastResourceInfo;
+    }
+
+    public static void launchSoftwareTopForty() {
+        BrowserUtil.browse("http://api.software.com/music/top40");
     }
 
     public static void launchCodeTimeMetricsDashboard() {
