@@ -395,44 +395,56 @@ public class SoftwareCoSessionManager {
         final Project project = this.getCurrentProject();
         ApplicationManager.getApplication().invokeLater(new Runnable() {
             public void run() {
-                // ask to download the PM
-                int options = Messages.showDialog(
-                        project,
-                        "Click to view your Code Time dashboard or visit the app.",
-                        "Code Time",
-                        new String[]{"Software.com", "Dashboard"},
-                        1,
-                        Messages.getInformationIcon());
-                if (options == 1) {
-                    SoftwareCoUtils.launchCodeTimeMetricsDashboard();
-                } else {
+                if (requiresAuthentication()) {
                     launchDashboard();
+                } else {
+                    // ask to download the PM
+                    int options = Messages.showDialog(
+                            project,
+                            "Click to view your Code Time dashboard or visit the app.",
+                            "Code Time",
+                            new String[]{"Software.com", "Dashboard"},
+                            1,
+                            Messages.getInformationIcon());
+                    if (options == 0) {
+                        launchDashboard();
+                    } else if (options == 1) {
+                        SoftwareCoUtils.launchCodeTimeMetricsDashboard();
+                    }
                 }
             }
         });
     }
 
-    public static void launchDashboard() {
-        String url = SoftwareCoUtils.launch_url;
+    public static boolean requiresAuthentication() {
+        boolean requiresAuth = false;
         String jwtToken = getItem("jwt");
         String tokenVal = getItem("token");
-        boolean checkForTokenAvailability = false;
-
         if (tokenVal == null || tokenVal.equals("")) {
-            checkForTokenAvailability = true;
+            requiresAuth = true;
+        } else if (jwtToken == null || jwtToken.equals("") || !isAuthenticated()) {
+            requiresAuth = true;
+        }
+        return requiresAuth;
+    }
+
+    public static void launchDashboard() {
+        String url = SoftwareCoUtils.launch_url;
+        String tokenVal = getItem("token");
+        boolean requiresAuth = requiresAuthentication();
+
+        if (requiresAuth && (tokenVal == null || tokenVal.equals(""))) {
             tokenVal = SoftwareCoSessionManager.generateToken();
             SoftwareCoSessionManager.setItem("token", tokenVal);
             url += "/onboarding?token=" + tokenVal;
-
-        } else if (jwtToken == null || jwtToken.equals("") || !isAuthenticated()) {
-            checkForTokenAvailability = true;
+        } else if (requiresAuth) {
             url += "/onboarding?token=" + tokenVal;
         }
 
         // launch the dashboard with the possible onboarding + token
         BrowserUtil.browse(url);
 
-        if (checkForTokenAvailability) {
+        if (requiresAuth) {
             // check for the token in a minute
             new Thread(() -> {
                 try {
