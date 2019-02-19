@@ -48,6 +48,8 @@ public class SoftwareCo implements ApplicationComponent {
     private String IDE_VERSION;
     private MessageBusConnection[] connections;
 
+    private final String LEGACY_VIM_ID = "0q9p7n6m4k2j1VIM54t";
+
     private final int SEND_INTERVAL = 60;
     private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private ScheduledFuture<?> scheduledFixture;
@@ -116,6 +118,18 @@ public class SoftwareCo implements ApplicationComponent {
                 new ProcessRepoCommitsTask(), one_min * 3, one_hour + one_min);
 
         eventMgr.setAppIsReady(true);
+
+        this.handleMigrationUpdates();
+    }
+
+    private void handleMigrationUpdates() {
+        String tokenVal = SoftwareCoSessionManager.getItem("token");
+        // vim plugin id check
+        if (tokenVal != null && tokenVal.equals(LEGACY_VIM_ID)) {
+            // delete the session json to re-establish a handshake without the vim token id
+            String sessionJsonFile = SoftwareCoSessionManager.getSoftwareSessionFile();
+            sessionMgr.deleteFile(sessionJsonFile);
+        }
     }
 
     private void initializeCalls() {

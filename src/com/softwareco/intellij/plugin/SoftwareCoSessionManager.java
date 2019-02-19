@@ -65,7 +65,7 @@ public class SoftwareCoSessionManager {
         return softwareDataDir;
     }
 
-    private static String getSoftwareSessionFile() {
+    public static String getSoftwareSessionFile() {
         String file = getSoftwareDir();
         if (SoftwareCo.isWindows()) {
             file += "\\session.json";
@@ -230,7 +230,7 @@ public class SoftwareCoSessionManager {
         return (data == null) ? new JsonObject() : data;
     }
 
-    private void deleteFile(String file) {
+    public void deleteFile(String file) {
         File f = new File(file);
         // if the file exists, delete it
         if (f.exists()) {
