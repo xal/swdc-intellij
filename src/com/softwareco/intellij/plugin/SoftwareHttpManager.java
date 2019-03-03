@@ -1,9 +1,5 @@
 package com.softwareco.intellij.plugin;
 
-import java.io.IOException;
-import java.util.concurrent.Callable;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
@@ -11,7 +7,11 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.HttpClientBuilder;
+
+import java.io.IOException;
+import java.util.concurrent.Callable;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class SoftwareHttpManager implements Callable<HttpResponse> {
 
@@ -21,12 +21,14 @@ public class SoftwareHttpManager implements Callable<HttpResponse> {
     private String api;
     private String httpMethodName;
     private HttpClient httpClient;
+    private String overridingJwt;
 
-    public SoftwareHttpManager(String api, String httpMethodName, String payload) {
+    public SoftwareHttpManager(String api, String httpMethodName, String payload, String overridingJwt, HttpClient httpClient) {
         this.payload = payload;
         this.api = api;
         this.httpMethodName = httpMethodName;
-        httpClient = HttpClientBuilder.create().build();
+        this.overridingJwt = overridingJwt;
+        this.httpClient = httpClient;
     }
 
     @Override
@@ -44,7 +46,8 @@ public class SoftwareHttpManager implements Callable<HttpResponse> {
                         //
                         StringEntity params = new StringEntity(payload);
                         ((HttpPost)req).setEntity(params);
-                    }   break;
+                    }
+                    break;
                 case HttpDelete.METHOD_NAME:
                     req = new HttpDelete(SoftwareCoUtils.api_endpoint + "" + this.api);
                     break;
@@ -53,7 +56,8 @@ public class SoftwareHttpManager implements Callable<HttpResponse> {
                     break;
             }
 
-            String jwtToken = SoftwareCoSessionManager.getItem("jwt");
+
+            String jwtToken = (this.overridingJwt != null) ? this.overridingJwt : SoftwareCoSessionManager.getItem("jwt");
             // obtain the jwt session token if we have it
             if (jwtToken != null) {
                 req.addHeader("Authorization", jwtToken);

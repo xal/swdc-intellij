@@ -267,7 +267,7 @@ public class SoftwareCoEventManager {
                 // opposite for grtr than gmt
                 wrapper.getKeystrokeCount().setLocal_start(startInSeconds + offset);
                 wrapper.getKeystrokeCount().setTimezone(TimeZone.getDefault().getID());
-                String payload = SoftwareCo.gson.toJson(wrapper.getKeystrokeCount());
+                final String payload = SoftwareCo.gson.toJson(wrapper.getKeystrokeCount());
 
                 if (!SoftwareCo.TELEMTRY_ON) {
                     log.info("Code Time telemetry is currently paused. Enable to view KPM metrics");
@@ -275,11 +275,15 @@ public class SoftwareCoEventManager {
                     return;
                 }
 
-                SoftwareResponse resp = SoftwareCoUtils.makeApiCall("/data", HttpPost.METHOD_NAME, payload);
-                if (!resp.isOk() && !SoftwareCoSessionManager.isDeactivated()) {
-                    sessionMgr.storePayload(payload);
-                    sessionMgr.checkUserAuthenticationStatus();
-                }
+                ApplicationManager.getApplication().invokeLater(new Runnable() {
+                    public void run() {
+                        SoftwareResponse resp = SoftwareCoUtils.makeApiCall("/data", HttpPost.METHOD_NAME, payload);
+                        if (!resp.isOk()) {
+                            sessionMgr.storePayload(payload);
+                            sessionMgr.checkUserAuthenticationStatus();
+                        }
+                    }
+                });
 
                 keystrokeMgr.resetData();
             } else if (wrapper != null && wrapper.getKeystrokeCount() != null) {

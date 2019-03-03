@@ -19,8 +19,9 @@ public class CodeTimeMetricsAction extends AnAction {
 
     @Override
     public void update(AnActionEvent event) {
+        SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
         Editor editor = event.getData(CommonDataKeys.EDITOR);
-        event.getPresentation().setVisible(true);
+        event.getPresentation().setVisible(userStatus.hasAccounts);
         event.getPresentation().setEnabled(true);
     }
 }

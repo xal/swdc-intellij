@@ -12,9 +12,11 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
-import org.apache.http.client.methods.*;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 
 import java.io.*;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -28,8 +30,6 @@ public class SoftwareCoSessionManager {
 
     private static long MILLIS_PER_HOUR = 1000 * 60 * 60;
     private static int LONG_THRESHOLD_HOURS = 24;
-
-    private boolean confirmWindowOpen = false;
 
     public static SoftwareCoSessionManager getInstance() {
         if (instance == null) {
@@ -85,43 +85,11 @@ public class SoftwareCoSessionManager {
         return file;
     }
 
-    /**
-     * User session will have...
-     * { user: user, jwt: jwt }
-     */
-    private static boolean isAuthenticated() {
-        String tokenVal = getItem("token");
-        boolean isOk = true;
-        if (tokenVal == null) {
-            isOk = false;
-        } else {
-            isOk = SoftwareCoUtils.makeApiCall("/users/ping/", HttpGet.METHOD_NAME, null).isOk();
-        }
-        if (!isOk) {
-            // update the status bar with Sign Up message
-            SoftwareCoUtils.setStatusLineMessage(
-                    "warning.png", "Code Time", "Click to log in to Code Time");
-        }
+    public static boolean isServerOnline() {
+        SoftwareResponse resp = SoftwareCoUtils.makeApiCall("/ping", HttpGet.METHOD_NAME, null);
+        boolean isOk = resp.isOk();
+        SoftwareCoUtils.updateServerStatus(isOk);
         return isOk;
-    }
-
-    public static boolean isDeactivated() {
-        String tokenVal = getItem("token");
-        if (tokenVal == null) {
-            return false;
-        }
-
-        SoftwareResponse resp = SoftwareCoUtils.makeApiCall("/users/ping/", HttpGet.METHOD_NAME, null);
-        if (!resp.isOk() && resp.isDeactivated()) {
-            // update the status bar with Sign Up message
-            SoftwareCoUtils.setStatusLineMessage(
-                    "warning.png", "Code Time", "Click to log in to Code Time");
-        }
-        return resp.isDeactivated();
-    }
-
-    private boolean isServerOnline() {
-        return SoftwareCoUtils.makeApiCall("/ping", HttpGet.METHOD_NAME, null).isOk();
     }
 
     public void storePayload(String payload) {
@@ -146,7 +114,7 @@ public class SoftwareCoSessionManager {
     }
 
     public void sendOfflineData() {
-        String dataStoreFile = getSoftwareDataStoreFile();
+        final String dataStoreFile = getSoftwareDataStoreFile();
         File f = new File(dataStoreFile);
 
         if (f.exists()) {
@@ -171,11 +139,16 @@ public class SoftwareCoSessionManager {
                     String payloads = sb.toString();
                     payloads = payloads.substring(0, payloads.lastIndexOf(","));
                     payloads = "[" + payloads + "]";
-                    SoftwareResponse resp = SoftwareCoUtils.makeApiCall("/data/batch", HttpPost.METHOD_NAME, payloads);
-                    if (resp.isOk() || resp.isDeactivated()) {
-                        // delete the file
-                        this.deleteFile(dataStoreFile);
-                    }
+                    final String batchPayload = payloads;
+                    ApplicationManager.getApplication().invokeLater(new Runnable() {
+                        public void run() {
+                            SoftwareResponse resp = SoftwareCoUtils.makeApiCall("/data/batch", HttpPost.METHOD_NAME, batchPayload);
+                            if (resp.isOk() || resp.isDeactivated()) {
+                                // delete the file
+                                deleteFile(dataStoreFile);
+                            }
+                        }
+                    });
                 } else {
                     log.info("Code Time: No offline data to send");
                 }
@@ -200,6 +173,14 @@ public class SoftwareCoSessionManager {
         } catch (Exception e) {
             log.info("Code Time: Failed to write the key value pair (" + key + ", " + val + ") into the session.", e);
         }
+    }
+
+    public static JsonObject getJsonObjectItem(String key) {
+        JsonObject jsonObj = getSoftwareSessionAsJson();
+        if (jsonObj != null && jsonObj.has(key) && !jsonObj.get(key).isJsonNull()) {
+            return jsonObj.get(key).getAsJsonObject();
+        }
+        return null;
     }
 
     public static String getItem(String key) {
@@ -248,23 +229,19 @@ public class SoftwareCoSessionManager {
     }
 
     public void checkUserAuthenticationStatus() {
-        Project project = this.getCurrentProject();
-
         boolean isOnline = isServerOnline();
-        boolean authenticated = isAuthenticated();
-        boolean deactivated = isDeactivated();
-        boolean pastThresholdTime = isPastTimeThreshold();
+        SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
+        String lastUpdateTimeStr = getItem("jetbrains_lastUpdateTime");
 
-        boolean requiresLogin = isOnline && !authenticated && pastThresholdTime && !confirmWindowOpen;
-
-        if (requiresLogin && project != null) {
+        if (isOnline && lastUpdateTimeStr == null && !userStatus.hasUserAccounts) {
             // set the last update time so we don't try to ask too frequently
-            setItem("eclipse_lastUpdateTime", String.valueOf(System.currentTimeMillis()));
-            confirmWindowOpen = true;
+            setItem("jetbrains_lastUpdateTime", String.valueOf(System.currentTimeMillis()));
 
             String msg = "To see your coding data in Code Time, please log in your account.";
 
             final String dialogMsg = msg;
+
+            Project project = this.getCurrentProject();
 
             ApplicationManager.getApplication().invokeLater(new Runnable() {
                 public void run() {
@@ -272,29 +249,15 @@ public class SoftwareCoSessionManager {
                     int options = Messages.showDialog(
                             project,
                             msg,
-                            "Software", new String[]{"Not now", "Log in"},
-                            1, Messages.getInformationIcon());
-                    if (options == 1) {
-                        launchDashboard();
+                            "Software", new String[]{"Log in", "Sign up", "Not now"},
+                            0, Messages.getInformationIcon());
+                    if (options == 0) {
+                        launchLogin();
+                    } else if (options == 1) {
+                        launchSignup();
                     }
-                    confirmWindowOpen = false;
                 }
             });
-        } else if (requiresLogin && project == null) {
-
-            new Thread(() -> {
-                try {
-                    if (deactivated) {
-                        Thread.sleep(1000 * 60 * 60 * 24);
-                    } else {
-                        Thread.sleep(1000 * 25);
-                    }
-                    checkUserAuthenticationStatus();
-                }
-                catch (Exception e){
-                    System.err.println(e);
-                }
-            }).start();
         }
     }
 
@@ -302,44 +265,10 @@ public class SoftwareCoSessionManager {
      * Checks the last time we've updated the session info
      */
     private boolean isPastTimeThreshold() {
-        String lastUpdateTimeStr = getItem("eclipse_lastUpdateTime");
+        String lastUpdateTimeStr = getItem("jetbrains_lastUpdateTime");
         Long lastUpdateTime = (lastUpdateTimeStr != null) ? Long.valueOf(lastUpdateTimeStr) : null;
         return lastUpdateTime == null ||
                 System.currentTimeMillis() - lastUpdateTime.longValue() >= MILLIS_PER_HOUR * LONG_THRESHOLD_HOURS;
-    }
-
-    public static void checkTokenAvailability() {
-        String tokenVal = getItem("token");
-
-        if (tokenVal == null || tokenVal.equals("")) {
-            SoftwareCoUtils.setStatusLineMessage(
-                    "warning.png", "Code Time", "Click to log in to Code Time");
-            return;
-        }
-
-        JsonObject responseData = SoftwareCoUtils.makeApiCall("/users/plugin/confirm?token=" + tokenVal, HttpGet.METHOD_NAME, null).getJsonObj();
-        if (responseData != null && responseData.has("jwt")) {
-            // update the jwt, user and eclipse_lastUpdateTime
-            setItem("jwt", responseData.get("jwt").getAsString());
-            setItem("user", responseData.get("user").getAsString());
-            setItem("eclipse_lastUpdateTime", String.valueOf(System.currentTimeMillis()));
-        } else {
-            boolean deactivated = isDeactivated();
-            // check again in a couple of minutes
-            new Thread(() -> {
-                try {
-                    if (deactivated) {
-                        Thread.sleep(1000 * 60 * 60 * 24);
-                    } else {
-                        Thread.sleep(1000 * 120);
-                    }
-                    checkTokenAvailability();
-                }
-                catch (Exception e){
-                    System.err.println(e);
-                }
-            }).start();
-        }
     }
 
     public static String generateToken() {
@@ -355,8 +284,6 @@ public class SoftwareCoSessionManager {
         // make an async call to get the kpm info
         JsonObject jsonObj = SoftwareCoUtils.makeApiCall(sessionsApi, HttpGet.METHOD_NAME, null).getJsonObj();
         if (jsonObj != null) {
-
-            float currentSessionGoalPercent = 0f;
 
             long currentSessionMinutes = 0;
             if (jsonObj.has("currentSessionMinutes")) {
@@ -381,13 +308,7 @@ public class SoftwareCoSessionManager {
             }
 
             SoftwareCoUtils.setStatusLineMessage(inFlowIcon, msg, "Click to see more from Code Time");
-        } else {
-            if (!isDeactivated()) {
-                log.info("Unable to get kpm summary");
-                this.checkUserAuthenticationStatus();
-                SoftwareCoUtils.setStatusLineMessage(
-                        "warning.png", "Code Time", "Click to see more from Code Time");
-            }
+            SoftwareCoUtils.fetchCodeTimeMetricsContent();
         }
     }
 
@@ -395,65 +316,70 @@ public class SoftwareCoSessionManager {
         final Project project = this.getCurrentProject();
         ApplicationManager.getApplication().invokeLater(new Runnable() {
             public void run() {
-                if (requiresAuthentication()) {
-                    launchDashboard();
+                SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
+                if (userStatus.hasAccounts) {
+                    // show the metrics dashboard
+                    SoftwareCoUtils.launchCodeTimeMetricsDashboard();
                 } else {
-                    // ask to download the PM
-                    int options = Messages.showDialog(
-                            project,
-                            "Click to view your Code Time dashboard or visit the app.",
-                            "Code Time",
-                            new String[]{"Software.com", "Dashboard"},
-                            1,
-                            Messages.getInformationIcon());
-                    if (options == 0) {
-                        launchDashboard();
-                    } else if (options == 1) {
-                        SoftwareCoUtils.launchCodeTimeMetricsDashboard();
-                    }
+                    launchSignup();
                 }
             }
         });
     }
 
-    public static boolean requiresAuthentication() {
-        boolean requiresAuth = false;
-        String jwtToken = getItem("jwt");
-        String tokenVal = getItem("token");
-        if (tokenVal == null || tokenVal.equals("")) {
-            requiresAuth = true;
-        } else if (jwtToken == null || jwtToken.equals("") || !isAuthenticated()) {
-            requiresAuth = true;
-        }
-        return requiresAuth;
-    }
-
-    public static void launchDashboard() {
+    public static void launchLogin() {
         String url = SoftwareCoUtils.launch_url;
-        String tokenVal = getItem("token");
-        boolean requiresAuth = requiresAuthentication();
-
-        if (requiresAuth && (tokenVal == null || tokenVal.equals(""))) {
-            tokenVal = SoftwareCoSessionManager.generateToken();
-            SoftwareCoSessionManager.setItem("token", tokenVal);
-            url += "/onboarding?token=" + tokenVal;
-        } else if (requiresAuth) {
-            url += "/onboarding?token=" + tokenVal;
+        String macAddress = SoftwareCoUtils.getMacAddress();
+        String encodedMacAddr = null;
+        try {
+            encodedMacAddr = URLEncoder.encode(macAddress, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            // url encoding failed, just use the mac addr
+            encodedMacAddr = macAddress;
         }
 
-        // launch the dashboard with the possible onboarding + token
+        url += "/login?addr=" + encodedMacAddr;
         BrowserUtil.browse(url);
 
-        if (requiresAuth) {
-            // check for the token in a minute
-            new Thread(() -> {
-                try {
-                    Thread.sleep(1000 * 60);
-                    SoftwareCoSessionManager.checkTokenAvailability();
-                } catch (Exception e) {
-                    System.err.println(e);
-                }
-            }).start();
+        new Thread(() -> {
+            try {
+                Thread.sleep(10000);
+                SoftwareCoUtils.clearUserStatusCache();
+                SoftwareCoUtils.getUserStatus();
+            }
+            catch (Exception e){
+                System.err.println(e);
+            }
+        }).start();
+    }
+
+    public static void launchSignup() {
+        String url = SoftwareCoUtils.launch_url;
+        String macAddress = SoftwareCoUtils.getMacAddress();
+        String encodedMacAddr = null;
+        try {
+            encodedMacAddr = URLEncoder.encode(macAddress, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            // url encoding failed, just use the mac addr
+            encodedMacAddr = macAddress;
         }
+        url += "/onboarding?addr=" + encodedMacAddr;
+        BrowserUtil.browse(url);
+
+        new Thread(() -> {
+            try {
+                Thread.sleep(45000);
+                SoftwareCoUtils.clearUserStatusCache();
+                SoftwareCoUtils.getUserStatus();
+            }
+            catch (Exception e){
+                System.err.println(e);
+            }
+        }).start();
+    }
+
+    public static void launchWebDashboard() {
+        String url = SoftwareCoUtils.launch_url;
+        BrowserUtil.browse(url);
     }
 }

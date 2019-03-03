@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018 by Software.com
+ * Copyright (c) 2019 by Software.com
  * All rights reserved
  */
 package com.softwareco.intellij.plugin.actions;
@@ -11,18 +11,18 @@ import com.intellij.openapi.editor.Editor;
 import com.softwareco.intellij.plugin.SoftwareCoSessionManager;
 import com.softwareco.intellij.plugin.SoftwareCoUtils;
 
-public class SoftwareDashboardAction extends AnAction {
+public class SoftwareSignupAction extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent anActionEvent) {
-        SoftwareCoSessionManager.launchWebDashboard();
+        SoftwareCoSessionManager.launchSignup();
     }
 
     @Override
     public void update(AnActionEvent event) {
-        SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
         Editor editor = event.getData(CommonDataKeys.EDITOR);
-        event.getPresentation().setVisible(userStatus.loggedInUser != null);
+        SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
+        event.getPresentation().setVisible(userStatus.loggedInUser == null);
         event.getPresentation().setEnabled(true);
     }
 }

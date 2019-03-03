@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>com.softwareco.intellij.plugin</id>
   <name>Code Time</name>
-  <version>0.1.66</version>
+  <version>0.1.68</version>
   <vendor email="cody@software.com" url="https://software.com">Software</vendor>
 
   <description><![CDATA[
@@ -81,13 +81,24 @@
   <actions>
     <group id="CustomDefaultActionGroup" class="com.softwareco.intellij.plugin.actions.CustomDefaultActionGroup" popup="true"
            text="Code Time" description="Code Time menu actions">
-        <add-to-group group-id="ToolsMenu" anchor="last"/>
+        <add-to-group group-id="MainMenu" relative-to-action="HelpMenu" anchor="before"/>
         <action class="com.softwareco.intellij.plugin.actions.CodeTimeMetricsAction" id="CodeTimeMetrics"
-                text="Dashboard" description="View your latest coding metrics"/>
-        <action class="com.softwareco.intellij.plugin.actions.SoftwareDashboardAction" id="SoftwareDashboardAction"
-                text="Go to software.com" description="View your KPM metrics"/>
+                text="Code time dashboard" description="View your latest coding metrics"/>
+
         <action class="com.softwareco.intellij.plugin.actions.SoftwareTopFortyAction" id="SoftwareTopFortyAction"
               text="Software top 40" description="Top 40 most popular songs developers around the world listen to as they code"/>
+
+        <action class="com.softwareco.intellij.plugin.actions.SoftwareDashboardAction" id="SoftwareDashboardAction"
+                text="Web dashboard" description="View your KPM metrics"/>
+
+        <action class="com.softwareco.intellij.plugin.actions.SoftwareLogoutAction" id="SoftwareLogoutAction"
+                text="Log out of Code Time" description="Log out of Code Time"/>
+
+        <action class="com.softwareco.intellij.plugin.actions.SoftwareLoginAction" id="SoftwareLoginAction"
+              text="Log in to see your coding data" description="To see your coding data in Code Time, please log in to your account."/>
+
+        <action class="com.softwareco.intellij.plugin.actions.SoftwareSignupAction" id="SoftwareSignupAction"
+                text="Sign up a new account" description="To see rich data visualizations and get weekly email reports, please sign in to our web app."/>
     </group>
   </actions>
 

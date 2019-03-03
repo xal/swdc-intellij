@@ -4,6 +4,7 @@
  */
 package com.softwareco.intellij.plugin;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -24,15 +25,23 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.io.*;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Calendar;
-import java.util.Date;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,12 +60,13 @@ public class SoftwareCoUtils {
 
     public static ExecutorService executorService;
     public static HttpClient httpClient;
+    public static HttpClient pingClient;
 
     public static JsonParser jsonParser = new JsonParser();
 
     // sublime = 1, vs code = 2, eclipse = 3, intellij = 4, visual studio = 6, atom = 7
     public static int pluginId = 4;
-    public static String version = "0.1.52";
+    public static String version = "0.1.68";
 
     private final static ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
 
@@ -65,23 +75,57 @@ public class SoftwareCoUtils {
     private static boolean fetchingResourceInfo = false;
     private static JsonObject lastResourceInfo = new JsonObject();
 
+    private static Long lastRegisterUserCheck = null;
+    private static UserStatus currentUserStatus = null;
+
+    private static boolean appAvailable = true;
+
+    private static String NO_DATA = "CODE TIME\n\nNo data available\n";
+
     static {
         // initialize the HttpClient
         RequestConfig config = RequestConfig.custom()
-                .setConnectTimeout(10000)
-                .setConnectionRequestTimeout(10000)
-                .setSocketTimeout(10000)
+                .setConnectTimeout(3000)
+                .setConnectionRequestTimeout(3000)
+                .setSocketTimeout(3000)
                 .build();
 
-        httpClient = HttpClientBuilder
-                .create()
-                .setDefaultRequestConfig(config)
-                .build();
+        pingClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build();
+        httpClient = HttpClientBuilder.create().build();
 
         executorService = Executors.newCachedThreadPool();
     }
 
+    public static class UserStatus {
+        public User loggedInUser;
+        public String email;
+        public boolean hasAccounts;
+        public boolean hasUserAccounts;
+    }
+
+    // "id", "email", "plugin_jwt", "mac_addr", "mac_addr_share"
+    public static class User {
+        public Long id;
+        public String email;
+        public String plugin_jwt;
+        public String mac_addr;
+        public String mac_addr_share;
+    }
+
+    public static void clearUserStatusCache() {
+        lastRegisterUserCheck = null;
+        currentUserStatus = null;
+    }
+
+    public static void updateServerStatus(boolean isOnlineStatus) {
+        appAvailable = isOnlineStatus;
+    }
+
     public static SoftwareResponse makeApiCall(String api, String httpMethodName, String payload) {
+        return makeApiCall(api, httpMethodName, payload, null);
+    }
+
+    public static SoftwareResponse makeApiCall(String api, String httpMethodName, String payload, String overridingJwt) {
 
         SoftwareResponse softwareResponse = new SoftwareResponse();
         if (!SoftwareCo.TELEMTRY_ON) {
@@ -89,7 +133,23 @@ public class SoftwareCoUtils {
             return softwareResponse;
         }
 
-        SoftwareHttpManager httpTask = new SoftwareHttpManager(api, httpMethodName, payload);
+        SoftwareHttpManager httpTask = null;
+        if (api.contains("/ping") || api.contains("/sessions") || api.contains("/dashboard") || api.contains("/users/plugin/accounts")) {
+            // if the server is having issues, we'll timeout within 3 seconds for these calls
+            httpTask = new SoftwareHttpManager(api, httpMethodName, payload, overridingJwt, pingClient);
+        } else {
+            if (httpMethodName == HttpPost.METHOD_NAME) {
+                // continue, POSTS encapsulated in invoke laters with a timeout of 3 seconds
+                httpTask = new SoftwareHttpManager(api, httpMethodName, payload, overridingJwt, pingClient);
+            } else {
+                if (!appAvailable) {
+                    // bail out
+                    softwareResponse.setIsOk(false);
+                    return softwareResponse;
+                }
+                httpTask = new SoftwareHttpManager(api, httpMethodName, payload, overridingJwt, httpClient);
+            }
+        }
         Future<HttpResponse> response = EXECUTOR_SERVICE.submit(httpTask);
 
         //
@@ -537,13 +597,16 @@ public class SoftwareCoUtils {
         BrowserUtil.browse("http://api.software.com/music/top40");
     }
 
-    public static void launchCodeTimeMetricsDashboard() {
+    public static void fetchCodeTimeMetricsContent() {
         Project p = getOpenProject();
         if (p == null) {
             return;
         }
         String api = "/dashboard";
         String dashboardContent = SoftwareCoUtils.makeApiCall(api, HttpGet.METHOD_NAME, null).getJsonStr();
+        if (dashboardContent == null || dashboardContent.trim().isEmpty()) {
+            dashboardContent = NO_DATA;
+        }
         String codeTimeFile = SoftwareCoSessionManager.getCodeTimeDashboardFile();
         File f = new File(codeTimeFile);
 
@@ -557,6 +620,19 @@ public class SoftwareCoUtils {
         } finally {
             try {writer.close();} catch (Exception ex) {/*ignore*/}
         }
+    }
+
+    public static void launchCodeTimeMetricsDashboard() {
+        Project p = getOpenProject();
+        if (p == null) {
+            return;
+        }
+
+        fetchCodeTimeMetricsContent();
+
+        String codeTimeFile = SoftwareCoSessionManager.getCodeTimeDashboardFile();
+        File f = new File(codeTimeFile);
+
         VirtualFile vFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(f);
         OpenFileDescriptor descriptor = new OpenFileDescriptor(p, vFile);
         FileEditorManager.getInstance(p).openTextEditor(descriptor, true);
@@ -567,6 +643,274 @@ public class SoftwareCoUtils {
         if (legacyFile.exists()) {
             legacyFile.delete();
         }
+    }
+
+    public static FileTime getCreationTime(File file) throws IOException {
+        Path p = Paths.get(file.getAbsolutePath());
+        BasicFileAttributes view
+                = Files.getFileAttributeView(p, BasicFileAttributeView.class)
+                .readAttributes();
+        FileTime fileTime=view.creationTime();
+        //  also available view.lastAccessTine and view.lastModifiedTime
+        return fileTime;
+    }
+
+    public static String getMacAddress() {
+        String macAddress = null;
+
+        try {
+            List<String> cmd = new ArrayList<String>();
+            if (SoftwareCo.isWindows()) {
+                cmd.add("cmd");
+                cmd.add("/c");
+                cmd.add("wmic nic get MACAddress");
+            } else {
+                cmd.add("/bin/sh");
+                cmd.add("-c");
+                cmd.add("ifconfig | grep \"ether \" | grep -v 127.0.0.1 | cut -d \" \" -f2");
+            }
+
+            String[] cmdArgs = Arrays.copyOf(cmd.toArray(), cmd.size(), String[].class);
+            String content = SoftwareCoUtils.runCommand(cmdArgs, null);
+
+            // for now just get the 1st one found
+            if (content != null) {
+                String[] contentList = content.split("\n");
+                if (contentList != null && contentList.length > 0) {
+                    for (String line : contentList) {
+                        if (line != null && line.trim().length() > 0) {
+                            macAddress = line.trim();
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            //
+        }
+        Long time = getUserHomeDirCreateTime();
+        String username = SoftwareCo.getOsUserName();
+        List<String> parts = new ArrayList<>();
+        if (username != null) {
+            parts.add(username);
+        }
+        if (macAddress != null) {
+            parts.add(macAddress);
+        }
+        if (time != null) {
+            parts.add(String.valueOf(time));
+        }
+        macAddress = StringUtils.join(parts, "_");
+        return macAddress;
+    }
+
+    private static Long getUserHomeDirCreateTime() {
+        String homedir = SoftwareCo.getUserHomeDir();
+        Long createTimeMs = null;
+        File f = new File(homedir);
+        if (f.exists()) {
+            try {
+                createTimeMs = new Long(getCreationTime(f).toMillis());
+            } catch (IOException e) {
+                //
+            }
+        }
+        return createTimeMs;
+    }
+
+    private static List<String> getAllPossibleMacTokenApis() {
+        List<String> possibleMacTokenApis = new ArrayList<>();
+        String macAddress = getMacAddress();
+
+        try {
+            String encodedMacIdentity = URLEncoder.encode(macAddress, "UTF-8");
+            possibleMacTokenApis.add("/users/plugin/accounts?token=" + encodedMacIdentity);
+        } catch (UnsupportedEncodingException e) {
+            // url encoding failed, just use the mac addr id
+            possibleMacTokenApis.add("/users/plugin/accounts?token=" + macAddress);
+        }
+
+        String token = SoftwareCoSessionManager.getItem("token");
+        if (token != null) {
+            possibleMacTokenApis.add("/users/plugin/accounts?token=" + token);
+        }
+        return possibleMacTokenApis;
+    }
+
+    public static String getJsonObjString(JsonObject obj, String key) {
+        if (obj != null && !obj.get(key).isJsonNull()) {
+            return obj.get(key).getAsString();
+        }
+        return null;
+    }
+
+    public static Long getJsonObjLong(JsonObject obj, String key) {
+        if (obj != null && !obj.get(key).isJsonNull()) {
+            return obj.get(key).getAsLong();
+        }
+        return null;
+    }
+
+    @Nullable
+    public static List<User> getAuthenticatedPluginAccounts() {
+        List<User> users = new ArrayList<>();
+        boolean serverIsOnline = SoftwareCoSessionManager.isServerOnline();
+
+        // mac addr query str
+        String macAddress = getMacAddress();
+        String api = "/users/plugin/accounts?token=";
+        try {
+            String encodedMacIdentity = URLEncoder.encode(macAddress, "UTF-8");
+            api += encodedMacIdentity;
+        } catch (UnsupportedEncodingException e) {
+            // url encoding failed, just use the mac addr id
+            api += macAddress;
+        }
+
+        if (serverIsOnline) {
+            SoftwareResponse resp = SoftwareCoUtils.makeApiCall(api, HttpGet.METHOD_NAME, null);
+            if (resp.isOk()) {
+                JsonObject data = resp.getJsonObj();
+                // check if we have any data
+                if (data != null && data.has("users")) {
+                    try {
+                        JsonArray jsonUsers = data.getAsJsonArray("users");
+                        if (jsonUsers != null && jsonUsers.size() > 0) {
+                            for (JsonElement userObj : jsonUsers) {
+                                JsonObject obj = (JsonObject)userObj;
+                                User user = new User();
+                                user.email = getJsonObjString(obj, "email");
+                                user.mac_addr = getJsonObjString(obj, "mac_addr");
+                                user.mac_addr_share = getJsonObjString(obj, "mac_addr_share");
+                                user.plugin_jwt = getJsonObjString(obj, "plugin_jwt");
+                                user.id = getJsonObjLong(obj, "id");
+                                users.add(user);
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.out.println("error: " + e.getMessage());
+                    }
+                }
+            }
+        }
+
+        return users;
+    }
+
+    public static User getLoggedInUser(List<User> authAccounts) {
+        String macAddress = getMacAddress();
+        User loggedInUser = null;
+        if (authAccounts != null && authAccounts.size() > 0) {
+
+            for (User user : authAccounts) {
+                String userMacAddr = user.mac_addr;
+                String userEmail = user.email;
+
+                if (userMacAddr != null && userMacAddr.equals(macAddress) && userEmail != null && !userEmail.equals(macAddress)) {
+                    loggedInUser = user;
+                    break;
+                }
+            }
+
+            if (loggedInUser != null) {
+                // found th user, update the session
+                JsonObject foundUserObj = new JsonObject();
+                foundUserObj.addProperty("id", loggedInUser.id);
+                SoftwareCoSessionManager.setItem("jwt", loggedInUser.plugin_jwt);
+                SoftwareCoSessionManager.setItem("user", foundUserObj.toString());
+                SoftwareCoSessionManager.setItem("jetbrains_lastUpdateTime", String.valueOf(System.currentTimeMillis()));
+            } else {
+                String jwt = SoftwareCoSessionManager.getItem("jwt");
+                String userIdInfo = SoftwareCoSessionManager.getItem("user");
+                if (jwt == null || userIdInfo == null) {
+                    // use the anonymous user account
+                    for (User user : authAccounts) {
+                        String userMacAddr = user.mac_addr;
+                        String userEmail = user.email;
+                        if (userEmail != null && userMacAddr != null && userEmail.equals(userMacAddr)) {
+                            JsonObject foundUserObj = new JsonObject();
+                            foundUserObj.addProperty("id", user.id);
+                            SoftwareCoSessionManager.setItem("jwt", user.plugin_jwt);
+                            SoftwareCoSessionManager.setItem("user", foundUserObj.toString());
+                            SoftwareCoSessionManager.setItem("jetbrains_lastUpdateTime", String.valueOf(System.currentTimeMillis()));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return loggedInUser;
+    }
+
+    private static boolean hasPluginAccount(List<User> authAccounts) {
+        if (authAccounts != null && authAccounts.size() > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean hasRegisteredAccounts(List<User> authAccounts) {
+        String macAddress = getMacAddress();
+        if (authAccounts != null && authAccounts.size() > 0) {
+            for (User user : authAccounts) {
+                if (!user.email.equals(macAddress)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static UserStatus getUserStatus() {
+        long nowMillis = System.currentTimeMillis();
+        if (currentUserStatus != null && lastRegisterUserCheck != null) {
+            if (nowMillis - lastRegisterUserCheck.longValue() <= 10000) {
+                return currentUserStatus;
+            }
+        }
+
+        if (currentUserStatus == null) {
+            currentUserStatus = new UserStatus();
+        }
+
+        try {
+            List<User> authAccounts = getAuthenticatedPluginAccounts();
+            currentUserStatus.loggedInUser = getLoggedInUser(authAccounts);
+            currentUserStatus.hasAccounts = hasPluginAccount(authAccounts);
+            currentUserStatus.hasUserAccounts = hasRegisteredAccounts(authAccounts);
+
+            if (currentUserStatus.loggedInUser != null) {
+                currentUserStatus.email = currentUserStatus.loggedInUser.email;
+            } else {
+                currentUserStatus.email = null;
+            }
+        } catch (Exception e) {
+            //
+        }
+
+        lastRegisterUserCheck = System.currentTimeMillis();
+
+        return currentUserStatus;
+    }
+
+    public static void pluginLogout() {
+        String api = "/users/plugin/logout";
+        SoftwareResponse resp = SoftwareCoUtils.makeApiCall(api, HttpPost.METHOD_NAME, null);
+
+        clearUserStatusCache();
+
+        getUserStatus();
+
+        new Thread(() -> {
+            try {
+                Thread.sleep(1000);
+                SoftwareCoSessionManager.getInstance().fetchDailyKpmSessionInfo();
+            }
+            catch (Exception e){
+                System.err.println(e);
+            }
+        }).start();
+
     }
 
 }
