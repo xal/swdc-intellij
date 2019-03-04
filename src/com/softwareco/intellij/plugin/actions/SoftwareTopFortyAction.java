@@ -10,7 +10,7 @@ public class SoftwareTopFortyAction extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent anActionEvent) {
-        SoftwareCoUtils.launchCodeTimeMetricsDashboard();
+        SoftwareCoUtils.launchSoftwareTopForty();
     }
 
     @Override

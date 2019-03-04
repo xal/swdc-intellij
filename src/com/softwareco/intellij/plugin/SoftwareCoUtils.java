@@ -48,6 +48,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 public class SoftwareCoUtils {
 
@@ -654,6 +655,9 @@ public class SoftwareCoUtils {
         return fileTime;
     }
 
+    private static Pattern patternMacPairs = Pattern.compile("^([a-fA-F0-9]{2}[:\\.-]?){5}[a-fA-F0-9]{2}$");
+    private static Pattern patternMacTriples = Pattern.compile("^([a-fA-F0-9]{3}[:\\.-]?){3}[a-fA-F0-9]{3}$");
+
     public static String getMacAddress() {
         String macAddress = null;
 
@@ -677,7 +681,8 @@ public class SoftwareCoUtils {
                 String[] contentList = content.split("\n");
                 if (contentList != null && contentList.length > 0) {
                     for (String line : contentList) {
-                        if (line != null && line.trim().length() > 0) {
+                        if (line != null && line.trim().length() > 0 &&
+                                (patternMacPairs.matcher(line).find() || patternMacTriples.matcher(line).find())) {
                             macAddress = line.trim();
                             break;
                         }
