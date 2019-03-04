@@ -327,6 +327,24 @@ public class SoftwareCoSessionManager {
         });
     }
 
+    protected static void lazilyFetchUserStatus(int retryCount) {
+        SoftwareCoUtils.clearUserStatusCache();
+        SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
+
+        if (userStatus.loggedInUser == null && retryCount > 0) {
+            final int newRetryCount = retryCount - 1;
+            new Thread(() -> {
+                try {
+                    Thread.sleep(10000);
+                    lazilyFetchUserStatus(newRetryCount);
+                }
+                catch (Exception e){
+                    System.err.println(e);
+                }
+            }).start();
+        }
+    }
+
     public static void launchLogin() {
         String url = SoftwareCoUtils.launch_url;
         String macAddress = SoftwareCoUtils.getMacAddress();
@@ -344,8 +362,7 @@ public class SoftwareCoSessionManager {
         new Thread(() -> {
             try {
                 Thread.sleep(10000);
-                SoftwareCoUtils.clearUserStatusCache();
-                SoftwareCoUtils.getUserStatus();
+                lazilyFetchUserStatus(3);
             }
             catch (Exception e){
                 System.err.println(e);
@@ -368,9 +385,8 @@ public class SoftwareCoSessionManager {
 
         new Thread(() -> {
             try {
-                Thread.sleep(45000);
-                SoftwareCoUtils.clearUserStatusCache();
-                SoftwareCoUtils.getUserStatus();
+                Thread.sleep(55000);
+                lazilyFetchUserStatus(3);
             }
             catch (Exception e){
                 System.err.println(e);

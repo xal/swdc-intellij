@@ -66,9 +66,9 @@ public class SoftwareHttpManager implements Callable<HttpResponse> {
             req.addHeader("Content-type", "application/json");
 
             if (payload != null) {
-                LOG.log(Level.INFO, "Sofware.com: Sending API request: {0}, payload: {1}", new Object[]{api, payload});
+                LOG.log(Level.INFO, "Code Time: Sending API request: {0}, payload: {1}", new Object[]{api, payload});
             } else {
-                LOG.log(Level.INFO, "Sofware.com: Sending API request: {0}", api);
+                LOG.log(Level.INFO, "Code Time: Sending API request: {0}", api);
             }
 
             // execute the request

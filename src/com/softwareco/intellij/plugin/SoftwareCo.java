@@ -93,6 +93,7 @@ public class SoftwareCo implements ApplicationComponent {
         log.info("Code Time: Finished initializing SoftwareCo plugin");
 
         long one_min = 1000 * 60;
+        long ninety_sec = one_min + (1000 * 30);
         long one_hour = one_min * 60;
 
         ProcessKpmSessionInfoTask kpmTask = new ProcessKpmSessionInfoTask();
@@ -100,7 +101,7 @@ public class SoftwareCo implements ApplicationComponent {
         // run the kpm fetch task every minute
         kpmFetchTimer = new Timer();
         kpmFetchTimer.scheduleAtFixedRate(
-                kpmTask, one_min, one_min);
+                kpmTask, 1000 * 20, one_min);
 
         // run the music manager task every 15 seconds
         trackInfoTimer = new Timer();
@@ -117,7 +118,7 @@ public class SoftwareCo implements ApplicationComponent {
 
         userStatusTimer = new Timer();
         userStatusTimer.scheduleAtFixedRate(
-                new ProcessUserStatusTask(), one_min, one_min);
+                new ProcessUserStatusTask(), one_min, ninety_sec);
 
         eventMgr.setAppIsReady(true);
 
@@ -132,13 +133,6 @@ public class SoftwareCo implements ApplicationComponent {
             }
         }).start();
 
-        new Thread(() -> {
-            try {
-                kpmTask.run();
-            } catch (Exception e) {
-                System.err.println(e);
-            }
-        }).start();
     }
 
     private void initializeUserInfo() {
@@ -151,14 +145,12 @@ public class SoftwareCo implements ApplicationComponent {
                 }
 
                 SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
-                if (userStatus.loggedInUser != null) {
-                    // initialize preferences
-                } else {
+                if (userStatus.loggedInUser == null) {
                     // ask the user to login one time only
                     // run the initial calls in 6 seconds
                     new Thread(() -> {
                         try {
-                            Thread.sleep(1000 * 9);
+                            Thread.sleep(1000 * 10);
                             sessionMgr.checkUserAuthenticationStatus();
                         }
                         catch (Exception e){

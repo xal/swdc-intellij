@@ -6,8 +6,6 @@ package com.softwareco.intellij.plugin.actions;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.CommonDataKeys;
-import com.intellij.openapi.editor.Editor;
 import com.softwareco.intellij.plugin.SoftwareCoUtils;
 
 public class SoftwareLogoutAction extends AnAction {
@@ -19,9 +17,9 @@ public class SoftwareLogoutAction extends AnAction {
 
     @Override
     public void update(AnActionEvent event) {
-        Editor editor = event.getData(CommonDataKeys.EDITOR);
         SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
         event.getPresentation().setVisible(userStatus.loggedInUser != null);
         event.getPresentation().setEnabled(true);
+        event.getPresentation().setText("Log out from Code Time (" + userStatus.email + ")");
     }
 }
