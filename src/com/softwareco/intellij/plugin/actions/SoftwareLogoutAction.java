@@ -18,8 +18,9 @@ public class SoftwareLogoutAction extends AnAction {
     @Override
     public void update(AnActionEvent event) {
         SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
+        String userEmailTxt = (userStatus.email != null) ? " (" + userStatus.email + ")" : "";
         event.getPresentation().setVisible(userStatus.loggedInUser != null);
         event.getPresentation().setEnabled(true);
-        event.getPresentation().setText("Log out from Code Time (" + userStatus.email + ")");
+        event.getPresentation().setText("Log out from Code Time" + userEmailTxt);
     }
 }

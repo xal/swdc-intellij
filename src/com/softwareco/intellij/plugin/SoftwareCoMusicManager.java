@@ -154,7 +154,7 @@ public class SoftwareCoMusicManager {
 
                 MusicSendDataTask sendTask = new MusicSendDataTask();
 
-                Future<SoftwareResponse> response = SoftwareCoUtils.executorService.submit(sendTask);
+                Future<SoftwareResponse> response = SoftwareCoUtils.EXECUTOR_SERVICE.submit(sendTask);
 
                 //
                 // Handle the Future if it exist

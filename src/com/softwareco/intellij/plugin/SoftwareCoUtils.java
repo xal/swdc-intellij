@@ -59,7 +59,6 @@ public class SoftwareCoUtils {
     // set the launch url to use
     public final static String launch_url = "https://app.software.com";
 
-    public static ExecutorService executorService;
     public static HttpClient httpClient;
     public static HttpClient pingClient;
 
@@ -69,7 +68,7 @@ public class SoftwareCoUtils {
     public static int pluginId = 4;
     public static String version = "0.1.68";
 
-    private final static ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
+    public final static ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
 
     private final static int EOF = -1;
 
@@ -93,8 +92,6 @@ public class SoftwareCoUtils {
 
         pingClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build();
         httpClient = HttpClientBuilder.create().build();
-
-        executorService = Executors.newCachedThreadPool();
     }
 
     public static class UserStatus {
@@ -139,8 +136,8 @@ public class SoftwareCoUtils {
             // if the server is having issues, we'll timeout within 3 seconds for these calls
             httpTask = new SoftwareHttpManager(api, httpMethodName, payload, overridingJwt, pingClient);
         } else {
-            if (httpMethodName == HttpPost.METHOD_NAME) {
-                // continue, POSTS encapsulated in invoke laters with a timeout of 3 seconds
+            if (httpMethodName.equals(HttpPost.METHOD_NAME)) {
+                // continue, POSTS encapsulated "invokeLater" with a timeout of 3 seconds
                 httpTask = new SoftwareHttpManager(api, httpMethodName, payload, overridingJwt, pingClient);
             } else {
                 if (!appAvailable) {
@@ -722,25 +719,6 @@ public class SoftwareCoUtils {
         return createTimeMs;
     }
 
-    private static List<String> getAllPossibleMacTokenApis() {
-        List<String> possibleMacTokenApis = new ArrayList<>();
-        String macAddress = getMacAddress();
-
-        try {
-            String encodedMacIdentity = URLEncoder.encode(macAddress, "UTF-8");
-            possibleMacTokenApis.add("/users/plugin/accounts?token=" + encodedMacIdentity);
-        } catch (UnsupportedEncodingException e) {
-            // url encoding failed, just use the mac addr id
-            possibleMacTokenApis.add("/users/plugin/accounts?token=" + macAddress);
-        }
-
-        String token = SoftwareCoSessionManager.getItem("token");
-        if (token != null) {
-            possibleMacTokenApis.add("/users/plugin/accounts?token=" + token);
-        }
-        return possibleMacTokenApis;
-    }
-
     public static String getJsonObjString(JsonObject obj, String key) {
         if (obj != null && !obj.get(key).isJsonNull()) {
             return obj.get(key).getAsString();
@@ -914,7 +892,6 @@ public class SoftwareCoUtils {
                 System.err.println(e);
             }
         }).start();
-
     }
 
 }

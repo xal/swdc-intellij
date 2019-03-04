@@ -20,7 +20,6 @@ import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Date;
 import java.util.UUID;
 
 public class SoftwareCoSessionManager {
@@ -261,24 +260,12 @@ public class SoftwareCoSessionManager {
         }
     }
 
-    /**
-     * Checks the last time we've updated the session info
-     */
-    private boolean isPastTimeThreshold() {
-        String lastUpdateTimeStr = getItem("jetbrains_lastUpdateTime");
-        Long lastUpdateTime = (lastUpdateTimeStr != null) ? Long.valueOf(lastUpdateTimeStr) : null;
-        return lastUpdateTime == null ||
-                System.currentTimeMillis() - lastUpdateTime.longValue() >= MILLIS_PER_HOUR * LONG_THRESHOLD_HOURS;
-    }
-
     public static String generateToken() {
         String uuid = UUID.randomUUID().toString();
         return uuid.replace("-", "");
     }
 
     public void fetchDailyKpmSessionInfo() {
-        Date d = SoftwareCoUtils.atStartOfDay(new Date());
-        long fromSeconds = Math.round(d.getTime() / 1000);
         String sessionsApi = "/sessions?summary=true";
 
         // make an async call to get the kpm info
