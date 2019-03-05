@@ -22,6 +22,7 @@ import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.PlatformUtils;
 import com.intellij.util.messages.MessageBusConnection;
+import org.apache.commons.lang.SystemUtils;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.log4j.Level;
@@ -398,6 +399,31 @@ public class SoftwareCo implements ApplicationComponent {
 
     public static String getOsUserName() {
         return System.getProperty("user.name");
+    }
+
+    public static String getOsInfo() {
+        String osName = SystemUtils.OS_NAME;
+        String osVersion = SystemUtils.OS_VERSION;
+        String osArch = SystemUtils.OS_ARCH;
+
+        String osInfo = "";
+        if (osArch != null) {
+            osInfo += osArch;
+        }
+        if (osInfo.length() > 0) {
+            osInfo += "_";
+        }
+        if (osVersion != null) {
+            osInfo += osVersion;
+        }
+        if (osInfo.length() > 0) {
+            osInfo += "_";
+        }
+        if (osName != null) {
+            osInfo += osName;
+        }
+
+        return osInfo;
     }
 
     public static boolean isWindows() {

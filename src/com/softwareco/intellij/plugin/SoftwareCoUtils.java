@@ -781,47 +781,44 @@ public class SoftwareCoUtils {
 
     public static User getLoggedInUser(List<User> authAccounts) {
         String macAddress = getMacAddress();
-        User loggedInUser = null;
         if (authAccounts != null && authAccounts.size() > 0) {
-
+            User loggedInUser = null;
+            User secondaryUser = null;
+            User anonUser = null;
             for (User user : authAccounts) {
-                String userMacAddr = user.mac_addr;
-                String userEmail = user.email;
+                String userMacAddr = (user.mac_addr != null) ? user.mac_addr : "";
+                String userEmail = (user.email != null) ? user.email : "";
+                String userMacAddrShare = (user.mac_addr_share != null) ? user.mac_addr_share : "";
 
-                if (userMacAddr != null && userMacAddr.equals(macAddress) && userEmail != null && !userEmail.equals(macAddress)) {
+                if (userMacAddr.equals(macAddress) && !userEmail.equals(macAddress)) {
                     loggedInUser = user;
                     break;
+                } else if (!userEmail.equals(userMacAddrShare)) {
+                    secondaryUser = user;
+                } else if (anonUser == null && (userEmail.equals(userMacAddr) || userEmail.equals(macAddress))) {
+                    anonUser = user;
                 }
             }
 
             if (loggedInUser != null) {
                 // found th user, update the session
-                JsonObject foundUserObj = new JsonObject();
-                foundUserObj.addProperty("id", loggedInUser.id);
-                SoftwareCoSessionManager.setItem("jwt", loggedInUser.plugin_jwt);
-                SoftwareCoSessionManager.setItem("user", foundUserObj.toString());
-                SoftwareCoSessionManager.setItem("jetbrains_lastUpdateTime", String.valueOf(System.currentTimeMillis()));
-            } else {
-                String jwt = SoftwareCoSessionManager.getItem("jwt");
-                String userIdInfo = SoftwareCoSessionManager.getItem("user");
-                if (jwt == null || userIdInfo == null) {
-                    // use the anonymous user account
-                    for (User user : authAccounts) {
-                        String userMacAddr = user.mac_addr;
-                        String userEmail = user.email;
-                        if (userEmail != null && userMacAddr != null && userEmail.equals(userMacAddr)) {
-                            JsonObject foundUserObj = new JsonObject();
-                            foundUserObj.addProperty("id", user.id);
-                            SoftwareCoSessionManager.setItem("jwt", user.plugin_jwt);
-                            SoftwareCoSessionManager.setItem("user", foundUserObj.toString());
-                            SoftwareCoSessionManager.setItem("jetbrains_lastUpdateTime", String.valueOf(System.currentTimeMillis()));
-                            break;
-                        }
-                    }
-                }
+                updateSessionUser(loggedInUser);
+                return loggedInUser;
+            } else if (anonUser != null) {
+                updateSessionUser(anonUser);
+            } else if (secondaryUser != null) {
+                updateSessionUser(secondaryUser);
             }
         }
-        return loggedInUser;
+        return null;
+    }
+
+    private static void updateSessionUser(User user) {
+        JsonObject userObj = new JsonObject();
+        userObj.addProperty("id", user.id);
+        SoftwareCoSessionManager.setItem("jwt", user.plugin_jwt);
+        SoftwareCoSessionManager.setItem("user", userObj.toString());
+        SoftwareCoSessionManager.setItem("jetbrains_lastUpdateTime", String.valueOf(System.currentTimeMillis()));
     }
 
     private static boolean hasPluginAccount(List<User> authAccounts) {

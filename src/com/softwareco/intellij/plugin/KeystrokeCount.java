@@ -21,6 +21,7 @@ public class KeystrokeCount {
     // start and end are in seconds
     private long start;
     private long local_start;
+    private String os;
     private String timezone;
     private KeystrokeProject project;
 
@@ -33,6 +34,7 @@ public class KeystrokeCount {
             this.version = SoftwareCoUtils.version;
         }
         this.pluginId = SoftwareCoUtils.pluginId;
+        this.os = SoftwareCo.getOsInfo();
     }
 
     public KeystrokeCount clone() {
