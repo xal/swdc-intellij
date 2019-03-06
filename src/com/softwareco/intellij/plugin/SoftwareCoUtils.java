@@ -415,11 +415,11 @@ public class SoftwareCoUtils {
                     // don't return a number with 2 decimal place precision
                     str = String.format("%.0f", hours) + " hrs";
                 } else {
-                    hours = Math.round(hours * 10) / 10;
+                    // hours = Math.round(hours * 10) / 10;
                     str = String.format("%.1f", hours) + " hrs";
                 }
             } catch (Exception e) {
-                str = String.valueOf(Math.round(hours)) + " hrs";
+                str = String.format("%s hrs", String.valueOf(Math.round(hours)));
             }
         } else if (minutes == 1) {
             str = "1 min";

@@ -349,7 +349,7 @@ public class SoftwareCoSessionManager {
         new Thread(() -> {
             try {
                 Thread.sleep(10000);
-                lazilyFetchUserStatus(3);
+                lazilyFetchUserStatus(4);
             }
             catch (Exception e){
                 System.err.println(e);
@@ -373,7 +373,7 @@ public class SoftwareCoSessionManager {
         new Thread(() -> {
             try {
                 Thread.sleep(55000);
-                lazilyFetchUserStatus(3);
+                lazilyFetchUserStatus(8);
             }
             catch (Exception e){
                 System.err.println(e);

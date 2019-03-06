@@ -10,6 +10,9 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.editor.Editor;
 import com.softwareco.intellij.plugin.SoftwareCoUtils;
 
+/**
+ * This is the code time metrics action for the menu items
+ */
 public class CodeTimeMetricsAction extends AnAction {
 
     @Override
