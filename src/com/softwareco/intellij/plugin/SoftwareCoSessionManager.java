@@ -304,12 +304,7 @@ public class SoftwareCoSessionManager {
         ApplicationManager.getApplication().invokeLater(new Runnable() {
             public void run() {
                 SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
-                if (userStatus.hasAccounts) {
-                    // show the metrics dashboard
-                    SoftwareCoUtils.launchCodeTimeMetricsDashboard();
-                } else {
-                    launchSignup();
-                }
+                SoftwareCoUtils.launchCodeTimeMetricsDashboard();
             }
         });
     }

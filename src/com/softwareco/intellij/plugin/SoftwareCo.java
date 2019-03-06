@@ -5,7 +5,6 @@
 package com.softwareco.intellij.plugin;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManager;
@@ -23,15 +22,9 @@ import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.PlatformUtils;
 import com.intellij.util.messages.MessageBusConnection;
 import org.apache.commons.lang.SystemUtils;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.List;
-import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executors;
@@ -141,9 +134,6 @@ public class SoftwareCo implements ApplicationComponent {
             public void run() {
                 // this should only ever possibly return true the very first
                 // time the IDE loads this new code
-                if (requiresUserCreation()) {
-                    createAnonymousUser();
-                }
 
                 SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
                 if (userStatus.loggedInUser == null) {
@@ -162,89 +152,6 @@ public class SoftwareCo implements ApplicationComponent {
                 }
             }
         });
-    }
-
-    protected String getAppJwt() {
-        String appJwt = SoftwareCoSessionManager.getItem("app_jwt");
-        boolean serverIsOnline = SoftwareCoSessionManager.isServerOnline();
-        if (appJwt == null && serverIsOnline) {
-            String macAddress = SoftwareCoUtils.getMacAddress();
-            if (macAddress != null) {
-                String encodedMacIdentity = "";
-                try {
-                    encodedMacIdentity = URLEncoder.encode(macAddress, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    // url encoding failed, just use the mac addr id
-                    encodedMacIdentity = macAddress;
-                }
-
-                String api = "/data/token?addr=" + encodedMacIdentity;
-                SoftwareResponse resp = SoftwareCoUtils.makeApiCall(api, HttpGet.METHOD_NAME, null);
-                if (resp.isOk()) {
-                    JsonObject obj = resp.getJsonObj();
-                    appJwt = obj.get("jwt").getAsString();
-                    SoftwareCoSessionManager.setItem("app_jwt", appJwt);
-                }
-            }
-        }
-        return SoftwareCoSessionManager.getItem("app_jwt");
-    }
-
-    protected boolean requiresUserCreation() {
-        // check using the mac address
-        List<SoftwareCoUtils.User> authAccounts = SoftwareCoUtils.getAuthenticatedPluginAccounts();
-        if (authAccounts != null && authAccounts.size() > 0) {
-            for (SoftwareCoUtils.User user : authAccounts) {
-                if (user.email != null && user.mac_addr != null && user.email.equals(user.mac_addr)) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    protected void createAnonymousUser() {
-        boolean serverIsOnline = SoftwareCoSessionManager.isServerOnline();
-        String pluginToken = SoftwareCoSessionManager.getItem("token");
-        String macAddress = SoftwareCoUtils.getMacAddress();
-        // make sure we've fetched the app jwt
-        String appJwt = getAppJwt();
-
-        if (serverIsOnline && macAddress != null) {
-            String email = macAddress;
-            if (pluginToken == null) {
-                pluginToken = SoftwareCoSessionManager.generateToken();
-                SoftwareCoSessionManager.setItem("token", pluginToken);
-            }
-            String timezone = TimeZone.getDefault().getID();
-
-            String encodedMacIdentity = "";
-            try {
-                encodedMacIdentity = URLEncoder.encode(macAddress, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                // url encoding failed, just use the mac addr id
-                encodedMacIdentity = macAddress;
-            }
-            JsonObject payload = new JsonObject();
-            payload.addProperty("email", email);
-            payload.addProperty("plugin_token", pluginToken);
-            payload.addProperty("timezone", timezone);
-            String api = "/data/onboard?addr=" + encodedMacIdentity;
-            SoftwareResponse resp = SoftwareCoUtils.makeApiCall(api, HttpPost.METHOD_NAME, payload.toString(), appJwt);
-            if (resp.isOk()) {
-                // check if we have the data and jwt
-                // resp.data.jwt and resp.data.user
-                // then update the session.json for the jwt, user, and jetbrains_lastUpdateTime
-                JsonObject data = resp.getJsonObj();
-                // check if we have any data
-                if (data != null && data.has("jwt")) {
-                    String dataJwt = data.get("jwt").getAsString();
-                    String user = data.get("user").getAsString();
-                    SoftwareCoSessionManager.setItem("jwt", dataJwt);
-                    SoftwareCoSessionManager.setItem("user", user);
-                }
-            }
-        }
     }
 
     private void handleMigrationUpdates() {
