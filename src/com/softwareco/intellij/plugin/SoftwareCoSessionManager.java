@@ -27,9 +27,6 @@ public class SoftwareCoSessionManager {
     private static SoftwareCoSessionManager instance = null;
     public static final Logger log = Logger.getInstance("SoftwareCoSessionManager");
 
-    private static long MILLIS_PER_HOUR = 1000 * 60 * 60;
-    private static int LONG_THRESHOLD_HOURS = 24;
-
     public static SoftwareCoSessionManager getInstance() {
         if (instance == null) {
             instance = new SoftwareCoSessionManager();
@@ -329,16 +326,16 @@ public class SoftwareCoSessionManager {
 
     public static void launchLogin() {
         String url = SoftwareCoUtils.launch_url;
-        String macAddress = SoftwareCoUtils.getMacAddress();
-        String encodedMacAddr = null;
+        String identityId = SoftwareCoUtils.getIdentity();
+        String encodedIdentityId = null;
         try {
-            encodedMacAddr = URLEncoder.encode(macAddress, "UTF-8");
+            encodedIdentityId = URLEncoder.encode(identityId, "UTF-8");
         } catch (UnsupportedEncodingException e) {
             // url encoding failed, just use the mac addr
-            encodedMacAddr = macAddress;
+            encodedIdentityId = identityId;
         }
 
-        url += "/login?addr=" + encodedMacAddr;
+        url += "/login?addr=" + encodedIdentityId;
         BrowserUtil.browse(url);
 
         new Thread(() -> {
@@ -354,7 +351,7 @@ public class SoftwareCoSessionManager {
 
     public static void launchSignup() {
         String url = SoftwareCoUtils.launch_url;
-        String macAddress = SoftwareCoUtils.getMacAddress();
+        String macAddress = SoftwareCoUtils.getIdentity();
         String encodedMacAddr = null;
         try {
             encodedMacAddr = URLEncoder.encode(macAddress, "UTF-8");

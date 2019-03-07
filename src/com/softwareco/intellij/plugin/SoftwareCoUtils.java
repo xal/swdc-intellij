@@ -653,8 +653,8 @@ public class SoftwareCoUtils {
     private static Pattern patternMacPairs = Pattern.compile("^([a-fA-F0-9]{2}[:\\.-]?){5}[a-fA-F0-9]{2}$");
     private static Pattern patternMacTriples = Pattern.compile("^([a-fA-F0-9]{3}[:\\.-]?){3}[a-fA-F0-9]{3}$");
 
-    public static String getMacAddress() {
-        String macAddress = null;
+    public static String getIdentity() {
+        String identityId = null;
 
         try {
             List<String> cmd = new ArrayList<String>();
@@ -678,7 +678,7 @@ public class SoftwareCoUtils {
                     for (String line : contentList) {
                         if (line != null && line.trim().length() > 0 &&
                                 (patternMacPairs.matcher(line).find() || patternMacTriples.matcher(line).find())) {
-                            macAddress = line.trim();
+                            identityId = line.trim();
                             break;
                         }
                     }
@@ -687,34 +687,16 @@ public class SoftwareCoUtils {
         } catch (Exception e) {
             //
         }
-        Long time = getUserHomeDirCreateTime();
         String username = SoftwareCo.getOsUserName();
         List<String> parts = new ArrayList<>();
         if (username != null) {
             parts.add(username);
         }
-        if (macAddress != null) {
-            parts.add(macAddress);
+        if (identityId != null) {
+            parts.add(identityId);
         }
-        if (time != null) {
-            parts.add(String.valueOf(time));
-        }
-        macAddress = StringUtils.join(parts, "_");
-        return macAddress;
-    }
-
-    private static Long getUserHomeDirCreateTime() {
-        String homedir = SoftwareCo.getUserHomeDir();
-        Long createTimeMs = null;
-        File f = new File(homedir);
-        if (f.exists()) {
-            try {
-                createTimeMs = new Long(getCreationTime(f).toMillis());
-            } catch (IOException e) {
-                //
-            }
-        }
-        return createTimeMs;
+        identityId = StringUtils.join(parts, "_");
+        return identityId;
     }
 
     public static String getJsonObjString(JsonObject obj, String key) {
@@ -731,39 +713,41 @@ public class SoftwareCoUtils {
         return null;
     }
 
-    public static String getAppJwt(String macAddr) {
-        String appJwt = SoftwareCoSessionManager.getItem("app_jwt");
+    public static String getAppJwt(String identityId) {
+        // clear out the previous app_jwt
+        SoftwareCoSessionManager.setItem("app_jwt", null);
+
         boolean serverIsOnline = SoftwareCoSessionManager.isServerOnline();
-        if (appJwt == null && serverIsOnline) {
-            if (macAddr != null) {
+
+        if (serverIsOnline) {
+            if (identityId != null) {
                 String encodedMacIdentity = "";
                 try {
-                    encodedMacIdentity = URLEncoder.encode(macAddr, "UTF-8");
+                    encodedMacIdentity = URLEncoder.encode(identityId, "UTF-8");
                 } catch (UnsupportedEncodingException e) {
                     // url encoding failed, just use the mac addr id
-                    encodedMacIdentity = macAddr;
+                    encodedMacIdentity = identityId;
                 }
 
                 String api = "/data/token?addr=" + encodedMacIdentity;
                 SoftwareResponse resp = SoftwareCoUtils.makeApiCall(api, HttpGet.METHOD_NAME, null);
                 if (resp.isOk()) {
                     JsonObject obj = resp.getJsonObj();
-                    appJwt = obj.get("jwt").getAsString();
-                    SoftwareCoSessionManager.setItem("app_jwt", appJwt);
+                    return obj.get("jwt").getAsString();
                 }
             }
         }
-        return SoftwareCoSessionManager.getItem("app_jwt");
+        return null;
     }
 
-    public static void createAnonymousUser(String macAddr) {
+    public static void createAnonymousUser(String identityId) {
         boolean serverIsOnline = SoftwareCoSessionManager.isServerOnline();
         String pluginToken = SoftwareCoSessionManager.getItem("token");
         // make sure we've fetched the app jwt
-        String appJwt = getAppJwt(macAddr);
+        String appJwt = getAppJwt(identityId);
 
-        if (serverIsOnline && macAddr != null) {
-            String email = macAddr;
+        if (serverIsOnline && identityId != null) {
+            String email = identityId;
             if (pluginToken == null) {
                 pluginToken = SoftwareCoSessionManager.generateToken();
                 SoftwareCoSessionManager.setItem("token", pluginToken);
@@ -772,10 +756,10 @@ public class SoftwareCoUtils {
 
             String encodedMacIdentity = "";
             try {
-                encodedMacIdentity = URLEncoder.encode(macAddr, "UTF-8");
+                encodedMacIdentity = URLEncoder.encode(identityId, "UTF-8");
             } catch (UnsupportedEncodingException e) {
                 // url encoding failed, just use the mac addr id
-                encodedMacIdentity = macAddr;
+                encodedMacIdentity = identityId;
             }
             JsonObject payload = new JsonObject();
             payload.addProperty("email", email);
@@ -799,18 +783,18 @@ public class SoftwareCoUtils {
         }
     }
 
-    public static List<User> getAuthenticatedPluginAccounts(String macAddr) {
+    public static List<User> getAuthenticatedPluginAccounts(String identityId) {
         List<User> users = new ArrayList<>();
         boolean serverIsOnline = SoftwareCoSessionManager.isServerOnline();
 
         // mac addr query str
         String api = "/users/plugin/accounts?token=";
         try {
-            String encodedMacIdentity = URLEncoder.encode(macAddr, "UTF-8");
+            String encodedMacIdentity = URLEncoder.encode(identityId, "UTF-8");
             api += encodedMacIdentity;
         } catch (UnsupportedEncodingException e) {
             // url encoding failed, just use the mac addr id
-            api += macAddr;
+            api += identityId;
         }
 
         if (serverIsOnline) {
@@ -843,16 +827,16 @@ public class SoftwareCoUtils {
         return users;
     }
 
-    public static User getLoggedInUser(String macAddr, List<User> authAccounts) {
+    public static User getLoggedInUser(String identityId, List<User> authAccounts) {
         if (authAccounts != null && authAccounts.size() > 0) {
             for (User user : authAccounts) {
                 String userMacAddr = (user.mac_addr != null) ? user.mac_addr : "";
                 String userEmail = (user.email != null) ? user.email : "";
                 String userMacAddrShare = (user.mac_addr_share != null) ? user.mac_addr_share : "";
                 if (!userEmail.equals(userMacAddr) &&
-                    !userEmail.equals(macAddr) &&
+                    !userEmail.equals(identityId) &&
                     !userEmail.equals(userMacAddrShare) &&
-                    userMacAddr.equals(macAddr)) {
+                    userMacAddr.equals(identityId)) {
                     return user;
                 }
             }
@@ -861,14 +845,14 @@ public class SoftwareCoUtils {
     }
 
 
-    public static boolean hasRegisteredUserAccount(String macAddr, List<User> authAccounts) {
+    public static boolean hasRegisteredUserAccount(String identityId, List<User> authAccounts) {
         if (authAccounts != null && authAccounts.size() > 0) {
             for (User user : authAccounts) {
                 String userMacAddr = (user.mac_addr != null) ? user.mac_addr : "";
                 String userEmail = (user.email != null) ? user.email : "";
                 String userMacAddrShare = (user.mac_addr_share != null) ? user.mac_addr_share : "";
                 if (!userEmail.equals(userMacAddr) &&
-                        !userEmail.equals(macAddr) &&
+                        !userEmail.equals(identityId) &&
                         !userEmail.equals(userMacAddrShare)) {
                     return true;
                 }
@@ -877,13 +861,13 @@ public class SoftwareCoUtils {
         return false;
     }
 
-    public static User getAnonymousUser(String macAddr, List<User> authAccounts) {
+    public static User getAnonymousUser(String identityId, List<User> authAccounts) {
         if (authAccounts != null && authAccounts.size() > 0) {
             for (User user : authAccounts) {
                 String userMacAddr = (user.mac_addr != null) ? user.mac_addr : "";
                 String userEmail = (user.email != null) ? user.email : "";
                 String userMacAddrShare = (user.mac_addr_share != null) ? user.mac_addr_share : "";
-                if (userEmail.equals(userMacAddr) || userEmail.equals(macAddr) || userEmail.equals(userMacAddrShare)) {
+                if (userEmail.equals(userMacAddr) || userEmail.equals(identityId) || userEmail.equals(userMacAddrShare)) {
                     return user;
                 }
             }
@@ -907,26 +891,23 @@ public class SoftwareCoUtils {
             }
         }
 
-        String macAddress = getMacAddress();
-
-        // make sure the app jwt is available
-        getAppJwt(macAddress);
+        String identityId = getIdentity();
 
         if (currentUserStatus == null) {
             currentUserStatus = new UserStatus();
         }
 
         try {
-            List<User> authAccounts = getAuthenticatedPluginAccounts(macAddress);
-            User loggedInUser = getLoggedInUser(macAddress, authAccounts);
-            User anonUser = getAnonymousUser(macAddress, authAccounts);
+            List<User> authAccounts = getAuthenticatedPluginAccounts(identityId);
+            User loggedInUser = getLoggedInUser(identityId, authAccounts);
+            User anonUser = getAnonymousUser(identityId, authAccounts);
             if (anonUser == null) {
                 // create the anonymous user
-                createAnonymousUser(macAddress);
-                authAccounts = getAuthenticatedPluginAccounts(macAddress);
-                anonUser = getAnonymousUser(macAddress, authAccounts);
+                createAnonymousUser(identityId);
+                authAccounts = getAuthenticatedPluginAccounts(identityId);
+                anonUser = getAnonymousUser(identityId, authAccounts);
             }
-            boolean hasUserAccounts = hasRegisteredUserAccount(macAddress, authAccounts);
+            boolean hasUserAccounts = hasRegisteredUserAccount(identityId, authAccounts);
 
             if (loggedInUser != null) {
                 updateSessionUser(loggedInUser);
