@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>com.softwareco.intellij.plugin</id>
   <name>Code Time</name>
-  <version>0.1.76</version>
+  <version>0.1.77</version>
   <vendor email="cody@software.com" url="https://software.com">Software</vendor>
 
   <description><![CDATA[

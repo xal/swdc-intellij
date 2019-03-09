@@ -34,12 +34,6 @@ import javax.swing.*;
 import java.io.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributeView;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -640,18 +634,28 @@ public class SoftwareCoUtils {
         }
     }
 
-    public static FileTime getCreationTime(File file) throws IOException {
-        Path p = Paths.get(file.getAbsolutePath());
-        BasicFileAttributes view
-                = Files.getFileAttributeView(p, BasicFileAttributeView.class)
-                .readAttributes();
-        FileTime fileTime=view.creationTime();
-        //  also available view.lastAccessTine and view.lastModifiedTime
-        return fileTime;
-    }
-
     private static Pattern patternMacPairs = Pattern.compile("^([a-fA-F0-9]{2}[:\\.-]?){5}[a-fA-F0-9]{2}$");
     private static Pattern patternMacTriples = Pattern.compile("^([a-fA-F0-9]{3}[:\\.-]?){3}[a-fA-F0-9]{3}$");
+    private static Pattern patternMac = Pattern.compile("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$");
+
+    public static boolean isMacEmail(String email) {
+        if (email.contains("_")) {
+            String[] parts = email.split("_");
+            for (int i = 0; i < parts.length; i++) {
+                String part = parts[i];
+                if (patternMacPairs.matcher(part).find()
+                        || patternMacTriples.matcher(part).find()
+                        || patternMac.matcher(part).find()) {
+                    return true;
+                }
+            }
+        } else if (patternMacPairs.matcher(email).find()
+                || patternMacTriples.matcher(email).find()
+                || patternMac.matcher(email).find()) {
+            return true;
+        }
+        return false;
+    }
 
     public static String getIdentity() {
         String identityId = null;
@@ -676,8 +680,10 @@ public class SoftwareCoUtils {
                 String[] contentList = content.split("\n");
                 if (contentList != null && contentList.length > 0) {
                     for (String line : contentList) {
-                        if (line != null && line.trim().length() > 0 &&
-                                (patternMacPairs.matcher(line).find() || patternMacTriples.matcher(line).find())) {
+                        if ( line != null && line.trim().length() > 0 &&
+                                ( patternMacPairs.matcher(line).find()
+                                        || patternMacTriples.matcher(line).find()
+                                        || patternMac.matcher(line).find() ) ) {
                             identityId = line.trim();
                             break;
                         }
@@ -861,13 +867,10 @@ public class SoftwareCoUtils {
         return false;
     }
 
-    public static User getAnonymousUser(String identityId, List<User> authAccounts) {
+    public static User getAnonymousUser(List<User> authAccounts) {
         if (authAccounts != null && authAccounts.size() > 0) {
             for (User user : authAccounts) {
-                String userMacAddr = (user.mac_addr != null) ? user.mac_addr : "";
-                String userEmail = (user.email != null) ? user.email : "";
-                String userMacAddrShare = (user.mac_addr_share != null) ? user.mac_addr_share : "";
-                if (userEmail.equals(userMacAddr) || userEmail.equals(identityId) || userEmail.equals(userMacAddrShare)) {
+                if (user.email != null && SoftwareCoUtils.isMacEmail(user.email)) {
                     return user;
                 }
             }
@@ -900,12 +903,12 @@ public class SoftwareCoUtils {
         try {
             List<User> authAccounts = getAuthenticatedPluginAccounts(identityId);
             User loggedInUser = getLoggedInUser(identityId, authAccounts);
-            User anonUser = getAnonymousUser(identityId, authAccounts);
+            User anonUser = getAnonymousUser(authAccounts);
             if (anonUser == null) {
                 // create the anonymous user
                 createAnonymousUser(identityId);
                 authAccounts = getAuthenticatedPluginAccounts(identityId);
-                anonUser = getAnonymousUser(identityId, authAccounts);
+                anonUser = getAnonymousUser(authAccounts);
             }
             boolean hasUserAccounts = hasRegisteredUserAccount(identityId, authAccounts);
 
