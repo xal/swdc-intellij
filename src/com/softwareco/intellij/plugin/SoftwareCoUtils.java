@@ -851,15 +851,10 @@ public class SoftwareCoUtils {
     }
 
 
-    public static boolean hasRegisteredUserAccount(String identityId, List<User> authAccounts) {
+    public static boolean hasRegisteredUserAccount(List<User> authAccounts) {
         if (authAccounts != null && authAccounts.size() > 0) {
             for (User user : authAccounts) {
-                String userMacAddr = (user.mac_addr != null) ? user.mac_addr : "";
-                String userEmail = (user.email != null) ? user.email : "";
-                String userMacAddrShare = (user.mac_addr_share != null) ? user.mac_addr_share : "";
-                if (!userEmail.equals(userMacAddr) &&
-                        !userEmail.equals(identityId) &&
-                        !userEmail.equals(userMacAddrShare)) {
+                if (user.email != null && !SoftwareCoUtils.isMacEmail(user.email)) {
                     return true;
                 }
             }
@@ -910,7 +905,7 @@ public class SoftwareCoUtils {
                 authAccounts = getAuthenticatedPluginAccounts(identityId);
                 anonUser = getAnonymousUser(authAccounts);
             }
-            boolean hasUserAccounts = hasRegisteredUserAccount(identityId, authAccounts);
+            boolean hasUserAccounts = hasRegisteredUserAccount(authAccounts);
 
             if (loggedInUser != null) {
                 updateSessionUser(loggedInUser);
