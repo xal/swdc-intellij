@@ -65,6 +65,10 @@ public class SoftwareCoUtils {
 
     private final static int EOF = -1;
 
+    private static Pattern patternMacPairs = Pattern.compile("([a-fA-F0-9]{2}[:\\.-]?){5}[a-fA-F0-9]{2}");
+    private static Pattern patternMacTriples = Pattern.compile("([a-fA-F0-9]{3}[:\\.-]?){3}[a-fA-F0-9]{3}");
+    private static Pattern patternMac = Pattern.compile("([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})");
+
     private static boolean fetchingResourceInfo = false;
     private static JsonObject lastResourceInfo = new JsonObject();
 
@@ -633,10 +637,6 @@ public class SoftwareCoUtils {
             legacyFile.delete();
         }
     }
-
-    private static Pattern patternMacPairs = Pattern.compile("^([a-fA-F0-9]{2}[:\\.-]?){5}[a-fA-F0-9]{2}$");
-    private static Pattern patternMacTriples = Pattern.compile("^([a-fA-F0-9]{3}[:\\.-]?){3}[a-fA-F0-9]{3}$");
-    private static Pattern patternMac = Pattern.compile("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$");
 
     public static boolean isMacEmail(String email) {
         if (email.contains("_")) {
