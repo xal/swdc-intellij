@@ -16,7 +16,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 
 import java.io.*;
-import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -226,17 +225,10 @@ public class SoftwareCoSessionManager {
 
     public void checkUserAuthenticationStatus() {
         boolean isOnline = isServerOnline();
-        SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
-        String lastUpdateTimeStr = getItem("jetbrains_lastUpdateTime");
 
-        if (isOnline && lastUpdateTimeStr == null && !userStatus.hasUserAccounts) {
-            // set the last update time so we don't try to ask too frequently
-            setItem("jetbrains_lastUpdateTime", String.valueOf(System.currentTimeMillis()));
+        if (isOnline) {
 
             String msg = "To see your coding data in Code Time, please log in your account.";
-
-            final String dialogMsg = msg;
-
             Project project = this.getCurrentProject();
 
             ApplicationManager.getApplication().invokeLater(new Runnable() {
@@ -245,12 +237,10 @@ public class SoftwareCoSessionManager {
                     int options = Messages.showDialog(
                             project,
                             msg,
-                            "Software", new String[]{"Log in", "Sign up", "Not now"},
+                            "Software", new String[]{"Log in", "Not now"},
                             0, Messages.getInformationIcon());
                     if (options == 0) {
                         launchLogin();
-                    } else if (options == 1) {
-                        launchSignup();
                     }
                 }
             });
@@ -307,10 +297,9 @@ public class SoftwareCoSessionManager {
     }
 
     protected static void lazilyFetchUserStatus(int retryCount) {
-        SoftwareCoUtils.clearUserStatusCache();
         SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
 
-        if (userStatus.loggedInUser == null && retryCount > 0) {
+        if (!userStatus.loggedIn && retryCount > 0) {
             final int newRetryCount = retryCount - 1;
             new Thread(() -> {
                 try {
@@ -326,46 +315,15 @@ public class SoftwareCoSessionManager {
 
     public static void launchLogin() {
         String url = SoftwareCoUtils.launch_url;
-        String identityId = SoftwareCoUtils.getIdentity();
-        String encodedIdentityId = null;
-        try {
-            encodedIdentityId = URLEncoder.encode(identityId, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            // url encoding failed, just use the mac addr
-            encodedIdentityId = identityId;
-        }
+        String jwt = getItem("jwt");
 
-        url += "/login?addr=" + encodedIdentityId;
+        url += "/onboarding?token=" + jwt;
         BrowserUtil.browse(url);
 
         new Thread(() -> {
             try {
                 Thread.sleep(10000);
-                lazilyFetchUserStatus(4);
-            }
-            catch (Exception e){
-                System.err.println(e);
-            }
-        }).start();
-    }
-
-    public static void launchSignup() {
-        String url = SoftwareCoUtils.launch_url;
-        String macAddress = SoftwareCoUtils.getIdentity();
-        String encodedMacAddr = null;
-        try {
-            encodedMacAddr = URLEncoder.encode(macAddress, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            // url encoding failed, just use the mac addr
-            encodedMacAddr = macAddress;
-        }
-        url += "/onboarding?addr=" + encodedMacAddr;
-        BrowserUtil.browse(url);
-
-        new Thread(() -> {
-            try {
-                Thread.sleep(55000);
-                lazilyFetchUserStatus(8);
+                lazilyFetchUserStatus(12);
             }
             catch (Exception e){
                 System.err.println(e);

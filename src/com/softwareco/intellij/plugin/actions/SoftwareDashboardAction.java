@@ -19,7 +19,7 @@ public class SoftwareDashboardAction extends AnAction {
     @Override
     public void update(AnActionEvent event) {
         SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
-        event.getPresentation().setVisible(userStatus.loggedInUser != null);
+        event.getPresentation().setVisible(userStatus.loggedIn);
         event.getPresentation().setEnabled(true);
     }
 }

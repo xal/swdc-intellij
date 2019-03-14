@@ -135,21 +135,36 @@ public class SoftwareCo implements ApplicationComponent {
                 // this should only ever possibly return true the very first
                 // time the IDE loads this new code
 
+                String jwt = SoftwareCoSessionManager.getItem("jwt");
+                boolean initializingPlugin = false;
+                if (jwt == null || jwt.equals("")) {
+                    initializingPlugin = true;
+                }
+
                 SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
-                if (userStatus.loggedInUser == null) {
+
+                if (initializingPlugin) {
                     // ask the user to login one time only
-                    // run the initial calls in 6 seconds
                     new Thread(() -> {
                         try {
-                            Thread.sleep(1000 * 10);
+                            Thread.sleep(5000);
                             sessionMgr.checkUserAuthenticationStatus();
                         }
                         catch (Exception e){
                             System.err.println(e);
                         }
                     }).start();
-                    initializeCalls();
                 }
+
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(1000 * 20);
+                        initializeCalls();
+                    }
+                    catch (Exception e){
+                        System.err.println(e);
+                    }
+                }).start();
             }
         });
     }
@@ -230,8 +245,8 @@ public class SoftwareCo implements ApplicationComponent {
         if (editors != null && editors.length > 0) {
             for (Editor editor : editors) {
                 Project project = editor.getProject();
-                if (project != null && project.getBaseDir() != null) {
-                    return project.getBaseDir().getPath();
+                if (project != null && project.getProjectFilePath() != null) {
+                    return project.getProjectFilePath();
                 }
             }
         }
@@ -302,10 +317,6 @@ public class SoftwareCo implements ApplicationComponent {
 
     public static String getUserHomeDir() {
         return System.getProperty("user.home");
-    }
-
-    public static String getOsUserName() {
-        return System.getProperty("user.name");
     }
 
     public static String getOsInfo() {

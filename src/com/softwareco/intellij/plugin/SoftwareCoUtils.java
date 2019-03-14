@@ -4,7 +4,6 @@
  */
 package com.softwareco.intellij.plugin;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -32,7 +31,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 
 import javax.swing.*;
 import java.io.*;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -72,9 +70,6 @@ public class SoftwareCoUtils {
     private static boolean fetchingResourceInfo = false;
     private static JsonObject lastResourceInfo = new JsonObject();
 
-    private static Long lastRegisterUserCheck = null;
-    private static UserStatus currentUserStatus = null;
-
     private static boolean appAvailable = true;
 
     private static String NO_DATA = "CODE TIME\n\nNo data available\n";
@@ -92,23 +87,7 @@ public class SoftwareCoUtils {
     }
 
     public static class UserStatus {
-        public User loggedInUser;
-        public String email;
-        public boolean hasUserAccounts;
-    }
-
-    // "id", "email", "plugin_jwt", "mac_addr", "mac_addr_share"
-    public static class User {
-        public Long id;
-        public String email;
-        public String plugin_jwt;
-        public String mac_addr;
-        public String mac_addr_share;
-    }
-
-    public static void clearUserStatusCache() {
-        lastRegisterUserCheck = null;
-        currentUserStatus = null;
+        public boolean loggedIn;
     }
 
     public static void updateServerStatus(boolean isOnlineStatus) {
@@ -638,223 +617,112 @@ public class SoftwareCoUtils {
         }
     }
 
-    public static boolean isMacEmail(String email) {
-        if (email.contains("_")) {
-            String[] parts = email.split("_");
-            for (int i = 0; i < parts.length; i++) {
-                String part = parts[i];
-                if (patternMacPairs.matcher(part).find()
-                        || patternMacTriples.matcher(part).find()
-                        || patternMac.matcher(part).find()) {
-                    return true;
-                }
-            }
-        } else if (patternMacPairs.matcher(email).find()
-                || patternMacTriples.matcher(email).find()
-                || patternMac.matcher(email).find()) {
-            return true;
-        }
-        return false;
-    }
+    private static String getSingleLineResult(List<String> cmd) {
+        String result = null;
+        String[] cmdArgs = Arrays.copyOf(cmd.toArray(), cmd.size(), String[].class);
+        String content = SoftwareCoUtils.runCommand(cmdArgs, null);
 
-    public static String getIdentity() {
-        String identityId = null;
-
-        try {
-            List<String> cmd = new ArrayList<String>();
-            if (SoftwareCo.isWindows()) {
-                cmd.add("cmd");
-                cmd.add("/c");
-                cmd.add("wmic nic get MACAddress");
-            } else {
-                cmd.add("/bin/sh");
-                cmd.add("-c");
-                cmd.add("ifconfig | grep \"ether \" | grep -v 127.0.0.1 | cut -d \" \" -f2");
-            }
-
-            String[] cmdArgs = Arrays.copyOf(cmd.toArray(), cmd.size(), String[].class);
-            String content = SoftwareCoUtils.runCommand(cmdArgs, null);
-
-            // for now just get the 1st one found
-            if (content != null) {
-                String[] contentList = content.split("\n");
-                if (contentList != null && contentList.length > 0) {
-                    for (String line : contentList) {
-                        if ( line != null && line.trim().length() > 0 &&
-                                ( patternMacPairs.matcher(line).find()
-                                        || patternMacTriples.matcher(line).find()
-                                        || patternMac.matcher(line).find() ) ) {
-                            identityId = line.trim();
-                            break;
-                        }
+        // for now just get the 1st one found
+        if (content != null) {
+            String[] contentList = content.split("\n");
+            if (contentList != null && contentList.length > 0) {
+                for (String line : contentList) {
+                    if ( line != null && line.trim().length() > 0 &&
+                            ( patternMacPairs.matcher(line).find()
+                                    || patternMacTriples.matcher(line).find()
+                                    || patternMac.matcher(line).find() ) ) {
+                        result = line.trim();
+                        break;
                     }
                 }
             }
-        } catch (Exception e) {
-            //
         }
-        String username = SoftwareCo.getOsUserName();
-        List<String> parts = new ArrayList<>();
-        if (username != null) {
-            parts.add(username);
-        }
-        if (identityId != null) {
-            parts.add(identityId);
-        }
-        identityId = StringUtils.join(parts, "_");
-        return identityId;
+        return result;
     }
 
-    public static String getJsonObjString(JsonObject obj, String key) {
-        if (obj != null && !obj.get(key).isJsonNull()) {
-            return obj.get(key).getAsString();
+    public static String getOsUsername() {
+        String username = System.getProperty("user.name");
+        if (username == null || username.trim().equals("")) {
+            try {
+                List<String> cmd = new ArrayList<String>();
+                if (SoftwareCo.isWindows()) {
+                    cmd.add("cmd");
+                    cmd.add("/c");
+                    cmd.add("whoami");
+                } else {
+                    cmd.add("/bin/sh");
+                    cmd.add("-c");
+                    cmd.add("whoami");
+                }
+                username = getSingleLineResult(cmd);
+            } catch (Exception e) {
+                //
+            }
         }
-        return null;
+        return username;
     }
 
-    public static Long getJsonObjLong(JsonObject obj, String key) {
-        if (obj != null && !obj.get(key).isJsonNull()) {
-            return obj.get(key).getAsLong();
-        }
-        return null;
-    }
-
-    public static String getAppJwt(String identityId) {
+    public static String getAppJwt(boolean serverIsOnline) {
         // clear out the previous app_jwt
         SoftwareCoSessionManager.setItem("app_jwt", null);
 
-        boolean serverIsOnline = SoftwareCoSessionManager.isServerOnline();
-
         if (serverIsOnline) {
-            if (identityId != null) {
-                String encodedMacIdentity = "";
-                try {
-                    encodedMacIdentity = URLEncoder.encode(identityId, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    // url encoding failed, just use the mac addr id
-                    encodedMacIdentity = identityId;
-                }
-
-                String api = "/data/token?addr=" + encodedMacIdentity;
-                SoftwareResponse resp = SoftwareCoUtils.makeApiCall(api, HttpGet.METHOD_NAME, null);
-                if (resp.isOk()) {
-                    JsonObject obj = resp.getJsonObj();
-                    return obj.get("jwt").getAsString();
-                }
+            long now = Math.round(System.currentTimeMillis() / 1000);
+            String api = "/data/apptoken?token=" + now;
+            SoftwareResponse resp = SoftwareCoUtils.makeApiCall(api, HttpGet.METHOD_NAME, null);
+            if (resp.isOk()) {
+                JsonObject obj = resp.getJsonObj();
+                return obj.get("jwt").getAsString();
             }
         }
         return null;
     }
 
-    public static void createAnonymousUser(String identityId) {
-        boolean serverIsOnline = SoftwareCoSessionManager.isServerOnline();
-        String pluginToken = SoftwareCoSessionManager.getItem("token");
+    public static void createAnonymousUser(boolean serverIsOnline) {
         // make sure we've fetched the app jwt
-        String appJwt = getAppJwt(identityId);
+        String appJwt = getAppJwt(serverIsOnline);
 
-        if (serverIsOnline && identityId != null) {
-            String email = identityId;
-            if (pluginToken == null) {
-                pluginToken = SoftwareCoSessionManager.generateToken();
-                SoftwareCoSessionManager.setItem("token", pluginToken);
-            }
+        if (serverIsOnline && appJwt != null) {
             String timezone = TimeZone.getDefault().getID();
 
-            String encodedMacIdentity = "";
-            try {
-                encodedMacIdentity = URLEncoder.encode(identityId, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                // url encoding failed, just use the mac addr id
-                encodedMacIdentity = identityId;
-            }
             JsonObject payload = new JsonObject();
-            payload.addProperty("email", email);
-            payload.addProperty("plugin_token", pluginToken);
+            payload.addProperty("username", getOsUsername());
             payload.addProperty("timezone", timezone);
-            String api = "/data/onboard?addr=" + encodedMacIdentity;
+
+            String api = "/data/onboard";
             SoftwareResponse resp = SoftwareCoUtils.makeApiCall(api, HttpPost.METHOD_NAME, payload.toString(), appJwt);
             if (resp.isOk()) {
                 // check if we have the data and jwt
                 // resp.data.jwt and resp.data.user
-                // then update the session.json for the jwt, user, and jetbrains_lastUpdateTime
+                // then update the session.json for the jwt
                 JsonObject data = resp.getJsonObj();
                 // check if we have any data
                 if (data != null && data.has("jwt")) {
                     String dataJwt = data.get("jwt").getAsString();
-                    String user = data.get("user").getAsString();
                     SoftwareCoSessionManager.setItem("jwt", dataJwt);
-                    SoftwareCoSessionManager.setItem("user", user);
                 }
             }
         }
     }
 
-    public static List<User> getAuthenticatedPluginAccounts(String identityId) {
-        List<User> users = new ArrayList<>();
-        boolean serverIsOnline = SoftwareCoSessionManager.isServerOnline();
-
-        // mac addr query str
-        String api = "/users/plugin/accounts?token=";
-        try {
-            String encodedMacIdentity = URLEncoder.encode(identityId, "UTF-8");
-            api += encodedMacIdentity;
-        } catch (UnsupportedEncodingException e) {
-            // url encoding failed, just use the mac addr id
-            api += identityId;
-        }
-
+    private static boolean isLoggedOn(boolean serverIsOnline) {
+        String jwt = SoftwareCoSessionManager.getItem("jwt");
         if (serverIsOnline) {
-            SoftwareResponse resp = SoftwareCoUtils.makeApiCall(api, HttpGet.METHOD_NAME, null);
+            String api = "/users/plugin/state";
+            SoftwareResponse resp = SoftwareCoUtils.makeApiCall(api, HttpGet.METHOD_NAME, null, jwt);
             if (resp.isOk()) {
+                // check if we have the data and jwt
+                // resp.data.jwt and resp.data.user
+                // then update the session.json for the jwt
                 JsonObject data = resp.getJsonObj();
                 // check if we have any data
-                if (data != null && data.has("users")) {
-                    try {
-                        JsonArray jsonUsers = data.getAsJsonArray("users");
-                        if (jsonUsers != null && jsonUsers.size() > 0) {
-                            for (JsonElement userObj : jsonUsers) {
-                                JsonObject obj = (JsonObject)userObj;
-                                User user = new User();
-                                user.email = getJsonObjString(obj, "email");
-                                user.mac_addr = getJsonObjString(obj, "mac_addr");
-                                user.mac_addr_share = getJsonObjString(obj, "mac_addr_share");
-                                user.plugin_jwt = getJsonObjString(obj, "plugin_jwt");
-                                user.id = getJsonObjLong(obj, "id");
-                                users.add(user);
-                            }
-                        }
-                    } catch (Exception e) {
-                        System.out.println("error: " + e.getMessage());
+                if (data != null && data.has("jwt")) {
+                    String dataJwt = data.get("jwt").getAsString();
+                    SoftwareCoSessionManager.setItem("jwt", dataJwt);
+                    String dataEmail = data.get("email").getAsString();
+                    if (dataEmail != null) {
+                        SoftwareCoSessionManager.setItem("name", dataEmail);
                     }
-                }
-            }
-        }
-
-        return users;
-    }
-
-    public static User getLoggedInUser(String identityId, List<User> authAccounts) {
-        if (authAccounts != null && authAccounts.size() > 0) {
-            for (User user : authAccounts) {
-                String userMacAddr = (user.mac_addr != null) ? user.mac_addr : "";
-                String userEmail = (user.email != null) ? user.email : "";
-                String userMacAddrShare = (user.mac_addr_share != null) ? user.mac_addr_share : "";
-                if (!userEmail.equals(userMacAddr) &&
-                    !userEmail.equals(identityId) &&
-                    !userEmail.equals(userMacAddrShare) &&
-                    userMacAddr.equals(identityId)) {
-                    return user;
-                }
-            }
-        }
-        return null;
-    }
-
-
-    public static boolean hasRegisteredUserAccount(List<User> authAccounts) {
-        if (authAccounts != null && authAccounts.size() > 0) {
-            for (User user : authAccounts) {
-                if (user.email != null && !SoftwareCoUtils.isMacEmail(user.email)) {
                     return true;
                 }
             }
@@ -862,93 +730,22 @@ public class SoftwareCoUtils {
         return false;
     }
 
-    public static User getAnonymousUser(List<User> authAccounts) {
-        if (authAccounts != null && authAccounts.size() > 0) {
-            for (User user : authAccounts) {
-                if (user.email != null && SoftwareCoUtils.isMacEmail(user.email)) {
-                    return user;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static void updateSessionUser(User user) {
-        JsonObject userObj = new JsonObject();
-        userObj.addProperty("id", user.id);
-        SoftwareCoSessionManager.setItem("jwt", user.plugin_jwt);
-        SoftwareCoSessionManager.setItem("user", userObj.toString());
-        SoftwareCoSessionManager.setItem("jetbrains_lastUpdateTime", String.valueOf(System.currentTimeMillis()));
-    }
-
     public static UserStatus getUserStatus() {
-        long nowMillis = System.currentTimeMillis();
-        if (currentUserStatus != null && lastRegisterUserCheck != null) {
-            if (nowMillis - lastRegisterUserCheck.longValue() <= 5000) {
-                return currentUserStatus;
-            }
+
+        String jwt = SoftwareCoSessionManager.getItem("jwt");
+        boolean serverIsOnline = SoftwareCoSessionManager.isServerOnline();
+
+        if (jwt == null || jwt.equals("")) {
+            // create an anonymous user
+            createAnonymousUser(serverIsOnline);
         }
 
-        String identityId = getIdentity();
+        boolean loggedIn = isLoggedOn(serverIsOnline);
 
-        if (currentUserStatus == null) {
-            currentUserStatus = new UserStatus();
-        }
-
-        try {
-            List<User> authAccounts = getAuthenticatedPluginAccounts(identityId);
-            User loggedInUser = getLoggedInUser(identityId, authAccounts);
-            User anonUser = getAnonymousUser(authAccounts);
-            if (anonUser == null) {
-                // create the anonymous user
-                createAnonymousUser(identityId);
-                authAccounts = getAuthenticatedPluginAccounts(identityId);
-                anonUser = getAnonymousUser(authAccounts);
-            }
-            boolean hasUserAccounts = hasRegisteredUserAccount(authAccounts);
-
-            if (loggedInUser != null) {
-                updateSessionUser(loggedInUser);
-            } else if (anonUser != null) {
-                updateSessionUser(anonUser);
-            }
-
-
-            currentUserStatus.loggedInUser = loggedInUser;
-            currentUserStatus.hasUserAccounts = hasUserAccounts;
-
-            if (currentUserStatus.loggedInUser != null) {
-                currentUserStatus.email = currentUserStatus.loggedInUser.email;
-            } else {
-                currentUserStatus.email = null;
-            }
-        } catch (Exception e) {
-            //
-        }
-
-        lastRegisterUserCheck = System.currentTimeMillis();
-
+        UserStatus currentUserStatus = new UserStatus();
+        currentUserStatus.loggedIn = loggedIn;
 
         return currentUserStatus;
-    }
-
-    public static void pluginLogout() {
-        String api = "/users/plugin/logout";
-        SoftwareResponse resp = SoftwareCoUtils.makeApiCall(api, HttpPost.METHOD_NAME, null);
-
-        clearUserStatusCache();
-
-        getUserStatus();
-
-        new Thread(() -> {
-            try {
-                Thread.sleep(1000);
-                SoftwareCoSessionManager.getInstance().fetchDailyKpmSessionInfo();
-            }
-            catch (Exception e){
-                System.err.println(e);
-            }
-        }).start();
     }
 
 }
