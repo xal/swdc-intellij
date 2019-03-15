@@ -245,8 +245,9 @@ public class SoftwareCo implements ApplicationComponent {
         if (editors != null && editors.length > 0) {
             for (Editor editor : editors) {
                 Project project = editor.getProject();
-                if (project != null && project.getProjectFilePath() != null) {
-                    return project.getProjectFilePath();
+                if (project != null && project.getBasePath() != null) {
+                    String filePath = project.getBasePath();
+                    return filePath;
                 }
             }
         }

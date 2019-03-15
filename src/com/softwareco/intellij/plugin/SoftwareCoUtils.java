@@ -627,10 +627,7 @@ public class SoftwareCoUtils {
             String[] contentList = content.split("\n");
             if (contentList != null && contentList.length > 0) {
                 for (String line : contentList) {
-                    if ( line != null && line.trim().length() > 0 &&
-                            ( patternMacPairs.matcher(line).find()
-                                    || patternMacTriples.matcher(line).find()
-                                    || patternMac.matcher(line).find() ) ) {
+                    if (line != null && line.trim().length() > 0) {
                         result = line.trim();
                         break;
                     }
