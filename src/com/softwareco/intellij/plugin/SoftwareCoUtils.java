@@ -73,9 +73,9 @@ public class SoftwareCoUtils {
     static {
         // initialize the HttpClient
         RequestConfig config = RequestConfig.custom()
-                .setConnectTimeout(3000)
-                .setConnectionRequestTimeout(3000)
-                .setSocketTimeout(3000)
+                .setConnectTimeout(5000)
+                .setConnectionRequestTimeout(5000)
+                .setSocketTimeout(5000)
                 .build();
 
         pingClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build();
@@ -705,8 +705,9 @@ public class SoftwareCoUtils {
                 // resp.data.jwt and resp.data.user
                 // then update the session.json for the jwt
                 JsonObject data = resp.getJsonObj();
+                String state = (data != null && data.has("state")) ? data.get("state").getAsString() : "UNKNOWN";
                 // check if we have any data
-                if (data != null && data.has("jwt")) {
+                if (state.equals("OK")) {
                     String dataJwt = data.get("jwt").getAsString();
                     SoftwareCoSessionManager.setItem("jwt", dataJwt);
                     String dataEmail = data.get("email").getAsString();
@@ -714,9 +715,14 @@ public class SoftwareCoUtils {
                         SoftwareCoSessionManager.setItem("name", dataEmail);
                     }
                     return true;
+                } else if (!state.equals("ANONYMOUS")) {
+                    SoftwareCoSessionManager.setItem("jwt", null);
                 }
+            } else {
+                SoftwareCoSessionManager.setItem("jwt", null);
             }
         }
+        SoftwareCoSessionManager.setItem("name", null);
         return false;
     }
 
