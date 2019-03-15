@@ -19,6 +19,8 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 public class SoftwareCoSessionManager {
@@ -153,6 +155,34 @@ public class SoftwareCoSessionManager {
         }
     }
 
+    public static void cleanSessionInfo() {
+        JsonObject jsonObj = getSoftwareSessionAsJson();
+        if (jsonObj != null && jsonObj.size() > 0) {
+            Set<String> keys = jsonObj.keySet();
+            Set<String> keysToRemove = new HashSet<String>();
+            for (String key : keys) {
+                if (!key.equals("jwt") && !key.equals("name")) {
+                    keysToRemove.add(key);
+                }
+            }
+            if (keysToRemove.size() > 0) {
+                for (String key : keysToRemove) {
+                    jsonObj.remove(key);
+                }
+                String content = jsonObj.toString();
+                String sessionFile = getSoftwareSessionFile();
+
+                try {
+                    Writer output = new BufferedWriter(new FileWriter(sessionFile));
+                    output.write(content);
+                    output.close();
+                } catch (Exception e) {
+                    log.info("Code Time: Failed to write cleaned up session info.", e);
+                }
+            }
+        }
+    }
+
     public static void setItem(String key, String val) {
         JsonObject jsonObj = getSoftwareSessionAsJson();
         jsonObj.addProperty(key, val);
@@ -168,14 +198,6 @@ public class SoftwareCoSessionManager {
         } catch (Exception e) {
             log.info("Code Time: Failed to write the key value pair (" + key + ", " + val + ") into the session.", e);
         }
-    }
-
-    public static JsonObject getJsonObjectItem(String key) {
-        JsonObject jsonObj = getSoftwareSessionAsJson();
-        if (jsonObj != null && jsonObj.has(key) && !jsonObj.get(key).isJsonNull()) {
-            return jsonObj.get(key).getAsJsonObject();
-        }
-        return null;
     }
 
     public static String getItem(String key) {

@@ -39,7 +39,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 public class SoftwareCoUtils {
 
@@ -57,18 +56,15 @@ public class SoftwareCoUtils {
 
     // sublime = 1, vs code = 2, eclipse = 3, intellij = 4, visual studio = 6, atom = 7
     public static int pluginId = 4;
-    public static String version = "0.1.68";
+    public static String version = "0.1.83";
 
     public final static ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
 
     private final static int EOF = -1;
 
-    private static Pattern patternMacPairs = Pattern.compile("([a-fA-F0-9]{2}[:\\.-]?){5}[a-fA-F0-9]{2}");
-    private static Pattern patternMacTriples = Pattern.compile("([a-fA-F0-9]{3}[:\\.-]?){3}[a-fA-F0-9]{3}");
-    private static Pattern patternMac = Pattern.compile("([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})");
-
     private static boolean fetchingResourceInfo = false;
     private static JsonObject lastResourceInfo = new JsonObject();
+    private static boolean loggedInCacheState = false;
 
     private static boolean appAvailable = true;
 
@@ -574,7 +570,7 @@ public class SoftwareCoUtils {
         if (p == null) {
             return;
         }
-        String api = "/dashboard";
+        String api = "/dashboard?linux=" + SoftwareCo.isLinux();
         String dashboardContent = SoftwareCoUtils.makeApiCall(api, HttpGet.METHOD_NAME, null).getJsonStr();
         if (dashboardContent == null || dashboardContent.trim().isEmpty()) {
             dashboardContent = NO_DATA;
@@ -660,9 +656,6 @@ public class SoftwareCoUtils {
     }
 
     public static String getAppJwt(boolean serverIsOnline) {
-        // clear out the previous app_jwt
-        SoftwareCoSessionManager.setItem("app_jwt", null);
-
         if (serverIsOnline) {
             long now = Math.round(System.currentTimeMillis() / 1000);
             String api = "/data/apptoken?token=" + now;
@@ -727,7 +720,9 @@ public class SoftwareCoUtils {
         return false;
     }
 
-    public static UserStatus getUserStatus() {
+    public static synchronized UserStatus getUserStatus() {
+
+        SoftwareCoSessionManager.cleanSessionInfo();
 
         String jwt = SoftwareCoSessionManager.getItem("jwt");
         boolean serverIsOnline = SoftwareCoSessionManager.isServerOnline();
@@ -741,6 +736,17 @@ public class SoftwareCoUtils {
 
         UserStatus currentUserStatus = new UserStatus();
         currentUserStatus.loggedIn = loggedIn;
+
+        if (loggedInCacheState != loggedIn) {
+            // refetch kpm
+            ApplicationManager.getApplication().invokeLater(new Runnable() {
+                public void run() {
+                    SoftwareCoSessionManager.getInstance().fetchDailyKpmSessionInfo();
+                }
+            });
+        }
+
+        loggedInCacheState = loggedIn;
 
         return currentUserStatus;
     }

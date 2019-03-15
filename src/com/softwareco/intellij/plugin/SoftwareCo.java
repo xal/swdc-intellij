@@ -116,8 +116,6 @@ public class SoftwareCo implements ApplicationComponent {
 
         eventMgr.setAppIsReady(true);
 
-        this.handleMigrationUpdates();
-
         new Thread(() -> {
             try {
                 Thread.sleep(5000);
@@ -167,16 +165,6 @@ public class SoftwareCo implements ApplicationComponent {
                 }).start();
             }
         });
-    }
-
-    private void handleMigrationUpdates() {
-        String tokenVal = SoftwareCoSessionManager.getItem("token");
-        // vim plugin id check
-        if (tokenVal != null && tokenVal.equals(LEGACY_VIM_ID)) {
-            // delete the session json to re-establish a handshake without the vim token id
-            String sessionJsonFile = SoftwareCoSessionManager.getSoftwareSessionFile();
-            sessionMgr.deleteFile(sessionJsonFile);
-        }
     }
 
     private void initializeCalls() {
@@ -343,6 +331,10 @@ public class SoftwareCo implements ApplicationComponent {
         }
 
         return osInfo;
+    }
+
+    public static boolean isLinux() {
+        return (isWindows() || isMac()) ? false : true;
     }
 
     public static boolean isWindows() {
