@@ -21,12 +21,14 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoUtils.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="146">
-              <caret line="702" column="30" lean-forward="true" selection-start-line="702" selection-start-column="30" selection-end-line="702" selection-end-column="30" />
+            <state relative-caret-position="316">
+              <caret line="733" column="32" lean-forward="true" selection-start-line="733" selection-start-column="32" selection-end-line="733" selection-end-column="32" />
               <folding>
                 <element signature="imports" expanded="true" />
-                <element signature="e#31670#31671#0" expanded="true" />
-                <element signature="e#31775#31776#0" expanded="true" />
+                <element signature="e#29904#29905#0" expanded="true" />
+                <element signature="e#29959#29960#0" expanded="true" />
+                <element signature="e#31897#31898#0" expanded="true" />
+                <element signature="e#32002#32003#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -35,29 +37,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/resources/META-INF/plugin.xml">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="45">
-              <caret line="3" column="17" selection-start-line="3" selection-start-column="17" selection-end-line="3" selection-end-column="17" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoSessionManager.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="4515">
-              <caret line="321" column="77" selection-start-line="321" selection-start-column="64" selection-end-line="321" selection-end-column="77" />
-              <folding>
-                <element signature="imports" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="jar://$PROJECT_DIR$/lib/gson-2.8.2.jar!/com/google/gson/JsonObject.class">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="255">
-              <caret line="23" column="66" selection-start-line="23" selection-start-column="66" selection-end-line="23" selection-end-column="66" />
+            <state relative-caret-position="120">
+              <caret line="8" lean-forward="true" selection-start-line="8" selection-end-line="8" />
             </state>
           </provider>
         </entry>
@@ -74,7 +55,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>patternMacPairs</find>
       <find>patternMac</find>
       <find>isMacEmail</find>
       <find>patternMacTriples</find>
@@ -104,6 +84,7 @@
       <find>clean</find>
       <find>last</find>
       <find>loggedInCacheState</find>
+      <find>/me</find>
     </findStrings>
     <replaceStrings>
       <replace>softwareco</replace>
@@ -163,8 +144,8 @@
         <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoStatusBarKpmTextWidget.java" />
         <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoSessionManager.java" />
         <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCo.java" />
-        <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoUtils.java" />
         <option value="$PROJECT_DIR$/resources/META-INF/plugin.xml" />
+        <option value="$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoUtils.java" />
       </list>
     </option>
   </component>
@@ -176,10 +157,10 @@
     <option name="CUSTOM_FILTER" value="" />
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="1508" />
-    <option name="y" value="76" />
-    <option name="width" value="1462" />
-    <option name="height" value="962" />
+    <option name="x" value="54" />
+    <option name="y" value="97" />
+    <option name="width" value="1180" />
+    <option name="height" value="775" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <ConfirmationsSetting value="1" id="Add" />
@@ -189,6 +170,28 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope">
+        <subPane subId="Problems">
+          <expand>
+            <path>
+              <item name="Root" type="cbb8eebc:String" user="Root" />
+              <item name="softwareco" type="cbb8eebc:String" user="softwareco" />
+            </path>
+            <path>
+              <item name="Root" type="cbb8eebc:String" user="Root" />
+              <item name="softwareco" type="cbb8eebc:String" user="softwareco" />
+              <item name="src" type="cbb8eebc:String" user="src" />
+            </path>
+            <path>
+              <item name="Root" type="cbb8eebc:String" user="Root" />
+              <item name="softwareco" type="cbb8eebc:String" user="softwareco" />
+              <item name="src" type="cbb8eebc:String" user="src" />
+              <item name="com/softwareco/intellij/plugin" type="cbb8eebc:String" user="com/softwareco/intellij/plugin" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -223,33 +226,11 @@
         </subPane>
       </pane>
       <pane id="PackagesPane" />
-      <pane id="Scope">
-        <subPane subId="Problems">
-          <expand>
-            <path>
-              <item name="Root" type="cbb8eebc:String" user="Root" />
-              <item name="softwareco" type="cbb8eebc:String" user="softwareco" />
-            </path>
-            <path>
-              <item name="Root" type="cbb8eebc:String" user="Root" />
-              <item name="softwareco" type="cbb8eebc:String" user="softwareco" />
-              <item name="src" type="cbb8eebc:String" user="src" />
-            </path>
-            <path>
-              <item name="Root" type="cbb8eebc:String" user="Root" />
-              <item name="softwareco" type="cbb8eebc:String" user="softwareco" />
-              <item name="src" type="cbb8eebc:String" user="src" />
-              <item name="com/softwareco/intellij/plugin" type="cbb8eebc:String" user="com/softwareco/intellij/plugin" />
-            </path>
-          </expand>
-          <select />
-        </subPane>
-      </pane>
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="SearchEverywhereHistoryKey" value="0.1.&#9;FILE&#9;jar:///Applications/IntelliJ IDEA CE.app/Contents/lib/jsch-0.1.54.jar!/" />
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1552658512495" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1552701592450" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="project.structure.last.edited" value="Project" />
     <property name="project.structure.proportion" value="0.15" />
@@ -375,10 +356,10 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="1508" y="76" width="1462" height="962" extended-state="0" />
+    <frame x="-48" y="127" width="1180" height="775" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.24014084" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.30843586" />
       <window_info id="Structure" order="1" weight="0.39895013" />
       <window_info id="Capture Tool" order="2" />
       <window_info id="Designer" order="3" />
@@ -388,12 +369,12 @@
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" sideWeight="0.48804185" weight="0.19954649" />
       <window_info anchor="bottom" id="Run" order="2" sideWeight="0.8221226" weight="0.31719744" />
-      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.6866197" visible="true" weight="0.27126437" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.685413" visible="true" weight="0.27086383" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" sideWeight="0.49925372" weight="0.32978722" />
-      <window_info anchor="bottom" id="Event Log" order="7" sideWeight="0.31338027" side_tool="true" visible="true" weight="0.27126437" />
-      <window_info anchor="bottom" id="Messages" order="8" sideWeight="0.48162475" weight="0.24583334" />
+      <window_info anchor="bottom" id="Event Log" order="7" sideWeight="0.314587" side_tool="true" visible="true" weight="0.27086383" />
+      <window_info anchor="bottom" id="Messages" order="8" sideWeight="0.48028168" weight="0.24482758" />
       <window_info anchor="bottom" id="Terminal" order="9" sideWeight="0.49925372" weight="0.32978722" />
       <window_info anchor="bottom" id="Version Control" order="10" />
       <window_info anchor="bottom" id="Inspection Results" order="11" weight="0.32933334" />
@@ -705,18 +686,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoUtils.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="146">
-          <caret line="702" column="30" lean-forward="true" selection-start-line="702" selection-start-column="30" selection-end-line="702" selection-end-column="30" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#31670#31671#0" expanded="true" />
-            <element signature="e#31775#31776#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoSessionManager.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="4515">
@@ -734,10 +703,24 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/softwareco/intellij/plugin/SoftwareCoUtils.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="316">
+          <caret line="733" column="32" lean-forward="true" selection-start-line="733" selection-start-column="32" selection-end-line="733" selection-end-column="32" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#29904#29905#0" expanded="true" />
+            <element signature="e#29959#29960#0" expanded="true" />
+            <element signature="e#31897#31898#0" expanded="true" />
+            <element signature="e#32002#32003#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/resources/META-INF/plugin.xml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="45">
-          <caret line="3" column="17" selection-start-line="3" selection-start-column="17" selection-end-line="3" selection-end-column="17" />
+        <state relative-caret-position="120">
+          <caret line="8" lean-forward="true" selection-start-line="8" selection-end-line="8" />
         </state>
       </provider>
     </entry>

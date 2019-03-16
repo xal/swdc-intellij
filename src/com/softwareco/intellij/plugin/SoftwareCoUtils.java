@@ -39,6 +39,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 public class SoftwareCoUtils {
 
@@ -695,9 +696,45 @@ public class SoftwareCoUtils {
         }
     }
 
+    private static JsonObject getUser(boolean serverIsOnline) {
+        String jwt = SoftwareCoSessionManager.getItem("jwt");
+        if (serverIsOnline) {
+            String api = "/users/me";
+            SoftwareResponse resp = SoftwareCoUtils.makeApiCall(api, HttpGet.METHOD_NAME, null, jwt);
+            if (resp.isOk()) {
+                // check if we have the data and jwt
+                // resp.data.jwt and resp.data.user
+                // then update the session.json for the jwt
+                JsonObject obj = resp.getJsonObj();
+                if (obj != null && obj.has("data")) {
+                    return obj.get("data").getAsJsonObject();
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String regex = "^\\S+@\\S+\\.\\S+$";
+    private static Pattern pattern = Pattern.compile(regex);
+
+    private static boolean validateEmail(String email) {
+        return pattern.matcher(email).matches();
+    }
+
     private static boolean isLoggedOn(boolean serverIsOnline) {
         String jwt = SoftwareCoSessionManager.getItem("jwt");
         if (serverIsOnline) {
+            JsonObject userObj = getUser(serverIsOnline);
+            if (userObj != null && userObj.has("email")) {
+                // check if the email is valid
+                String email = userObj.get("email").getAsString();
+                if (validateEmail(email)) {
+                    SoftwareCoSessionManager.setItem("jwt", userObj.get("plugin_jwt").getAsString());
+                    SoftwareCoSessionManager.setItem("name", email);
+                    return true;
+                }
+            }
+
             String api = "/users/plugin/state";
             SoftwareResponse resp = SoftwareCoUtils.makeApiCall(api, HttpGet.METHOD_NAME, null, jwt);
             if (resp.isOk()) {
