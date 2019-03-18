@@ -8,7 +8,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.intellij.ide.BrowserUtil;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
@@ -25,7 +24,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.HttpClientBuilder;
 
@@ -101,11 +99,11 @@ public class SoftwareCoUtils {
 
         SoftwareHttpManager httpTask = null;
         if (api.contains("/ping") || api.contains("/sessions") || api.contains("/dashboard") || api.contains("/users/plugin/accounts")) {
-            // if the server is having issues, we'll timeout within 3 seconds for these calls
+            // if the server is having issues, we'll timeout within 5 seconds for these calls
             httpTask = new SoftwareHttpManager(api, httpMethodName, payload, overridingJwt, pingClient);
         } else {
             if (httpMethodName.equals(HttpPost.METHOD_NAME)) {
-                // continue, POSTS encapsulated "invokeLater" with a timeout of 3 seconds
+                // continue, POSTS encapsulated "invokeLater" with a timeout of 5 seconds
                 httpTask = new SoftwareHttpManager(api, httpMethodName, payload, overridingJwt, pingClient);
             } else {
                 if (!appAvailable) {
@@ -242,16 +240,6 @@ public class SoftwareCoUtils {
         return calendar.getTime();
     }
 
-    private static boolean isOk(HttpResponse response) {
-        return response != null && response.getStatusLine() != null && response.getStatusLine().getStatusCode() == 200;
-    }
-
-    public static void logApiRequest(HttpUriRequest req, String payload) {
-        LOG.info("Code Time: executing request "
-                + "[method: " + req.getMethod() + ", URI: " + req.getURI()
-                + ", payload: " + payload + "]");
-    }
-
     public static synchronized void setStatusLineMessage(
             final String singleMsg, final String tooltip) {
         setStatusLineMessage(null, singleMsg, null, null, tooltip);
@@ -294,64 +282,62 @@ public class SoftwareCoUtils {
     private static void updateStatusBar(final String kpmIcon, final String kpmMsg,
                                         final String timeIcon, final String timeMsg,
                                         final String tooltip) {
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
-            public void run() {
-                ProjectManager pm = ProjectManager.getInstance();
-                if (pm != null && pm.getOpenProjects() != null && pm.getOpenProjects().length > 0) {
-                    try {
-                        Project p = pm.getOpenProjects()[0];
-                        final StatusBar statusBar = WindowManager.getInstance().getStatusBar(p);
+        new Thread(() -> {
+            ProjectManager pm = ProjectManager.getInstance();
+            if (pm != null && pm.getOpenProjects() != null && pm.getOpenProjects().length > 0) {
+                try {
+                    Project p = pm.getOpenProjects()[0];
+                    final StatusBar statusBar = WindowManager.getInstance().getStatusBar(p);
 
-                        if (statusBar != null) {
-                            if (statusBar.getWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_kpmmsg") != null) {
-                                statusBar.removeWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_kpmmsg");
-                            }
-                            if (statusBar.getWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_timemsg") != null) {
-                                statusBar.removeWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_timemsg");
-                            }
-                            if (statusBar.getWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_kpmicon") != null) {
-                                statusBar.removeWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_kpmicon");
-                            }
-                            if (statusBar.getWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_timeicon") != null) {
-                                statusBar.removeWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_timeicon");
-                            }
-
-                            String id = SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_kpmicon";
-                            if (kpmIcon != null) {
-                                SoftwareCoStatusBarKpmIconWidget kpmIconWidget = buildStatusBarIconWidget(
-                                        kpmIcon, tooltip, id);
-                                statusBar.addWidget(kpmIconWidget, id);
-                                statusBar.updateWidget(id);
-                            }
-
-                            id = SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_kpmmsg";
-                            SoftwareCoStatusBarKpmTextWidget kpmWidget = buildStatusBarTextWidget(
-                                    kpmMsg, tooltip, id);
-                            statusBar.addWidget(kpmWidget, id);
-                            statusBar.updateWidget(id);
-
-                            id = SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_timeicon";
-                            if (timeIcon != null) {
-                                SoftwareCoStatusBarKpmIconWidget timeIconWidget = buildStatusBarIconWidget(
-                                        timeIcon, tooltip, id);
-                                statusBar.addWidget(timeIconWidget, id);
-                                statusBar.updateWidget(id);
-                            }
-
-                            id = SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_timemsg";
-                            if (timeMsg != null) {
-                                SoftwareCoStatusBarKpmTextWidget timeWidget = buildStatusBarTextWidget(
-                                        timeMsg, tooltip, id);
-                                statusBar.addWidget(timeWidget, id);
-                                statusBar.updateWidget(id);
-                            }
+                    if (statusBar != null) {
+                        if (statusBar.getWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_kpmmsg") != null) {
+                            statusBar.removeWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_kpmmsg");
                         }
-                    } catch(Exception e){
-                        //
+                        if (statusBar.getWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_timemsg") != null) {
+                            statusBar.removeWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_timemsg");
+                        }
+                        if (statusBar.getWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_kpmicon") != null) {
+                            statusBar.removeWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_kpmicon");
+                        }
+                        if (statusBar.getWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_timeicon") != null) {
+                            statusBar.removeWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_timeicon");
+                        }
+
+                        String id = SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_kpmicon";
+                        if (kpmIcon != null) {
+                            SoftwareCoStatusBarKpmIconWidget kpmIconWidget = buildStatusBarIconWidget(
+                                    kpmIcon, tooltip, id);
+                            statusBar.addWidget(kpmIconWidget, id);
+                            statusBar.updateWidget(id);
+                        }
+
+                        id = SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_kpmmsg";
+                        SoftwareCoStatusBarKpmTextWidget kpmWidget = buildStatusBarTextWidget(
+                                kpmMsg, tooltip, id);
+                        statusBar.addWidget(kpmWidget, id);
+                        statusBar.updateWidget(id);
+
+                        id = SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_timeicon";
+                        if (timeIcon != null) {
+                            SoftwareCoStatusBarKpmIconWidget timeIconWidget = buildStatusBarIconWidget(
+                                    timeIcon, tooltip, id);
+                            statusBar.addWidget(timeIconWidget, id);
+                            statusBar.updateWidget(id);
+                        }
+
+                        id = SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_timemsg";
+                        if (timeMsg != null) {
+                            SoftwareCoStatusBarKpmTextWidget timeWidget = buildStatusBarTextWidget(
+                                    timeMsg, tooltip, id);
+                            statusBar.addWidget(timeWidget, id);
+                            statusBar.updateWidget(id);
+                        }
                     }
+                } catch(Exception e){
+                    //
                 }
             }
-        });
+        }).start();
     }
 
     public static SoftwareCoStatusBarKpmTextWidget buildStatusBarTextWidget(String msg, String tooltip, String id) {
@@ -578,7 +564,7 @@ public class SoftwareCoUtils {
         Writer writer = null;
         try {
             writer = new BufferedWriter(new OutputStreamWriter(
-                    new FileOutputStream(codeTimeFile), StandardCharsets.UTF_8));
+                    new FileOutputStream(f), StandardCharsets.UTF_8));
             writer.write(dashboardContent);
         } catch (IOException ex) {
             // Report
@@ -778,11 +764,8 @@ public class SoftwareCoUtils {
 
         if (loggedInCacheState != loggedIn) {
             // refetch kpm
-            ApplicationManager.getApplication().invokeLater(new Runnable() {
-                public void run() {
-                    SoftwareCoSessionManager.getInstance().fetchDailyKpmSessionInfo();
-                }
-            });
+            final Runnable kpmStatusRunner = () -> SoftwareCoSessionManager.getInstance().fetchDailyKpmSessionInfo();
+            kpmStatusRunner.run();
         }
 
         loggedInCacheState = loggedIn;

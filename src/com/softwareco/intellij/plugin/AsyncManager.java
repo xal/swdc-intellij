@@ -14,7 +14,7 @@ public class AsyncManager {
     private static AsyncManager instance = null;
     public static final Logger log = Logger.getInstance("AsyncManager");
 
-    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private List<String> names = new ArrayList<>();
     private List<Future<?>> futures = new ArrayList<>();
 

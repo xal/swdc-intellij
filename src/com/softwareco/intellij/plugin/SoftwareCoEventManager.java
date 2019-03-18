@@ -2,7 +2,6 @@ package com.softwareco.intellij.plugin;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -192,12 +191,11 @@ public class SoftwareCoEventManager {
             createKeystrokeCountWrapper(projectName, projectFilepath);
         } else if (!keystrokeCount.getProject().getName().equals(projectName)) {
             final KeystrokeManager.KeystrokeCountWrapper current = keystrokeMgr.getKeystrokeWrapper();
+
             // send the current wrapper and create a new one
-            ApplicationManager.getApplication().invokeLater(new Runnable() {
-                public void run() {
-                    processKeystrokes(current);
-                }
-            });
+            final Runnable processKpmRunner = () -> this.processKeystrokes(current);
+            processKpmRunner.run();
+
             createKeystrokeCountWrapper(projectName, projectFilepath);
         }
     }
@@ -247,15 +245,14 @@ public class SoftwareCoEventManager {
     public void processKeystrokesData() {
         final KeystrokeManager.KeystrokeCountWrapper current = keystrokeMgr.getKeystrokeWrapper();
         // send the current wrapper and create a new one
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
-            public void run() {
-                processKeystrokes(current);
-            }
-        });
+        processKeystrokes(current);
     }
 
     protected void processKeystrokes(KeystrokeManager.KeystrokeCountWrapper wrapper) {
         if (appIsReady) {
+
+            // send any offline data if we have any
+            sessionMgr.sendOfflineData();
 
             if (wrapper != null && wrapper.getKeystrokeCount() != null && wrapper.getKeystrokeCount().hasData()) {
                 // ZonedDateTime will get us the true seconds away from GMT
@@ -269,20 +266,17 @@ public class SoftwareCoEventManager {
                 wrapper.getKeystrokeCount().setTimezone(TimeZone.getDefault().getID());
                 final String payload = SoftwareCo.gson.toJson(wrapper.getKeystrokeCount());
 
-                ApplicationManager.getApplication().invokeLater(new Runnable() {
-                    public void run() {
-                        SoftwareResponse resp = SoftwareCoUtils.makeApiCall("/data", HttpPost.METHOD_NAME, payload);
-                        if (!resp.isOk()) {
-                            sessionMgr.storePayload(payload);
-                            sessionMgr.checkUserAuthenticationStatus();
-                        }
-                    }
-                });
+                SoftwareResponse resp = SoftwareCoUtils.makeApiCall("/data", HttpPost.METHOD_NAME, payload);
+                if (!resp.isOk()) {
+                    sessionMgr.storePayload(payload);
+                    sessionMgr.checkUserAuthenticationStatus();
+                }
 
                 keystrokeMgr.resetData();
             } else if (wrapper != null && wrapper.getKeystrokeCount() != null) {
                 keystrokeMgr.resetData();
             }
+
         }
     }
 }

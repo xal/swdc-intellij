@@ -6,7 +6,6 @@ package com.softwareco.intellij.plugin;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import org.apache.http.client.methods.HttpPost;
 
@@ -148,33 +147,27 @@ public class SoftwareCoMusicManager {
 
 
     public void processMusicTrackInfo() {
+        MusicSendDataTask sendTask = new MusicSendDataTask();
 
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
-            public void run() {
+        Future<SoftwareResponse> response = SoftwareCoUtils.EXECUTOR_SERVICE.submit(sendTask);
 
-                MusicSendDataTask sendTask = new MusicSendDataTask();
+        //
+        // Handle the Future if it exist
+        //
+        if ( response != null ) {
+            SoftwareResponse httpResponse = null;
+            try {
+                httpResponse = response.get();
 
-                Future<SoftwareResponse> response = SoftwareCoUtils.EXECUTOR_SERVICE.submit(sendTask);
-
-                //
-                // Handle the Future if it exist
-                //
-                if ( response != null ) {
-                    SoftwareResponse httpResponse = null;
-                    try {
-                        httpResponse = response.get();
-
-                        if (httpResponse != null && !httpResponse.isOk()) {
-                            String errorStr = (httpResponse != null && httpResponse.getErrorMessage() != null) ? httpResponse.getErrorMessage() : "";
-                            log.info("Code Time: Unable to get the music track response from the http request, error: " + errorStr);
-                        }
-
-                    } catch (InterruptedException | ExecutionException e) {
-                        log.info("Code Time: Unable to get the music track response from the http request, error: " + e.getMessage());
-                    }
+                if (httpResponse != null && !httpResponse.isOk()) {
+                    String errorStr = (httpResponse != null && httpResponse.getErrorMessage() != null) ? httpResponse.getErrorMessage() : "";
+                    log.info("Code Time: Unable to get the music track response from the http request, error: " + errorStr);
                 }
 
+            } catch (InterruptedException | ExecutionException e) {
+                log.info("Code Time: Unable to get the music track response from the http request, error: " + e.getMessage());
             }
-        });
+        }
+
     }
 }

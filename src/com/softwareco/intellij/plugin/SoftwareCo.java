@@ -8,7 +8,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManager;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
@@ -110,52 +109,39 @@ public class SoftwareCo implements ApplicationComponent {
     }
 
     private void initializeUserInfo() {
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
-            public void run() {
-                // this should only ever possibly return true the very first
-                // time the IDE loads this new code
+        // this should only ever possibly return true the very first
+        // time the IDE loads this new code
 
-                String jwt = SoftwareCoSessionManager.getItem("jwt");
-                boolean initializingPlugin = false;
-                if (jwt == null || jwt.equals("")) {
-                    initializingPlugin = true;
+        String jwt = SoftwareCoSessionManager.getItem("jwt");
+        boolean initializingPlugin = false;
+        if (jwt == null || jwt.equals("")) {
+            initializingPlugin = true;
+        }
+
+        SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
+
+        if (initializingPlugin) {
+            // ask the user to login one time only
+            new Thread(() -> {
+                try {
+                    Thread.sleep(5000);
+                    sessionMgr.checkUserAuthenticationStatus();
                 }
-
-                SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
-
-                if (initializingPlugin) {
-                    // ask the user to login one time only
-                    new Thread(() -> {
-                        try {
-                            Thread.sleep(5000);
-                            sessionMgr.checkUserAuthenticationStatus();
-                        }
-                        catch (Exception e){
-                            System.err.println(e);
-                        }
-                    }).start();
+                catch (Exception e){
+                    System.err.println(e);
                 }
+            }).start();
+        }
 
-                new Thread(() -> {
-                    try {
-                        Thread.sleep(1000 * 20);
-                        initializeCalls();
-                    }
-                    catch (Exception e){
-                        System.err.println(e);
-                    }
-                }).start();
-            }
-        });
-    }
-
-    private void initializeCalls() {
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
-            public void run() {
-                sessionMgr.sendOfflineData();
+        new Thread(() -> {
+            try {
+                Thread.sleep(1000 * 10);
                 sessionMgr.fetchDailyKpmSessionInfo();
             }
-        });
+            catch (Exception e){
+                System.err.println(e);
+            }
+        }).start();
     }
 
     protected String getRootPath() {
@@ -173,27 +159,22 @@ public class SoftwareCo implements ApplicationComponent {
     }
 
     private void setupEventListeners() {
-        ApplicationManager.getApplication().invokeLater(new Runnable(){
-            public void run() {
+        // edit document
+        EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new SoftwareCoDocumentListener());
 
-                // edit document
-                EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new SoftwareCoDocumentListener());
-
-                Project[] projects = ProjectManager.getInstance().getOpenProjects();
-                if (projects != null) {
-                    connections = new MessageBusConnection[projects.length];
-                    for (int i = 0; i < projects.length; i++) {
-                        Project project = projects[i];
-                        MessageBusConnection connection = project.getMessageBus().connect(project);
-                        connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new SoftwareCoFileEditorListener());
-                        connections[i] = connection;
-                    }
-                }
-
-                SoftwareCoUtils.setStatusLineMessage(
-                        "Code Time", "Click to see more from Code Time");
+        Project[] projects = ProjectManager.getInstance().getOpenProjects();
+        if (projects != null) {
+            connections = new MessageBusConnection[projects.length];
+            for (int i = 0; i < projects.length; i++) {
+                Project project = projects[i];
+                MessageBusConnection connection = project.getMessageBus().connect(project);
+                connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new SoftwareCoFileEditorListener());
+                connections[i] = connection;
             }
-        });
+        }
+
+        SoftwareCoUtils.setStatusLineMessage(
+                "Code Time", "Click to see more from Code Time");
     }
 
 

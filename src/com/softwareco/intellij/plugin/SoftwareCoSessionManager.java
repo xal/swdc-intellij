@@ -10,8 +10,11 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VirtualFile;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 
@@ -115,7 +118,7 @@ public class SoftwareCoSessionManager {
         File f = new File(dataStoreFile);
 
         if (f.exists()) {
-            // JsonArray jsonArray = new JsonArray();
+            // found a data file, check if there's content
             StringBuffer sb = new StringBuffer();
             try {
                 FileInputStream fis = new FileInputStream(f);
@@ -133,19 +136,17 @@ public class SoftwareCoSessionManager {
                 br.close();
 
                 if (sb.length() > 0) {
+                    // we have data to send
                     String payloads = sb.toString();
                     payloads = payloads.substring(0, payloads.lastIndexOf(","));
                     payloads = "[" + payloads + "]";
                     final String batchPayload = payloads;
-                    ApplicationManager.getApplication().invokeLater(new Runnable() {
-                        public void run() {
-                            SoftwareResponse resp = SoftwareCoUtils.makeApiCall("/data/batch", HttpPost.METHOD_NAME, batchPayload);
-                            if (resp.isOk() || resp.isDeactivated()) {
-                                // delete the file
-                                deleteFile(dataStoreFile);
-                            }
-                        }
-                    });
+
+                    SoftwareResponse resp = SoftwareCoUtils.makeApiCall("/data/batch", HttpPost.METHOD_NAME, batchPayload);
+                    if (resp.isOk() || resp.isDeactivated()) {
+                        // delete the file
+                        deleteFile(dataStoreFile);
+                    }
                 } else {
                     log.info("Code Time: No offline data to send");
                 }
@@ -304,18 +305,24 @@ public class SoftwareCoSessionManager {
             }
 
             SoftwareCoUtils.setStatusLineMessage(inFlowIcon, msg, "Click to see more from Code Time");
-            SoftwareCoUtils.fetchCodeTimeMetricsContent();
+
+            Project p = SoftwareCoUtils.getOpenProject();
+            if (p == null) {
+                return;
+            }
+
+            String codeTimeFile = SoftwareCoSessionManager.getCodeTimeDashboardFile();
+            File f = new File(codeTimeFile);
+            VirtualFile vFile = LocalFileSystem.getInstance().findFileByIoFile(f);
+            boolean metricsFileOpen = FileEditorManager.getInstance(p).isFileOpen(vFile);
+            if (metricsFileOpen) {
+                SoftwareCoUtils.fetchCodeTimeMetricsContent();
+            }
         }
     }
 
     public void statusBarClickHandler() {
-        final Project project = this.getCurrentProject();
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
-            public void run() {
-                SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
-                SoftwareCoUtils.launchCodeTimeMetricsDashboard();
-            }
-        });
+        SoftwareCoUtils.launchCodeTimeMetricsDashboard();
     }
 
     protected static void lazilyFetchUserStatus(int retryCount) {
