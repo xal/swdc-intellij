@@ -8,7 +8,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManager;
-import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
@@ -19,17 +18,11 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.SystemInfo;
-import com.intellij.util.PlatformUtils;
 import com.intellij.util.messages.MessageBusConnection;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 
 /**
  * Intellij Plugin Application
@@ -41,29 +34,15 @@ public class SoftwareCo implements ApplicationComponent {
     public static final Logger log = Logger.getInstance("SoftwareCo");
     public static Gson gson;
 
-    public static boolean TELEMTRY_ON = true;
-
     private String VERSION;
-    private String IDE_NAME;
-    private String IDE_VERSION;
     private MessageBusConnection[] connections;
 
-    private final String LEGACY_VIM_ID = "0q9p7n6m4k2j1VIM54t";
-
-    private final int SEND_INTERVAL = 60;
-    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-    private ScheduledFuture<?> scheduledFixture;
 
     private SoftwareCoMusicManager musicMgr = SoftwareCoMusicManager.getInstance();
-    private KeystrokeManager keystrokeMgr = KeystrokeManager.getInstance();
     private SoftwareCoSessionManager sessionMgr = SoftwareCoSessionManager.getInstance();
     private SoftwareCoEventManager eventMgr = SoftwareCoEventManager.getInstance();
+    private AsyncManager asyncManager = AsyncManager.getInstance();
 
-    private Timer kpmFetchTimer;
-    private Timer trackInfoTimer;
-    private Timer repoInfoTimer;
-    private Timer repoCommitsTimer;
-    private Timer userStatusTimer;
 
     public SoftwareCo() {
     }
@@ -74,45 +53,48 @@ public class SoftwareCo implements ApplicationComponent {
         VERSION = pluginDescriptor.getVersion();
         log.info("Code Time: Loaded v" + VERSION);
 
-        // Set runtime constants
-        IDE_NAME = PlatformUtils.getPlatformPrefix();
-        IDE_VERSION = ApplicationInfo.getInstance().getFullVersion();
-
         setLoggingLevel();
 
         gson = new Gson();
 
         setupEventListeners();
-        setupScheduledProcessor();
+
+        SoftwareCoRepoManager repoMgr = SoftwareCoRepoManager.getInstance();
+
+
+        // add the kpm payload one_min scheduler
+        final Runnable payloadPushRunner = () -> eventMgr.processKeystrokesData();
+        asyncManager.scheduleService(
+                payloadPushRunner, "payloadPushRunner", 60, 60);
+
         log.info("Code Time: Finished initializing SoftwareCo plugin");
 
-        long one_min = 1000 * 60;
-        long ninety_sec = one_min + (1000 * 30);
-        long one_hour = one_min * 60;
+        int one_hour_in_sec = 60 * 60;
+        int one_hour_ten_min_in_sec = one_hour_in_sec + (60 * 10);
 
-        ProcessKpmSessionInfoTask kpmTask = new ProcessKpmSessionInfoTask();
-
-        // run the kpm fetch task every minute
-        kpmFetchTimer = new Timer();
-        kpmFetchTimer.scheduleAtFixedRate(
-                kpmTask, 1000 * 20, one_min);
+        // add the kpm status scheduler
+        final Runnable kpmStatusRunner = () -> sessionMgr.fetchDailyKpmSessionInfo();
+        asyncManager.scheduleService(
+                kpmStatusRunner, "kpmStatusRunner", 15, 60);
 
         // run the music manager task every 15 seconds
-        trackInfoTimer = new Timer();
-        trackInfoTimer.scheduleAtFixedRate(
-                new ProcessMusicTrackInfoTask(), one_min, 15 * 1000);
+        final Runnable musicTrackRunner = () -> musicMgr.processMusicTrackInfo();
+        asyncManager.scheduleService(
+                musicTrackRunner, "musicTrackRunner", 30, 15);
 
-        repoInfoTimer = new Timer();
-        repoInfoTimer.scheduleAtFixedRate(
-                new ProcessRepoInfoTask(), one_min * 2, one_hour);
+        // run the repo info task every 1 hour
+        final Runnable repoInfoRunner = () -> repoMgr.processRepoMembersInfo(getRootPath());
+        asyncManager.scheduleService(
+                repoInfoRunner, "repoInfoRunner", 90, one_hour_in_sec);
 
-        repoCommitsTimer = new Timer();
-        repoCommitsTimer.scheduleAtFixedRate(
-                new ProcessRepoCommitsTask(), one_min * 3, one_hour + one_min);
+        // run the repo commits task every 2 hours
+        final Runnable repoCommitsRunner = () -> repoMgr.getHistoricalCommits(getRootPath());
+        asyncManager.scheduleService(
+                repoCommitsRunner, "repoCommitsRunner", 120, one_hour_ten_min_in_sec);
 
-        userStatusTimer = new Timer();
-        userStatusTimer.scheduleAtFixedRate(
-                new ProcessUserStatusTask(), one_min, ninety_sec);
+        final Runnable userStatusRunner = () -> SoftwareCoUtils.getUserStatus();
+        asyncManager.scheduleService(
+                userStatusRunner, "userStatusRunner", 60, 90);
 
         eventMgr.setAppIsReady(true);
 
@@ -176,58 +158,6 @@ public class SoftwareCo implements ApplicationComponent {
         });
     }
 
-    private class ProcessKpmSessionInfoTask extends TimerTask {
-        public void run() {
-            ApplicationManager.getApplication().invokeLater(new Runnable() {
-                public void run() {
-                    sessionMgr.fetchDailyKpmSessionInfo();
-                }
-            });
-        }
-    }
-
-    private class ProcessMusicTrackInfoTask extends TimerTask {
-        public void run() {
-            ApplicationManager.getApplication().invokeLater(new Runnable() {
-                public void run() {
-                    musicMgr.processMusicTrackInfo();
-                }
-            });
-        }
-    }
-
-    private class ProcessRepoInfoTask extends TimerTask {
-        public void run() {
-            ApplicationManager.getApplication().invokeLater(new Runnable() {
-                public void run() {
-                    SoftwareCoRepoManager.getInstance().processRepoMembersInfo(getRootPath());
-                }
-            });
-        }
-    }
-
-    private class ProcessRepoCommitsTask extends TimerTask {
-        public void run() {
-            ApplicationManager.getApplication().invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    SoftwareCoRepoManager.getInstance().getHistoricalCommits(getRootPath());
-                }
-            });
-        }
-    }
-
-    private class ProcessUserStatusTask extends TimerTask {
-        public void run() {
-            ApplicationManager.getApplication().invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    SoftwareCoUtils.getUserStatus();
-                }
-            });
-        }
-    }
-
     protected String getRootPath() {
         Editor[] editors = EditorFactory.getInstance().getAllEditors();
         if (editors != null && editors.length > 0) {
@@ -266,11 +196,6 @@ public class SoftwareCo implements ApplicationComponent {
         });
     }
 
-    private void setupScheduledProcessor() {
-        final Runnable handler = () -> eventMgr.processKeystrokesData();
-        scheduledFixture = scheduler.scheduleAtFixedRate(
-                handler, SEND_INTERVAL, SEND_INTERVAL, java.util.concurrent.TimeUnit.SECONDS);
-    }
 
     public void disposeComponent() {
         try {
@@ -282,11 +207,8 @@ public class SoftwareCo implements ApplicationComponent {
         } catch(Exception e) {
             log.debug("Error disconnecting the software.com plugin, reason: " + e.toString());
         }
-        try {
-            scheduledFixture.cancel(true);
-        } catch (Exception e) {
-            log.debug("Error cancelling the software.com plugin KPM processing schedule, reason: " + e.toString());
-        }
+
+        asyncManager.destroyServices();
 
         // process one last time
         // this will ensure we process the latest keystroke updates

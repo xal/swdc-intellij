@@ -98,10 +98,6 @@ public class SoftwareCoUtils {
     public static SoftwareResponse makeApiCall(String api, String httpMethodName, String payload, String overridingJwt) {
 
         SoftwareResponse softwareResponse = new SoftwareResponse();
-        if (!SoftwareCo.TELEMTRY_ON) {
-            softwareResponse.setIsOk(true);
-            return softwareResponse;
-        }
 
         SoftwareHttpManager httpTask = null;
         if (api.contains("/ping") || api.contains("/sessions") || api.contains("/dashboard") || api.contains("/users/plugin/accounts")) {

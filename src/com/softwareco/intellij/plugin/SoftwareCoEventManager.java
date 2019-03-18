@@ -269,12 +269,6 @@ public class SoftwareCoEventManager {
                 wrapper.getKeystrokeCount().setTimezone(TimeZone.getDefault().getID());
                 final String payload = SoftwareCo.gson.toJson(wrapper.getKeystrokeCount());
 
-                if (!SoftwareCo.TELEMTRY_ON) {
-                    log.info("Code Time telemetry is currently paused. Enable to view KPM metrics");
-                    sessionMgr.storePayload(payload);
-                    return;
-                }
-
                 ApplicationManager.getApplication().invokeLater(new Runnable() {
                     public void run() {
                         SoftwareResponse resp = SoftwareCoUtils.makeApiCall("/data", HttpPost.METHOD_NAME, payload);
