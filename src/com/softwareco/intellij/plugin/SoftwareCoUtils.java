@@ -548,6 +548,25 @@ public class SoftwareCoUtils {
         BrowserUtil.browse("http://api.software.com/music/top40");
     }
 
+    public static boolean isCodeTimeMetricsFileOpen() {
+        Project p = SoftwareCoUtils.getOpenProject();
+        if (p == null) {
+            return false;
+        }
+
+        // check if the file is already open, otherwise skip fetching it
+        try {
+            String codeTimeFile = SoftwareCoSessionManager.getCodeTimeDashboardFile();
+            File f = new File(codeTimeFile);
+            VirtualFile vFile = LocalFileSystem.getInstance().findFileByIoFile(f);
+            boolean metricsFileOpen = FileEditorManager.getInstance(p).isFileOpen(vFile);
+            return metricsFileOpen;
+        } catch (Exception e) {
+            //
+        }
+        return false;
+    }
+
     public static void fetchCodeTimeMetricsContent() {
         Project p = getOpenProject();
         if (p == null) {

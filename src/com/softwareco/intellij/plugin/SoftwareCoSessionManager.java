@@ -10,11 +10,8 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
-import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.vfs.LocalFileSystem;
-import com.intellij.openapi.vfs.VirtualFile;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 
@@ -306,16 +303,7 @@ public class SoftwareCoSessionManager {
 
             SoftwareCoUtils.setStatusLineMessage(inFlowIcon, msg, "Click to see more from Code Time");
 
-            Project p = SoftwareCoUtils.getOpenProject();
-            if (p == null) {
-                return;
-            }
-
-            String codeTimeFile = SoftwareCoSessionManager.getCodeTimeDashboardFile();
-            File f = new File(codeTimeFile);
-            VirtualFile vFile = LocalFileSystem.getInstance().findFileByIoFile(f);
-            boolean metricsFileOpen = FileEditorManager.getInstance(p).isFileOpen(vFile);
-            if (metricsFileOpen) {
+            if (SoftwareCoUtils.isCodeTimeMetricsFileOpen()) {
                 SoftwareCoUtils.fetchCodeTimeMetricsContent();
             }
         }
