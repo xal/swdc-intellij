@@ -8,6 +8,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.intellij.ide.BrowserUtil;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
@@ -282,62 +283,67 @@ public class SoftwareCoUtils {
     private static void updateStatusBar(final String kpmIcon, final String kpmMsg,
                                         final String timeIcon, final String timeMsg,
                                         final String tooltip) {
-        new Thread(() -> {
-            ProjectManager pm = ProjectManager.getInstance();
-            if (pm != null && pm.getOpenProjects() != null && pm.getOpenProjects().length > 0) {
-                try {
-                    Project p = pm.getOpenProjects()[0];
-                    final StatusBar statusBar = WindowManager.getInstance().getStatusBar(p);
+        ApplicationManager.getApplication().invokeLater(new Runnable() {
+            public void run() {
+                ProjectManager pm = ProjectManager.getInstance();
+                if (pm != null && pm.getOpenProjects() != null && pm.getOpenProjects().length > 0) {
+                    try {
+                        Project p = pm.getOpenProjects()[0];
+                        final StatusBar statusBar = WindowManager.getInstance().getStatusBar(p);
 
-                    if (statusBar != null) {
-                        if (statusBar.getWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_kpmmsg") != null) {
-                            statusBar.removeWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_kpmmsg");
-                        }
-                        if (statusBar.getWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_timemsg") != null) {
-                            statusBar.removeWidget(SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_timemsg");
-                        }
-                        if (statusBar.getWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_kpmicon") != null) {
-                            statusBar.removeWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_kpmicon");
-                        }
-                        if (statusBar.getWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_timeicon") != null) {
-                            statusBar.removeWidget(SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_timeicon");
-                        }
+                        if (statusBar != null) {
+                            String kpmmsgId = SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_kpmmsg";
+                            String timemsgId = SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_timemsg";
+                            String kpmiconId = SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_kpmicon";
+                            String timeiconId = SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_timeicon";
 
-                        String id = SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_kpmicon";
-                        if (kpmIcon != null) {
-                            SoftwareCoStatusBarKpmIconWidget kpmIconWidget = buildStatusBarIconWidget(
-                                    kpmIcon, tooltip, id);
-                            statusBar.addWidget(kpmIconWidget, id);
-                            statusBar.updateWidget(id);
-                        }
+                            final String kpmMsgVal = kpmMsg != null ? kpmMsg : "Code Time";
 
-                        id = SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_kpmmsg";
-                        SoftwareCoStatusBarKpmTextWidget kpmWidget = buildStatusBarTextWidget(
-                                kpmMsg, tooltip, id);
-                        statusBar.addWidget(kpmWidget, id);
-                        statusBar.updateWidget(id);
+                            if (statusBar.getWidget(kpmmsgId) != null) {
+                                statusBar.removeWidget(kpmmsgId);
+                            }
+                            if (statusBar.getWidget(timemsgId) != null) {
+                                statusBar.removeWidget(timemsgId);
+                            }
+                            if (statusBar.getWidget(kpmiconId) != null) {
+                                statusBar.removeWidget(kpmiconId);
+                            }
+                            if (statusBar.getWidget(timeiconId) != null) {
+                                statusBar.removeWidget(timeiconId);
+                            }
 
-                        id = SoftwareCoStatusBarKpmIconWidget.KPM_ICON_ID + "_timeicon";
-                        if (timeIcon != null) {
-                            SoftwareCoStatusBarKpmIconWidget timeIconWidget = buildStatusBarIconWidget(
-                                    timeIcon, tooltip, id);
-                            statusBar.addWidget(timeIconWidget, id);
-                            statusBar.updateWidget(id);
-                        }
+                            if (kpmIcon != null) {
+                                SoftwareCoStatusBarKpmIconWidget kpmIconWidget = buildStatusBarIconWidget(
+                                        kpmIcon, tooltip, kpmiconId);
+                                statusBar.addWidget(kpmIconWidget, kpmiconId);
+                                statusBar.updateWidget(kpmiconId);
+                            }
 
-                        id = SoftwareCoStatusBarKpmTextWidget.KPM_TEXT_ID + "_timemsg";
-                        if (timeMsg != null) {
-                            SoftwareCoStatusBarKpmTextWidget timeWidget = buildStatusBarTextWidget(
-                                    timeMsg, tooltip, id);
-                            statusBar.addWidget(timeWidget, id);
-                            statusBar.updateWidget(id);
+                            SoftwareCoStatusBarKpmTextWidget kpmWidget = buildStatusBarTextWidget(
+                                    kpmMsgVal, tooltip, kpmmsgId);
+                            statusBar.addWidget(kpmWidget, kpmmsgId);
+                            statusBar.updateWidget(kpmmsgId);
+
+                            if (timeIcon != null) {
+                                SoftwareCoStatusBarKpmIconWidget timeIconWidget = buildStatusBarIconWidget(
+                                        timeIcon, tooltip, timeiconId);
+                                statusBar.addWidget(timeIconWidget, timeiconId);
+                                statusBar.updateWidget(timeiconId);
+                            }
+
+                            if (timeMsg != null) {
+                                SoftwareCoStatusBarKpmTextWidget timeWidget = buildStatusBarTextWidget(
+                                        timeMsg, tooltip, timemsgId);
+                                statusBar.addWidget(timeWidget, timemsgId);
+                                statusBar.updateWidget(timemsgId);
+                            }
                         }
+                    } catch(Exception e){
+                        //
                     }
-                } catch(Exception e){
-                    //
                 }
             }
-        }).start();
+        });
     }
 
     public static SoftwareCoStatusBarKpmTextWidget buildStatusBarTextWidget(String msg, String tooltip, String id) {
