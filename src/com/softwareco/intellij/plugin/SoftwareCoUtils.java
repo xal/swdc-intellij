@@ -759,11 +759,9 @@ public class SoftwareCoUtils {
                         SoftwareCoSessionManager.setItem("name", dataEmail);
                     }
                     return true;
-                } else if (!state.equals("ANONYMOUS")) {
+                } else if (state.equals("NOT_FOUND")) {
                     SoftwareCoSessionManager.setItem("jwt", null);
                 }
-            } else {
-                SoftwareCoSessionManager.setItem("jwt", null);
             }
         }
         SoftwareCoSessionManager.setItem("name", null);
