@@ -5,6 +5,7 @@
 package com.softwareco.intellij.plugin;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManager;
@@ -118,9 +119,12 @@ public class SoftwareCo implements ApplicationComponent {
             initializingPlugin = true;
         }
 
-        SoftwareCoUtils.UserStatus userStatus = SoftwareCoUtils.getUserStatus();
+        SoftwareCoUtils.getUserStatus();
 
         if (initializingPlugin) {
+            // send an initial plugin payload
+            this.sendInstallPayload();
+
             // ask the user to login one time only
             new Thread(() -> {
                 try {
@@ -142,6 +146,16 @@ public class SoftwareCo implements ApplicationComponent {
                 System.err.println(e);
             }
         }).start();
+    }
+
+    protected void sendInstallPayload() {
+        KeystrokeManager keystrokeManager = KeystrokeManager.getInstance();
+        String fileName = "Untitled";
+        eventMgr.initializeKeystrokeObjectGraph(fileName, "Unnamed", "");
+        JsonObject fileInfo = keystrokeManager.getKeystrokeCount().getSourceByFileName(fileName);
+        eventMgr.updateFileInfoValue(fileInfo, "add", 1);
+        keystrokeManager.getKeystrokeCount().setKeystrokes(String.valueOf(1));
+        eventMgr.processKeystrokes(keystrokeManager.getKeystrokeWrapper());
     }
 
     protected String getRootPath() {

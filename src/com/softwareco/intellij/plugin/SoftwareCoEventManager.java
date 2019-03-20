@@ -26,8 +26,6 @@ public class SoftwareCoEventManager {
 
     private static SoftwareCoEventManager instance = null;
 
-    private JsonObject currentTrack = new JsonObject();
-
     private KeystrokeManager keystrokeMgr = KeystrokeManager.getInstance();
     private SoftwareCoSessionManager sessionMgr = SoftwareCoSessionManager.getInstance();
     private boolean appIsReady = false;
@@ -107,7 +105,7 @@ public class SoftwareCoEventManager {
                     String projectFilepath = null;
                     if (project != null) {
                         projectName = project.getName();
-                        projectFilepath = project.getBaseDir().getPath();
+                        projectFilepath = project.getBasePath();
 
                         keystrokeMgr.addKeystrokeWrapperIfNoneExists(project);
                         initializeKeystrokeObjectGraph(fileName, projectName, projectFilepath);
@@ -155,7 +153,7 @@ public class SoftwareCoEventManager {
         }
     }
 
-    private void updateFileInfoValue(JsonObject fileInfo, String key, int incrementVal) {
+    public void updateFileInfoValue(JsonObject fileInfo, String key, int incrementVal) {
         JsonPrimitive keysVal = fileInfo.getAsJsonPrimitive(key);
         if (key.equals("length") || key.equals("lines")) {
             // length, lines, or syntax are not additive
@@ -174,7 +172,7 @@ public class SoftwareCoEventManager {
         }
     }
 
-    private void initializeKeystrokeObjectGraph(String fileName, String projectName, String projectFilepath) {
+    public void initializeKeystrokeObjectGraph(String fileName, String projectName, String projectFilepath) {
         // initialize it in case it's not initialized yet
         initializeKeystrokeCount(projectName, projectFilepath);
 
@@ -248,7 +246,7 @@ public class SoftwareCoEventManager {
         processKeystrokes(current);
     }
 
-    protected void processKeystrokes(KeystrokeManager.KeystrokeCountWrapper wrapper) {
+    public void processKeystrokes(KeystrokeManager.KeystrokeCountWrapper wrapper) {
         if (appIsReady) {
 
             // send any offline data if we have any

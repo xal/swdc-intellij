@@ -81,10 +81,6 @@ public class KeystrokeManager {
             this.projectName = projectName;
         }
 
-        public String getCurrentFileName() {
-            return currentFileName;
-        }
-
         public void setCurrentFileName(String currentFileName) {
             this.currentFileName = currentFileName;
         }

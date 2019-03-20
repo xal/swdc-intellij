@@ -77,30 +77,13 @@ public class KeystrokeCount {
         fileInfoData.addProperty("delete", 0);
         fileInfoData.addProperty("length", 0);
         fileInfoData.addProperty("netkeys", 0);
-        // -1 to help identify when setting it the 1st time
-        fileInfoData.addProperty("lines", -1);
+        fileInfoData.addProperty("lines", 0);
         fileInfoData.addProperty("linesAdded", 0);
         fileInfoData.addProperty("linesRemoved", 0);
         fileInfoData.addProperty("syntax", 0);
         source.add(fileName, fileInfoData);
 
         return fileInfoData;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public int getPluginId() {
-        return pluginId;
-    }
-
-    public void setPluginId(int pluginId) {
-        this.pluginId = pluginId;
     }
 
     public String getSource() {
@@ -115,16 +98,6 @@ public class KeystrokeCount {
         return false;
     }
 
-    private boolean hasValueDataForProperty(JsonObject fileInfoData, String property) {
-        try {
-            int val = fileInfoData.getAsJsonPrimitive(property).getAsInt();
-            if (val > 0) {
-                return true;
-            }
-        } catch (Exception e) {}
-        return false;
-    }
-
     public String getKeystrokes() {
         return keystrokes;
     }
@@ -133,24 +106,12 @@ public class KeystrokeCount {
         this.keystrokes = keystrokes;
     }
 
-    public long getStart() {
-        return start;
-    }
-
     public void setStart(long start) {
         this.start = start;
     }
 
-    public long getLocal_start() {
-        return local_start;
-    }
-
     public void setLocal_start(long local_start) {
         this.local_start = local_start;
-    }
-
-    public String getTimezone() {
-        return timezone;
     }
 
     public void setTimezone(String timezone) {

@@ -349,7 +349,7 @@ public class SoftwareCoSessionManager {
     }
 
     public static void launchWebDashboard() {
-        String url = SoftwareCoUtils.launch_url;
+        String url = SoftwareCoUtils.launch_url + "/login";
         BrowserUtil.browse(url);
     }
 }
