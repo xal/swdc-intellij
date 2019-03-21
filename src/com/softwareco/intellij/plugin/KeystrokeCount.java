@@ -31,10 +31,10 @@ public class KeystrokeCount {
         if (appVersion != null) {
             this.version = appVersion;
         } else {
-            this.version = SoftwareCoUtils.version;
+            this.version = SoftwareCoUtils.getVersion();
         }
         this.pluginId = SoftwareCoUtils.pluginId;
-        this.os = SoftwareCo.getOsInfo();
+        this.os = SoftwareCoUtils.getOs();
     }
 
     public KeystrokeCount clone() {

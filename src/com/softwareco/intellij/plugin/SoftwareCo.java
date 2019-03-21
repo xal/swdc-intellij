@@ -7,21 +7,15 @@ package com.softwareco.intellij.plugin;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.intellij.ide.plugins.IdeaPluginDescriptor;
-import com.intellij.ide.plugins.PluginManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
-import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
-import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.messages.MessageBusConnection;
-import org.apache.commons.lang.SystemUtils;
 import org.apache.log4j.Level;
-import org.jetbrains.annotations.NotNull;
 
 
 /**
@@ -34,7 +28,6 @@ public class SoftwareCo implements ApplicationComponent {
     public static final Logger log = Logger.getInstance("SoftwareCo");
     public static Gson gson;
 
-    private String VERSION;
     private MessageBusConnection[] connections;
 
 
@@ -48,10 +41,7 @@ public class SoftwareCo implements ApplicationComponent {
     }
 
     public void initComponent() {
-
-        IdeaPluginDescriptor pluginDescriptor = PluginManager.getPlugin(PluginId.getId("com.softwareco.intellij.plugin"));
-        VERSION = pluginDescriptor.getVersion();
-        log.info("Code Time: Loaded v" + VERSION);
+        log.info("Code Time: Loaded v" + SoftwareCoUtils.getVersion());
 
         setLoggingLevel();
 
@@ -77,20 +67,14 @@ public class SoftwareCo implements ApplicationComponent {
         asyncManager.scheduleService(
                 kpmStatusRunner, "kpmStatusRunner", 15, 60);
 
+        final Runnable hourlyRunner = () -> this.processHourlyJobs();
+        asyncManager.scheduleService(
+                hourlyRunner, "musicTrackRunner", 45, 60 * 60);
+
         // run the music manager task every 15 seconds
         final Runnable musicTrackRunner = () -> musicMgr.processMusicTrackInfo();
         asyncManager.scheduleService(
                 musicTrackRunner, "musicTrackRunner", 30, 15);
-
-        // run the repo info task every 1 hour
-        final Runnable repoInfoRunner = () -> repoMgr.processRepoMembersInfo(getRootPath());
-        asyncManager.scheduleService(
-                repoInfoRunner, "repoInfoRunner", 90, one_hour_in_sec);
-
-        // run the repo commits task every 2 hours
-        final Runnable repoCommitsRunner = () -> repoMgr.getHistoricalCommits(getRootPath());
-        asyncManager.scheduleService(
-                repoCommitsRunner, "repoCommitsRunner", 120, one_hour_ten_min_in_sec);
 
         final Runnable userStatusRunner = () -> SoftwareCoUtils.getUserStatus();
         asyncManager.scheduleService(
@@ -107,6 +91,28 @@ public class SoftwareCo implements ApplicationComponent {
             }
         }).start();
 
+    }
+
+    private void processHourlyJobs() {
+        SoftwareCoUtils.sendHeartbeat();
+
+        SoftwareCoRepoManager repoMgr = SoftwareCoRepoManager.getInstance();
+        new Thread(() -> {
+            try {
+                Thread.sleep(5000);
+                repoMgr.processRepoMembersInfo(getRootPath());
+            } catch (Exception e) {
+                System.err.println(e);
+            }
+        }).start();
+        new Thread(() -> {
+            try {
+                Thread.sleep(60000);
+                repoMgr.getHistoricalCommits(getRootPath());
+            } catch (Exception e) {
+                System.err.println(e);
+            }
+        }).start();
     }
 
     private void initializeUserInfo() {
@@ -146,6 +152,8 @@ public class SoftwareCo implements ApplicationComponent {
                 System.err.println(e);
             }
         }).start();
+
+        SoftwareCoUtils.sendHeartbeat();
     }
 
     protected void sendInstallPayload() {
@@ -213,55 +221,5 @@ public class SoftwareCo implements ApplicationComponent {
     public static void setLoggingLevel() {
         log.setLevel(Level.INFO);
     }
-
-    @NotNull
-    public String getComponentName() {
-        return "SoftwareCo";
-    }
-
-
-
-    public static String getUserHomeDir() {
-        return System.getProperty("user.home");
-    }
-
-    public static String getOsInfo() {
-        String osName = SystemUtils.OS_NAME;
-        String osVersion = SystemUtils.OS_VERSION;
-        String osArch = SystemUtils.OS_ARCH;
-
-        String osInfo = "";
-        if (osArch != null) {
-            osInfo += osArch;
-        }
-        if (osInfo.length() > 0) {
-            osInfo += "_";
-        }
-        if (osVersion != null) {
-            osInfo += osVersion;
-        }
-        if (osInfo.length() > 0) {
-            osInfo += "_";
-        }
-        if (osName != null) {
-            osInfo += osName;
-        }
-
-        return osInfo;
-    }
-
-    public static boolean isLinux() {
-        return (isWindows() || isMac()) ? false : true;
-    }
-
-    public static boolean isWindows() {
-        return SystemInfo.isWindows;
-    }
-
-    public static boolean isMac() {
-        return SystemInfo.isMac;
-    }
-
-
 
 }

@@ -37,7 +37,7 @@ public class SoftwareCoSessionManager {
 
     public static String getCodeTimeDashboardFile() {
         String dashboardFile = getSoftwareDir();
-        if (SoftwareCo.isWindows()) {
+        if (SoftwareCoUtils.isWindows()) {
             dashboardFile += "\\CodeTime.txt";
         } else {
             dashboardFile += "/CodeTime.txt";
@@ -46,8 +46,8 @@ public class SoftwareCoSessionManager {
     }
 
     private static String getSoftwareDir() {
-        String softwareDataDir = SoftwareCo.getUserHomeDir();
-        if (SoftwareCo.isWindows()) {
+        String softwareDataDir = SoftwareCoUtils.getUserHomeDir();
+        if (SoftwareCoUtils.isWindows()) {
             softwareDataDir += "\\.software";
         } else {
             softwareDataDir += "/.software";
@@ -64,7 +64,7 @@ public class SoftwareCoSessionManager {
 
     public static String getSoftwareSessionFile() {
         String file = getSoftwareDir();
-        if (SoftwareCo.isWindows()) {
+        if (SoftwareCoUtils.isWindows()) {
             file += "\\session.json";
         } else {
             file += "/session.json";
@@ -74,7 +74,7 @@ public class SoftwareCoSessionManager {
 
     private String getSoftwareDataStoreFile() {
         String file = getSoftwareDir();
-        if (SoftwareCo.isWindows()) {
+        if (SoftwareCoUtils.isWindows()) {
             file += "\\data.json";
         } else {
             file += "/data.json";
@@ -93,7 +93,7 @@ public class SoftwareCoSessionManager {
         if (payload == null || payload.length() == 0) {
             return;
         }
-        if (SoftwareCo.isWindows()) {
+        if (SoftwareCoUtils.isWindows()) {
             payload += "\r\n";
         } else {
             payload += "\n";

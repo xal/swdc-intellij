@@ -8,17 +8,22 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.intellij.ide.BrowserUtil;
+import com.intellij.ide.plugins.IdeaPluginDescriptor;
+import com.intellij.ide.plugins.PluginManager;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.IconLoader;
+import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.WindowManager;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.SystemUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -27,6 +32,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.io.*;
@@ -56,7 +62,7 @@ public class SoftwareCoUtils {
 
     // sublime = 1, vs code = 2, eclipse = 3, intellij = 4, visual studio = 6, atom = 7
     public static int pluginId = 4;
-    public static String version = "0.1.83";
+    private static String VERSION = null;
 
     public final static ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool();
 
@@ -84,6 +90,60 @@ public class SoftwareCoUtils {
 
     public static class UserStatus {
         public boolean loggedIn;
+    }
+
+    public static String getVersion() {
+        if (VERSION == null) {
+            IdeaPluginDescriptor pluginDescriptor = PluginManager.getPlugin(PluginId.getId("com.softwareco.intellij.plugin"));
+            VERSION = pluginDescriptor.getVersion();
+        }
+        return VERSION;
+    }
+
+    @NotNull
+    public String getComponentName() {
+        return "SoftwareCo";
+    }
+
+    public static String getUserHomeDir() {
+        return System.getProperty("user.home");
+    }
+
+    public static String getOs() {
+        String osName = SystemUtils.OS_NAME;
+        String osVersion = SystemUtils.OS_VERSION;
+        String osArch = SystemUtils.OS_ARCH;
+
+        String osInfo = "";
+        if (osArch != null) {
+            osInfo += osArch;
+        }
+        if (osInfo.length() > 0) {
+            osInfo += "_";
+        }
+        if (osVersion != null) {
+            osInfo += osVersion;
+        }
+        if (osInfo.length() > 0) {
+            osInfo += "_";
+        }
+        if (osName != null) {
+            osInfo += osName;
+        }
+
+        return osInfo;
+    }
+
+    public static boolean isLinux() {
+        return (isWindows() || isMac()) ? false : true;
+    }
+
+    public static boolean isWindows() {
+        return SystemInfo.isWindows;
+    }
+
+    public static boolean isMac() {
+        return SystemInfo.isMac;
     }
 
     public static void updateServerStatus(boolean isOnlineStatus) {
@@ -437,7 +497,7 @@ public class SoftwareCoUtils {
 
     public static JsonObject getCurrentMusicTrack() {
         JsonObject jsonObj = new JsonObject();
-        if (!SoftwareCo.isMac()) {
+        if (!SoftwareCoUtils.isMac()) {
             return jsonObj;
         }
 
@@ -578,7 +638,7 @@ public class SoftwareCoUtils {
         if (p == null) {
             return;
         }
-        String api = "/dashboard?linux=" + SoftwareCo.isLinux();
+        String api = "/dashboard?linux=" + SoftwareCoUtils.isLinux();
         String dashboardContent = SoftwareCoUtils.makeApiCall(api, HttpGet.METHOD_NAME, null).getJsonStr();
         if (dashboardContent == null || dashboardContent.trim().isEmpty()) {
             dashboardContent = NO_DATA;
@@ -646,7 +706,7 @@ public class SoftwareCoUtils {
         if (username == null || username.trim().equals("")) {
             try {
                 List<String> cmd = new ArrayList<String>();
-                if (SoftwareCo.isWindows()) {
+                if (SoftwareCoUtils.isWindows()) {
                     cmd.add("cmd");
                     cmd.add("/c");
                     cmd.add("whoami");
@@ -786,6 +846,7 @@ public class SoftwareCoUtils {
         currentUserStatus.loggedIn = loggedIn;
 
         if (loggedInCacheState != loggedIn) {
+            sendHeartbeat();
             // refetch kpm
             final Runnable kpmStatusRunner = () -> SoftwareCoSessionManager.getInstance().fetchDailyKpmSessionInfo();
             kpmStatusRunner.run();
@@ -794,6 +855,29 @@ public class SoftwareCoUtils {
         loggedInCacheState = loggedIn;
 
         return currentUserStatus;
+    }
+
+    public static void sendHeartbeat() {
+        boolean serverIsOnline = SoftwareCoSessionManager.isServerOnline();
+        String jwt = SoftwareCoSessionManager.getItem("jwt");
+        if (serverIsOnline && jwt != null) {
+
+            long start = Math.round(System.currentTimeMillis() / 1000);
+
+            JsonObject payload = new JsonObject();
+            payload.addProperty("pluginId", pluginId);
+            payload.addProperty("os", getOs());
+            payload.addProperty("start", start);
+            payload.addProperty("version", getVersion());
+
+            String api = "/data/heartbeat";
+            SoftwareResponse resp = SoftwareCoUtils.makeApiCall(api, HttpPost.METHOD_NAME, payload.toString(), jwt);
+            if (!resp.isOk()) {
+                LOG.log(Level.WARNING, "Code Time: unable to send heartbeat ping");
+            } else {
+                LOG.log(Level.INFO, "Code Time: sent heartbeat");
+            }
+        }
     }
 
 }
