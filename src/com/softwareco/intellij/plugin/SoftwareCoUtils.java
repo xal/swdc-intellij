@@ -32,7 +32,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.io.*;
@@ -92,17 +91,19 @@ public class SoftwareCoUtils {
         public boolean loggedIn;
     }
 
+    public static String getHostname() {
+        List<String> cmd = new ArrayList<String>();
+        cmd.add("hostname");
+        String hostname = getSingleLineResult(cmd, 1);
+        return hostname;
+    }
+
     public static String getVersion() {
         if (VERSION == null) {
             IdeaPluginDescriptor pluginDescriptor = PluginManager.getPlugin(PluginId.getId("com.softwareco.intellij.plugin"));
             VERSION = pluginDescriptor.getVersion();
         }
         return VERSION;
-    }
-
-    @NotNull
-    public String getComponentName() {
-        return "SoftwareCo";
     }
 
     public static String getUserHomeDir() {
@@ -681,7 +682,7 @@ public class SoftwareCoUtils {
         }
     }
 
-    private static String getSingleLineResult(List<String> cmd) {
+    private static String getSingleLineResult(List<String> cmd, int maxLen) {
         String result = null;
         String[] cmdArgs = Arrays.copyOf(cmd.toArray(), cmd.size(), String[].class);
         String content = SoftwareCoUtils.runCommand(cmdArgs, null);
@@ -690,7 +691,9 @@ public class SoftwareCoUtils {
         if (content != null) {
             String[] contentList = content.split("\n");
             if (contentList != null && contentList.length > 0) {
-                for (String line : contentList) {
+                int len = (maxLen != -1) ? Math.min(maxLen, contentList.length) : contentList.length;
+                for (int i = 0; i < len; i++) {
+                    String line = contentList[i];
                     if (line != null && line.trim().length() > 0) {
                         result = line.trim();
                         break;
@@ -715,7 +718,7 @@ public class SoftwareCoUtils {
                     cmd.add("-c");
                     cmd.add("whoami");
                 }
-                username = getSingleLineResult(cmd);
+                username = getSingleLineResult(cmd, -1);
             } catch (Exception e) {
                 //
             }
@@ -736,7 +739,7 @@ public class SoftwareCoUtils {
         return null;
     }
 
-    public static void createAnonymousUser(boolean serverIsOnline) {
+    public static String createAnonymousUser(boolean serverIsOnline) {
         // make sure we've fetched the app jwt
         String appJwt = getAppJwt(serverIsOnline);
 
@@ -758,9 +761,11 @@ public class SoftwareCoUtils {
                 if (data != null && data.has("jwt")) {
                     String dataJwt = data.get("jwt").getAsString();
                     SoftwareCoSessionManager.setItem("jwt", dataJwt);
+                    return dataJwt;
                 }
             }
         }
+        return null;
     }
 
     private static JsonObject getUser(boolean serverIsOnline) {
@@ -830,15 +835,7 @@ public class SoftwareCoUtils {
 
     public static synchronized UserStatus getUserStatus() {
 
-        SoftwareCoSessionManager.cleanSessionInfo();
-
-        String jwt = SoftwareCoSessionManager.getItem("jwt");
         boolean serverIsOnline = SoftwareCoSessionManager.isServerOnline();
-
-        if (jwt == null || jwt.equals("")) {
-            // create an anonymous user
-            createAnonymousUser(serverIsOnline);
-        }
 
         boolean loggedIn = isLoggedOn(serverIsOnline);
 
@@ -846,7 +843,7 @@ public class SoftwareCoUtils {
         currentUserStatus.loggedIn = loggedIn;
 
         if (loggedInCacheState != loggedIn) {
-            sendHeartbeat();
+            sendHeartbeat("STATE_CHANGE:LOGGED_IN:" + loggedIn);
             // refetch kpm
             final Runnable kpmStatusRunner = () -> SoftwareCoSessionManager.getInstance().fetchDailyKpmSessionInfo();
             kpmStatusRunner.run();
@@ -857,7 +854,7 @@ public class SoftwareCoUtils {
         return currentUserStatus;
     }
 
-    public static void sendHeartbeat() {
+    public static void sendHeartbeat(String reason) {
         boolean serverIsOnline = SoftwareCoSessionManager.isServerOnline();
         String jwt = SoftwareCoSessionManager.getItem("jwt");
         if (serverIsOnline && jwt != null) {
@@ -869,13 +866,13 @@ public class SoftwareCoUtils {
             payload.addProperty("os", getOs());
             payload.addProperty("start", start);
             payload.addProperty("version", getVersion());
+            payload.addProperty("hostname", getHostname());
+            payload.addProperty("trigger_annotation", reason);
 
             String api = "/data/heartbeat";
             SoftwareResponse resp = SoftwareCoUtils.makeApiCall(api, HttpPost.METHOD_NAME, payload.toString(), jwt);
             if (!resp.isOk()) {
                 LOG.log(Level.WARNING, "Code Time: unable to send heartbeat ping");
-            } else {
-                LOG.log(Level.INFO, "Code Time: sent heartbeat");
             }
         }
     }

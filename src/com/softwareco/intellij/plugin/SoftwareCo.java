@@ -7,6 +7,7 @@ package com.softwareco.intellij.plugin;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
@@ -14,6 +15,7 @@ import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.util.messages.MessageBusConnection;
 import org.apache.log4j.Level;
 
@@ -36,11 +38,58 @@ public class SoftwareCo implements ApplicationComponent {
     private SoftwareCoEventManager eventMgr = SoftwareCoEventManager.getInstance();
     private AsyncManager asyncManager = AsyncManager.getInstance();
 
+    private static int retry_counter = 0;
+    private static long check_online_interval_ms = 1000 * 60 * 10;
+
 
     public SoftwareCo() {
     }
 
     public void initComponent() {
+        boolean serverIsOnline = SoftwareCoSessionManager.isServerOnline();
+        boolean sessionFileExists = SoftwareCoSessionManager.softwareSessionFileExists();
+        if (!sessionFileExists) {
+            if (!serverIsOnline) {
+                // server isn't online, check again in 10 min
+                if (retry_counter == 0) {
+                    showOfflinePrompt();
+                }
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(check_online_interval_ms);
+                        initComponent();
+                    } catch (Exception e) {
+                        System.err.println(e);
+                    }
+                }).start();
+            } else {
+                // create the anon user
+                String jwt = SoftwareCoUtils.createAnonymousUser(serverIsOnline);
+                if (jwt == null) {
+                    // it failed, try again later
+                    if (retry_counter == 0) {
+                        showOfflinePrompt();
+                    }
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(check_online_interval_ms);
+                            initComponent();
+                        } catch (Exception e) {
+                            System.err.println(e);
+                        }
+                    }).start();
+                } else {
+                    initializePlugin();
+                }
+            }
+        } else {
+            // session json already exists, continue with plugin init
+            initializePlugin();
+        }
+    }
+
+    protected void initializePlugin() {
+
         log.info("Code Time: Loaded v" + SoftwareCoUtils.getVersion());
 
         setLoggingLevel();
@@ -49,18 +98,12 @@ public class SoftwareCo implements ApplicationComponent {
 
         setupEventListeners();
 
-        SoftwareCoRepoManager repoMgr = SoftwareCoRepoManager.getInstance();
-
-
         // add the kpm payload one_min scheduler
         final Runnable payloadPushRunner = () -> eventMgr.processKeystrokesData();
         asyncManager.scheduleService(
                 payloadPushRunner, "payloadPushRunner", 60, 60);
 
         log.info("Code Time: Finished initializing SoftwareCo plugin");
-
-        int one_hour_in_sec = 60 * 60;
-        int one_hour_ten_min_in_sec = one_hour_in_sec + (60 * 10);
 
         // add the kpm status scheduler
         final Runnable kpmStatusRunner = () -> sessionMgr.fetchDailyKpmSessionInfo();
@@ -94,7 +137,7 @@ public class SoftwareCo implements ApplicationComponent {
     }
 
     private void processHourlyJobs() {
-        SoftwareCoUtils.sendHeartbeat();
+        SoftwareCoUtils.sendHeartbeat("HOURLY");
 
         SoftwareCoRepoManager repoMgr = SoftwareCoRepoManager.getInstance();
         new Thread(() -> {
@@ -153,7 +196,7 @@ public class SoftwareCo implements ApplicationComponent {
             }
         }).start();
 
-        SoftwareCoUtils.sendHeartbeat();
+        SoftwareCoUtils.sendHeartbeat("INITIALIZED");
     }
 
     protected void sendInstallPayload() {
@@ -220,6 +263,17 @@ public class SoftwareCo implements ApplicationComponent {
 
     public static void setLoggingLevel() {
         log.setLevel(Level.INFO);
+    }
+
+    protected void showOfflinePrompt() {
+        ApplicationManager.getApplication().invokeLater(new Runnable() {
+            public void run() {
+                String infoMsg = "Our service is temporarily unavailable. We will try to reconnect again " +
+                        "in 10 minutes. Your status bar will not update at this time.";
+                // ask to download the PM
+                Messages.showInfoMessage(infoMsg, "Code Time");
+            }
+        });
     }
 
 }

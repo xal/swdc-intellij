@@ -19,8 +19,6 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
 public class SoftwareCoSessionManager {
@@ -35,8 +33,16 @@ public class SoftwareCoSessionManager {
         return instance;
     }
 
+    public static boolean softwareSessionFileExists() {
+        // don't auto create the file
+        String file = getSoftwareSessionFile(false);
+        // check if it exists
+        File f = new File(file);
+        return f.exists();
+    }
+
     public static String getCodeTimeDashboardFile() {
-        String dashboardFile = getSoftwareDir();
+        String dashboardFile = getSoftwareDir(true);
         if (SoftwareCoUtils.isWindows()) {
             dashboardFile += "\\CodeTime.txt";
         } else {
@@ -45,7 +51,7 @@ public class SoftwareCoSessionManager {
         return dashboardFile;
     }
 
-    private static String getSoftwareDir() {
+    private static String getSoftwareDir(boolean autoCreate) {
         String softwareDataDir = SoftwareCoUtils.getUserHomeDir();
         if (SoftwareCoUtils.isWindows()) {
             softwareDataDir += "\\.software";
@@ -62,8 +68,8 @@ public class SoftwareCoSessionManager {
         return softwareDataDir;
     }
 
-    public static String getSoftwareSessionFile() {
-        String file = getSoftwareDir();
+    public static String getSoftwareSessionFile(boolean autoCreate) {
+        String file = getSoftwareDir(autoCreate);
         if (SoftwareCoUtils.isWindows()) {
             file += "\\session.json";
         } else {
@@ -73,7 +79,7 @@ public class SoftwareCoSessionManager {
     }
 
     private String getSoftwareDataStoreFile() {
-        String file = getSoftwareDir();
+        String file = getSoftwareDir(true);
         if (SoftwareCoUtils.isWindows()) {
             file += "\\data.json";
         } else {
@@ -153,41 +159,13 @@ public class SoftwareCoSessionManager {
         }
     }
 
-    public static void cleanSessionInfo() {
-        JsonObject jsonObj = getSoftwareSessionAsJson();
-        if (jsonObj != null && jsonObj.size() > 0) {
-            Set<String> keys = jsonObj.keySet();
-            Set<String> keysToRemove = new HashSet<String>();
-            for (String key : keys) {
-                if (!key.equals("jwt") && !key.equals("name")) {
-                    keysToRemove.add(key);
-                }
-            }
-            if (keysToRemove.size() > 0) {
-                for (String key : keysToRemove) {
-                    jsonObj.remove(key);
-                }
-                String content = jsonObj.toString();
-                String sessionFile = getSoftwareSessionFile();
-
-                try {
-                    Writer output = new BufferedWriter(new FileWriter(sessionFile));
-                    output.write(content);
-                    output.close();
-                } catch (Exception e) {
-                    log.info("Code Time: Failed to write cleaned up session info.", e);
-                }
-            }
-        }
-    }
-
     public static void setItem(String key, String val) {
         JsonObject jsonObj = getSoftwareSessionAsJson();
         jsonObj.addProperty(key, val);
 
         String content = jsonObj.toString();
 
-        String sessionFile = getSoftwareSessionFile();
+        String sessionFile = getSoftwareSessionFile(true);
 
         try {
             Writer output = new BufferedWriter(new FileWriter(sessionFile));
@@ -209,7 +187,7 @@ public class SoftwareCoSessionManager {
     private static JsonObject getSoftwareSessionAsJson() {
         JsonObject data = null;
 
-        String sessionFile = getSoftwareSessionFile();
+        String sessionFile = getSoftwareSessionFile(true);
         File f = new File(sessionFile);
         if (f.exists()) {
             try {
