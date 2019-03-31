@@ -749,6 +749,8 @@ public class SoftwareCoUtils {
             JsonObject payload = new JsonObject();
             payload.addProperty("username", getOsUsername());
             payload.addProperty("timezone", timezone);
+            payload.addProperty("hostname", getHostname());
+            payload.addProperty("creation_annotation", "NO_SESSION_FILE");
 
             String api = "/data/onboard";
             SoftwareResponse resp = SoftwareCoUtils.makeApiCall(api, HttpPost.METHOD_NAME, payload.toString(), appJwt);

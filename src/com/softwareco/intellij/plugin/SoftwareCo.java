@@ -79,16 +79,16 @@ public class SoftwareCo implements ApplicationComponent {
                         }
                     }).start();
                 } else {
-                    initializePlugin();
+                    initializePlugin(true);
                 }
             }
         } else {
             // session json already exists, continue with plugin init
-            initializePlugin();
+            initializePlugin(false);
         }
     }
 
-    protected void initializePlugin() {
+    protected void initializePlugin(boolean initializedUser) {
 
         log.info("Code Time: Loaded v" + SoftwareCoUtils.getVersion());
 
@@ -128,7 +128,7 @@ public class SoftwareCo implements ApplicationComponent {
         new Thread(() -> {
             try {
                 Thread.sleep(5000);
-                initializeUserInfo();
+                initializeUserInfo(initializedUser);
             } catch (Exception e) {
                 System.err.println(e);
             }
@@ -158,19 +158,11 @@ public class SoftwareCo implements ApplicationComponent {
         }).start();
     }
 
-    private void initializeUserInfo() {
-        // this should only ever possibly return true the very first
-        // time the IDE loads this new code
-
-        String jwt = SoftwareCoSessionManager.getItem("jwt");
-        boolean initializingPlugin = false;
-        if (jwt == null || jwt.equals("")) {
-            initializingPlugin = true;
-        }
+    private void initializeUserInfo(boolean initializedUser) {
 
         SoftwareCoUtils.getUserStatus();
 
-        if (initializingPlugin) {
+        if (initializedUser) {
             // send an initial plugin payload
             this.sendInstallPayload();
 
@@ -178,7 +170,7 @@ public class SoftwareCo implements ApplicationComponent {
             new Thread(() -> {
                 try {
                     Thread.sleep(5000);
-                    sessionMgr.checkUserAuthenticationStatus();
+                    sessionMgr.showLoginPrompt();
                 }
                 catch (Exception e){
                     System.err.println(e);

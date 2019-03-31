@@ -229,7 +229,7 @@ public class SoftwareCoSessionManager {
         return project;
     }
 
-    public void checkUserAuthenticationStatus() {
+    public void showLoginPrompt() {
         boolean isOnline = isServerOnline();
 
         if (isOnline) {
