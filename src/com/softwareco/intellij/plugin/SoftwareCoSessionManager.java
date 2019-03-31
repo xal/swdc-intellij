@@ -19,12 +19,15 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class SoftwareCoSessionManager {
 
     private static SoftwareCoSessionManager instance = null;
     public static final Logger log = Logger.getInstance("SoftwareCoSessionManager");
+    private static Map<String, String> sessionMap = new HashMap<>();
 
     public static SoftwareCoSessionManager getInstance() {
         if (instance == null) {
@@ -160,6 +163,7 @@ public class SoftwareCoSessionManager {
     }
 
     public static void setItem(String key, String val) {
+        sessionMap.put(key, val);
         JsonObject jsonObj = getSoftwareSessionAsJson();
         jsonObj.addProperty(key, val);
 
@@ -177,6 +181,10 @@ public class SoftwareCoSessionManager {
     }
 
     public static String getItem(String key) {
+        String val = sessionMap.get(key);
+        if (val != null) {
+            return val;
+        }
         JsonObject jsonObj = getSoftwareSessionAsJson();
         if (jsonObj != null && jsonObj.has(key) && !jsonObj.get(key).isJsonNull()) {
             return jsonObj.get(key).getAsString();
