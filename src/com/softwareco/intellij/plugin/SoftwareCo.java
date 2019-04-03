@@ -12,9 +12,7 @@ import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
-import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.util.messages.MessageBusConnection;
 import org.apache.log4j.Level;
@@ -31,6 +29,7 @@ public class SoftwareCo implements ApplicationComponent {
     public static Gson gson;
 
     private MessageBusConnection[] connections;
+    public static MessageBusConnection connection;
 
 
     private SoftwareCoMusicManager musicMgr = SoftwareCoMusicManager.getInstance();
@@ -216,19 +215,30 @@ public class SoftwareCo implements ApplicationComponent {
     }
 
     private void setupEventListeners() {
-        // edit document
-        EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new SoftwareCoDocumentListener());
+        ApplicationManager.getApplication().invokeLater(new Runnable(){
+            public void run() {
 
-        Project[] projects = ProjectManager.getInstance().getOpenProjects();
-        if (projects != null) {
-            connections = new MessageBusConnection[projects.length];
-            for (int i = 0; i < projects.length; i++) {
-                Project project = projects[i];
-                MessageBusConnection connection = project.getMessageBus().connect(project);
-                connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new SoftwareCoFileEditorListener());
-                connections[i] = connection;
+                // save file
+//                MessageBus bus = ApplicationManager.getApplication().getMessageBus();
+//                connection = bus.connect();
+//                connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new SoftwareCoFileEditorListener());
+
+                // edit document
+                EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new SoftwareCoDocumentListener());
             }
-        }
+        });
+
+
+//        Project[] projects = ProjectManager.getInstance().getOpenProjects();
+//        if (projects != null) {
+//            connections = new MessageBusConnection[projects.length];
+//            for (int i = 0; i < projects.length; i++) {
+//                Project project = projects[i];
+//                MessageBusConnection connection = project.getMessageBus().connect(project);
+//                connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new SoftwareCoFileEditorListener());
+//                connections[i] = connection;
+//            }
+//        }
 
         SoftwareCoUtils.setStatusLineMessage(
                 "Code Time", "Click to see more from Code Time");
