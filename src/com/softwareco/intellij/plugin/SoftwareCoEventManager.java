@@ -94,65 +94,63 @@ public class SoftwareCoEventManager {
         if (document == null || !document.isWritable() || document.getText() == null) {
             return;
         }
-        ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
-            public void run() {
-                FileDocumentManager instance = FileDocumentManager.getInstance();
-                if (instance != null) {
-                    VirtualFile file = instance.getFile(document);
-                    if (file != null && !file.isDirectory()) {
-                        Editor[] editors = EditorFactory.getInstance().getEditors(document);
-                        if (editors != null && editors.length > 0) {
-                            String fileName = file.getPath();
-                            Project project = editors[0].getProject();
-                            String projectName = null;
-                            String projectFilepath = null;
-                            if (project != null) {
-                                projectName = project.getName();
-                                projectFilepath = project.getBasePath();
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            FileDocumentManager instance = FileDocumentManager.getInstance();
+            if (instance != null) {
+                VirtualFile file = instance.getFile(document);
+                if (file != null && !file.isDirectory()) {
+                    Editor[] editors = EditorFactory.getInstance().getEditors(document);
+                    if (editors != null && editors.length > 0) {
+                        String fileName = file.getPath();
+                        Project project = editors[0].getProject();
+                        String projectName = null;
+                        String projectFilepath = null;
+                        if (project != null) {
+                            projectName = project.getName();
+                            projectFilepath = project.getBasePath();
 
-                                keystrokeMgr.addKeystrokeWrapperIfNoneExists(project);
-                                initializeKeystrokeObjectGraph(fileName, projectName, projectFilepath);
+                            keystrokeMgr.addKeystrokeWrapperIfNoneExists(project);
+                            initializeKeystrokeObjectGraph(fileName, projectName, projectFilepath);
 
-                                KeystrokeCount keystrokeCount = keystrokeMgr.getKeystrokeCount();
-                                if (keystrokeCount != null) {
+                            KeystrokeCount keystrokeCount = keystrokeMgr.getKeystrokeCount();
+                            if (keystrokeCount != null) {
 
-                                    KeystrokeManager.KeystrokeCountWrapper wrapper = keystrokeMgr.getKeystrokeWrapper();
+                                KeystrokeManager.KeystrokeCountWrapper wrapper = keystrokeMgr.getKeystrokeWrapper();
 
 
-                                    // Set the current text length and the current file and the current project
-                                    //
-                                    int currLen = document.getTextLength();
-                                    wrapper.setCurrentFileName(fileName);
-                                    wrapper.setCurrentTextLength(currLen);
+                                // Set the current text length and the current file and the current project
+                                //
+                                int currLen = document.getTextLength();
+                                wrapper.setCurrentFileName(fileName);
+                                wrapper.setCurrentTextLength(currLen);
 
-                                    JsonObject fileInfo = keystrokeCount.getSourceByFileName(fileName);
-                                    if (documentEvent.getOldLength() > 0) {
-                                        //it's a delete
-                                        updateFileInfoValue(fileInfo, "delete", 1);
+                                JsonObject fileInfo = keystrokeCount.getSourceByFileName(fileName);
+                                if (documentEvent.getOldLength() > 0) {
+                                    //it's a delete
+                                    updateFileInfoValue(fileInfo, "delete", 1);
+                                } else {
+                                    // it's an add
+                                    if (documentEvent.getNewLength() > 1) {
+                                        // it's a paste
+                                        updateFileInfoValue(fileInfo, "paste", 1);
                                     } else {
-                                        // it's an add
-                                        if (documentEvent.getNewLength() > 1) {
-                                            // it's a paste
-                                            updateFileInfoValue(fileInfo, "paste", 1);
-                                        } else {
-                                            updateFileInfoValue(fileInfo, "add", 1);
-                                        }
+                                        updateFileInfoValue(fileInfo, "add", 1);
                                     }
-
-                                    int incrementedCount = Integer.parseInt(keystrokeCount.getKeystrokes()) + 1;
-                                    keystrokeCount.setKeystrokes(String.valueOf(incrementedCount));
-
-                                    String newFrag = documentEvent.getNewFragment().toString();
-                                    if (newFrag.matches("^\n.*") || newFrag.matches("^\n\r.*")) {
-                                        // it's a new line
-                                        updateFileInfoValue(fileInfo, "linesAdded", 1);
-                                    }
-                                    updateFileInfoValue(fileInfo, "lines", getLineCount(fileName));
                                 }
+
+                                int incrementedCount = Integer.parseInt(keystrokeCount.getKeystrokes()) + 1;
+                                keystrokeCount.setKeystrokes(String.valueOf(incrementedCount));
+
+                                String newFrag = documentEvent.getNewFragment().toString();
+                                if (newFrag.matches("^\n.*") || newFrag.matches("^\n\r.*")) {
+                                    // it's a new line
+                                    updateFileInfoValue(fileInfo, "linesAdded", 1);
+                                }
+                                updateFileInfoValue(fileInfo, "lines", getLineCount(fileName));
                             }
                         }
-
                     }
+
                 }
             }
         });

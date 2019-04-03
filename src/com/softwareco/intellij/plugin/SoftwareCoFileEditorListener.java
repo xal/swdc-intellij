@@ -14,7 +14,7 @@ public class SoftwareCoFileEditorListener implements FileEditorManagerListener {
             return;
         }
 
-        // eventMgr.handleFileOpenedEvents(file.getPath(), manager.getProject());
+        eventMgr.handleFileOpenedEvents(file.getPath(), manager.getProject());
     }
 
     @Override
@@ -23,6 +23,6 @@ public class SoftwareCoFileEditorListener implements FileEditorManagerListener {
             return;
         }
 
-        // eventMgr.handleFileClosedEvents(file.getPath(), manager.getProject());
+        eventMgr.handleFileClosedEvents(file.getPath(), manager.getProject());
     }
 }
