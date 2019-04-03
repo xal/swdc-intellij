@@ -673,13 +673,6 @@ public class SoftwareCoUtils {
         VirtualFile vFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(f);
         OpenFileDescriptor descriptor = new OpenFileDescriptor(p, vFile);
         FileEditorManager.getInstance(p).openTextEditor(descriptor, true);
-
-        // delete the legacy file if we have one
-        String legacyFileName = codeTimeFile.substring(0, codeTimeFile.lastIndexOf("."));
-        File legacyFile = new File(legacyFileName);
-        if (legacyFile.exists()) {
-            legacyFile.delete();
-        }
     }
 
     private static String getSingleLineResult(List<String> cmd, int maxLen) {
