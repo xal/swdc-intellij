@@ -20,6 +20,7 @@ import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.stream.Stream;
 
 public class SoftwareCoEventManager {
 
@@ -77,7 +78,11 @@ public class SoftwareCoEventManager {
     protected int getLineCount(String fileName) {
         Path path = Paths.get(fileName);
         try {
-            return (int) Files.lines(path).count();
+            Stream<String> stream = Files.lines(path);
+            int count = (int) stream.count();
+            stream.close();
+            return count;
+
         } catch (IOException e) {
             log.info("Code Time: failed to get the line count for file " + fileName);
             return 0;
