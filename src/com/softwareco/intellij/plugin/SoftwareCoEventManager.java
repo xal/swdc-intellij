@@ -96,9 +96,10 @@ public class SoftwareCoEventManager {
      */
     public void handleChangeEvents(Document document, DocumentEvent documentEvent) {
 
-        if (document == null || !document.isWritable() || document.getText() == null) {
+        if (document == null) {
             return;
         }
+
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             FileDocumentManager instance = FileDocumentManager.getInstance();
             if (instance != null) {
