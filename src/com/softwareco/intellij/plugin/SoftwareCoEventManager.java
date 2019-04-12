@@ -276,7 +276,6 @@ public class SoftwareCoEventManager {
                 SoftwareResponse resp = SoftwareCoUtils.makeApiCall("/data", HttpPost.METHOD_NAME, payload);
                 if (!resp.isOk()) {
                     sessionMgr.storePayload(payload);
-                    sessionMgr.showLoginPrompt();
                 }
 
                 keystrokeMgr.resetData();
