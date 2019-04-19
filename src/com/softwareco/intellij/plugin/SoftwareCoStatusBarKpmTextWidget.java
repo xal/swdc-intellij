@@ -42,9 +42,9 @@ public class SoftwareCoStatusBarKpmTextWidget implements StatusBarWidget {
         String name = SoftwareCoSessionManager.getItem("name");
         if (name != null && !name.equals("")) {
             if (tooltip != null) {
-                tooltip += " (logged in as " + name + ")";
+                tooltip += " (" + name + ")";
             } else {
-                tooltip = "Click to see more from Code Time (logged in as " + name + ")";
+                tooltip = "Click to see more from Code Time (" + name + ")";
             }
         }
         this.tooltip = tooltip;

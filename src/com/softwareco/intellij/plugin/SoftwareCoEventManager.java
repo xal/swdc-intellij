@@ -13,7 +13,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.apache.http.client.methods.HttpPost;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -83,8 +82,11 @@ public class SoftwareCoEventManager {
             stream.close();
             return count;
 
-        } catch (IOException e) {
-            log.info("Code Time: failed to get the line count for file " + fileName);
+        } catch (Exception e) {
+            log.error("Code Time: unable to get the line count for file " + fileName);
+            return 0;
+        } catch (Throwable e) {
+            log.error("Code Time: unable to get the line count for file " + fileName);
             return 0;
         }
     }
