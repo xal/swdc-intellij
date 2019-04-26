@@ -72,6 +72,9 @@ public class SoftwareCoUtils {
     private static boolean loggedInCacheState = false;
 
     private static boolean appAvailable = true;
+    private static boolean showStatusText = true;
+    private static String lastMsg = "";
+    private static String lastTooltip = "";
 
     private static String NO_DATA = "CODE TIME\n\nNo data available\n";
 
@@ -302,6 +305,16 @@ public class SoftwareCoUtils {
         return calendar.getTime();
     }
 
+    public static void toggleStatusBar() {
+        showStatusText = !showStatusText;
+
+        if (showStatusText) {
+            SoftwareCoUtils.setStatusLineMessage(lastMsg, lastTooltip);
+        } else {
+            SoftwareCoUtils.setStatusLineMessage("clock.png", "", lastMsg + " | " + lastTooltip);
+        }
+    }
+
     public static synchronized void setStatusLineMessage(
             final String singleMsg, final String tooltip) {
         setStatusLineMessage(null, singleMsg, null, null, tooltip);
@@ -344,6 +357,11 @@ public class SoftwareCoUtils {
     private static void updateStatusBar(final String kpmIcon, final String kpmMsg,
                                         final String timeIcon, final String timeMsg,
                                         final String tooltip) {
+        if ( showStatusText ) {
+            lastMsg = kpmMsg;
+            lastTooltip = tooltip;
+        }
+
         ApplicationManager.getApplication().invokeLater(new Runnable() {
             public void run() {
                 ProjectManager pm = ProjectManager.getInstance();
@@ -373,26 +391,33 @@ public class SoftwareCoUtils {
                                 statusBar.removeWidget(timeiconId);
                             }
 
-                            if (kpmIcon != null) {
+                            String kpmIconVal = kpmIcon;
+                            if (!showStatusText && kpmIconVal == null) {
+                                kpmIconVal = "clock.png";
+                            }
+
+                            if (kpmIconVal != null) {
                                 SoftwareCoStatusBarKpmIconWidget kpmIconWidget = buildStatusBarIconWidget(
-                                        kpmIcon, tooltip, kpmiconId);
+                                        kpmIconVal, tooltip, kpmiconId);
                                 statusBar.addWidget(kpmIconWidget, kpmiconId);
                                 statusBar.updateWidget(kpmiconId);
                             }
 
-                            SoftwareCoStatusBarKpmTextWidget kpmWidget = buildStatusBarTextWidget(
-                                    kpmMsgVal, tooltip, kpmmsgId);
-                            statusBar.addWidget(kpmWidget, kpmmsgId);
-                            statusBar.updateWidget(kpmmsgId);
+                            if (showStatusText) {
+                                SoftwareCoStatusBarKpmTextWidget kpmWidget = buildStatusBarTextWidget(
+                                        kpmMsgVal, tooltip, kpmmsgId);
+                                statusBar.addWidget(kpmWidget, kpmmsgId);
+                                statusBar.updateWidget(kpmmsgId);
+                            }
 
-                            if (timeIcon != null) {
+                            if (showStatusText && timeIcon != null) {
                                 SoftwareCoStatusBarKpmIconWidget timeIconWidget = buildStatusBarIconWidget(
                                         timeIcon, tooltip, timeiconId);
                                 statusBar.addWidget(timeIconWidget, timeiconId);
                                 statusBar.updateWidget(timeiconId);
                             }
 
-                            if (timeMsg != null) {
+                            if (showStatusText && timeMsg != null) {
                                 SoftwareCoStatusBarKpmTextWidget timeWidget = buildStatusBarTextWidget(
                                         timeMsg, tooltip, timemsgId);
                                 statusBar.addWidget(timeWidget, timemsgId);

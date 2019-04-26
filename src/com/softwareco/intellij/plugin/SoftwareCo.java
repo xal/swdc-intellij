@@ -142,14 +142,6 @@ public class SoftwareCo implements ApplicationComponent {
         SoftwareCoRepoManager repoMgr = SoftwareCoRepoManager.getInstance();
         new Thread(() -> {
             try {
-                Thread.sleep(5000);
-                repoMgr.processRepoMembersInfo(getRootPath());
-            } catch (Exception e) {
-                System.err.println(e);
-            }
-        }).start();
-        new Thread(() -> {
-            try {
                 Thread.sleep(60000);
                 repoMgr.getHistoricalCommits(getRootPath());
             } catch (Exception e) {

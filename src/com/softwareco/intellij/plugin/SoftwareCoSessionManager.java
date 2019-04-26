@@ -282,12 +282,12 @@ public class SoftwareCoSessionManager {
             String averageDailyMinutesTimeStr = SoftwareCoUtils.humanizeMinutes(averageDailyMinutes);
 
             String inFlowIcon = currentDayMinutes > averageDailyMinutes ? "rocket.png" : null;
-            String msg = "Code time: " + currentDayTimeStr;
+            String msg = currentDayTimeStr;
             if (averageDailyMinutes > 0) {
-                msg += " | Avg: " + averageDailyMinutesTimeStr;
+                msg += " | " + averageDailyMinutesTimeStr;
             }
 
-            SoftwareCoUtils.setStatusLineMessage(inFlowIcon, msg, "Click to see more from Code Time");
+            SoftwareCoUtils.setStatusLineMessage(inFlowIcon, msg, "Code time today vs. your daily average. Click to see more from Code Time");
 
             if (SoftwareCoUtils.isCodeTimeMetricsFileOpen()) {
                 SoftwareCoUtils.fetchCodeTimeMetricsContent();
