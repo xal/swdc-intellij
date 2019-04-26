@@ -154,7 +154,8 @@ public class SoftwareCoEventManager {
                                     // it's a new line
                                     updateFileInfoValue(fileInfo, "linesAdded", 1);
                                 }
-                                updateFileInfoValue(fileInfo, "lines", getLineCount(fileName));
+                                int documentLineCount = document.getLineCount();
+                                updateFileInfoValue(fileInfo, "lines", documentLineCount);
                             }
                         }
                     }
