@@ -35,6 +35,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 
 import javax.swing.*;
 import java.io.*;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -275,7 +276,7 @@ public class SoftwareCoUtils {
 
         StringBuffer sb = new StringBuffer();
         InputStreamReader reader;
-        reader = new InputStreamReader(inputStream);
+        reader = new InputStreamReader(inputStream, Charset.forName("UTF-8"));
 
         BufferedReader br = new BufferedReader(reader);
         boolean done = false;
