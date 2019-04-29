@@ -81,12 +81,8 @@ public class SoftwareCoEventManager {
             int count = (int) stream.count();
             stream.close();
             return count;
-
-        } catch (Exception e) {
-            log.error("Code Time: unable to get the line count for file " + fileName);
-            return 0;
         } catch (Throwable e) {
-            log.error("Code Time: unable to get the line count for file " + fileName);
+            log.warn("Code Time: unable to get the line count for file " + fileName);
             return 0;
         }
     }
